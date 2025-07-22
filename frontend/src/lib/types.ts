@@ -3,7 +3,7 @@ interface Identifier {
   value: string
 }
 
-interface Provider {
+export interface Provider {
   id: string
   name: string
   level: string
@@ -86,12 +86,7 @@ interface Patient {
   identifiers: Identifier[];
 }
 
-interface Provider {
-  id: string;
-  name: string;
-  level: string;
-  identifiers: Identifier[];
-}
+/* Duplicate Provider interface removed to avoid redeclaration error */
 
 interface Use {
   id: string;
@@ -143,3 +138,17 @@ interface FormData {
 export interface TestCase {
   formData: FormData;
 }
+
+// type ProviderIdentifier = {
+//   system: string;
+//   value: string;
+// };
+
+// type Provider = {
+//   id: string;
+//   name: string;
+//   level: string;
+//   identifiers: ProviderIdentifier[];
+//   active?: boolean;
+//   type?: string;
+// };

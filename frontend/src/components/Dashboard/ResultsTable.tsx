@@ -1,3 +1,4 @@
+import { TestResult } from '@/lib/api';
 import { CheckCircleIcon, XCircleIcon, ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/16/solid';
 import { useState } from 'react';
 
@@ -106,13 +107,13 @@ export default function ResultsTable({ results }: { results: TestResult[] }) {
                         <div>
                           <h4 className="text-sm font-medium text-red-700">Validation Errors</h4>
                           <ul className="mt-1 space-y-1">
-                            {result.details.validationErrors.map((error, index) => (
+                            {result.details.validationErrors.map((error:any, index:any) => (
                               <li key={index} className="text-sm text-red-600">
                                 <span className="font-medium">{error.path}:</span> {error.message}
                               </li>
                             ))}
                             <li className="text-sm text-red-600">
-                                <span className="font-medium">{result.details.response?.error}</span>
+                                <span className="font-medium">{result.details?.error}</span>
                               </li>
                           </ul>
                         </div>
