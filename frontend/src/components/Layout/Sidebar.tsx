@@ -37,7 +37,7 @@ export default function Sidebar() {
               Test Cases
             </Link>
             
-            <Link
+            {/* <Link
               href="/reports"
               className={
                 `group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
@@ -63,7 +63,7 @@ export default function Sidebar() {
             >
               <CogIcon className="mr-3 h-6 w-6 text-gray-400 group-hover:text-gray-500" />
               Settings
-            </Link>
+            </Link> */}
           </nav>
         </div>
       </div>

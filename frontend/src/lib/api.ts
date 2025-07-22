@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { request } from 'http';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
 
@@ -73,7 +74,7 @@ export const runTestSuite = async (testData: any): Promise<TestResult[]> => {
     const endTime = Date.now();
     const responseTime = endTime - startTime;
 
-    console.log('API response:', response.data);
+    console.log('API response:', testData);
 
     if (response.status !== 200) {
       throw new Error(`API call failed with status ${response.status}`);
@@ -89,7 +90,7 @@ export const runTestSuite = async (testData: any): Promise<TestResult[]> => {
     
     const result: TestResult = {
       id: response.data.data?.id || 'generated-id',
-      name: 'Claim Submission',
+      name: testData?.formData?.title || 'Claim Submission',
       status: response.data.success ? 'passed' : 'failed',
       duration: responseTime,
       timestamp: new Date().toISOString(),
@@ -131,7 +132,7 @@ export const runTestSuite = async (testData: any): Promise<TestResult[]> => {
 
     const errorResult: TestResult = {
       id: 'error-' + Date.now().toString(),
-      name: 'Claim Submission',
+      name: testData?.formData?.title || 'Claim Submission',
       status: 'failed',
       duration: 0,
       timestamp: new Date().toISOString(),

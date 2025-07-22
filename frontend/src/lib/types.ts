@@ -38,29 +38,7 @@ type TestResult = {
   };
 };
 
-// type TestResult = {
-//   id: string;
-//   name: string;
-//   status: 'passed' | 'failed' | 'running';
-//   duration: number;
-//   timestamp: string;
-//   details: {
-//     request: any;
-//     response?: any;
-//     error?: string;
-//     validationErrors?: {
-//       path: string;
-//       message: string;
-//     }[];
-//   };
-// };
-
-type TestRunnerProps = {
-  isRunning?: boolean;
-  onRunTests?: (testConfig: any) => void;
-};
-
-type InterventionItem = {
+export type InterventionItem = {
   id: string;
   packageId: string;
   code: string;
@@ -71,3 +49,97 @@ type InterventionItem = {
   serviceEnd: string;
   netValue: number;
 };
+
+// interface Patient {
+//   id: string;
+//   name: string;
+//   gender: number;
+//   birthDate: string;
+//   identifiers: Identifier[];
+// };
+// interface Provider {
+//   id: string;
+//   name: string;
+//   level: string;
+//   identifiers: Identifier[];
+// };
+// export type TestCaseFormData = {
+
+//   patient: Patient;
+//   provider: Provider;
+//   use: {id: string;};
+//   productOrService: InterventionItem[];
+//   billablePeriod: { billableStart: string; billableEnd: string; created: string; };
+//   total: { value: number; currency: string; };
+// }
+
+interface Identifier {
+  system: string;
+  value: string;
+}
+
+interface Patient {
+  id: string;
+  name: string;
+  gender: string;
+  birthDate: string;
+  identifiers: Identifier[];
+}
+
+interface Provider {
+  id: string;
+  name: string;
+  level: string;
+  identifiers: Identifier[];
+}
+
+interface Use {
+  id: string;
+}
+
+interface ProductOrService {
+  code: string;
+  display: string;
+  quantity: {
+    value: string;
+  };
+  unitPrice: {
+    value: string;
+    currency: string;
+  };
+  net: {
+    value: number;
+    currency: string;
+  };
+  servicePeriod: {
+    start: string;
+    end: string;
+  };
+  sequence: number;
+}
+
+interface BillablePeriod {
+  billableStart: string;
+  billableEnd: string;
+  created: string;
+}
+
+interface Total {
+  value: number;
+  currency: string;
+}
+
+interface FormData {
+  test: string;
+  title: string;
+  patient: Patient;
+  provider: Provider;
+  use: Use;
+  productOrService: ProductOrService[];
+  billablePeriod: BillablePeriod;
+  total: Total;
+}
+
+export interface TestCase {
+  formData: FormData;
+}
