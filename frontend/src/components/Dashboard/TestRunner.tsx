@@ -6,39 +6,7 @@ import InterventionSelector from './InterventionSelector';
 import UseSelector from './UseSelector';
 import { InterventionItem } from '@/lib/types';
 import { TestResult } from '@/lib/api';
-
-const TEST_PACKAGES = [
-  { id: 'SHA-01', name: 'Ambulance and Emergency Services' },
-  { id: 'SHA-03', name: 'Critical Care Services' },
-  { id: 'SHA-05', name: 'Optical Health Services' },
-];
-
-const INTERVENTION_CODES = {
-  'SHA-01': [
-    { code: 'SHA-01-001', name: 'Ambulance Evacuations' },
-    { code: 'SHA-01-002', name: 'Ambulance Evacuations' },
-    { code: 'SHA-01-003', name: 'Cardiac/Respiratory Arrest' },
-    { code: 'SHA-01-004', name: 'Major Trauma' },
-    { code: 'SHA-01-005', name: 'Shock states' },
-    { code: 'SHA-01-006', name: 'Altered level of consciousness' },
-    { code: 'SHA-01-007', name: 'Severe respiratory distress' },
-    { code: 'SHA-01-008', name: 'Seizures/Status epilepticus' },
-    { code: 'SHA-01-010', name: 'Acute Cerebrovascular Accidents' },
-    { code: 'SHA-01-011', name: 'Anti-Rabies' },
-    { code: 'SHA-01-012', name: 'Anti-Snake Venom' },
-    { code: 'SHA-01-013', name: 'Chest Pain' }
-  ],
-  'SHA-03': [
-    { code: 'SHA-03-001', name: 'ICU Care' },
-    { code: 'SHA-03-002', name: 'HDU Care' },
-    { code: 'SHA-03-003', name: 'NICU Care' },
-    { code: 'SHA-03-004', name: 'PICU Care' },
-    { code: 'SHA-03-005', name: 'Intensive care Burns Unit' }
-  ],
-  'SHA-05': [
-    { code: 'SHA-05-001', name: 'Consultation and prescription and issuing of glasses' },
-  ],
-};
+import { INTERVENTION_CODES, TEST_PACKAGES } from '@/packages/ShaPackages';
 
 type TestRunnerProps = {
   isRunning?: boolean;
@@ -202,18 +170,6 @@ export default function TestRunner({ isRunning = false, onRunTests }: TestRunner
             onSelectIntervention={setSelectedIntervention}
           />
         </div>
-
-        {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <PatientDetailsPanel
-            patient={selectedPatient}
-            onSelectPatient={setSelectedPatient}
-          />
-
-          <ProviderDetailsPanel
-            provider={selectedProvider}
-            onSelectProvider={setSelectedProvider}
-          />
-        </div> */}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div>
@@ -406,8 +362,6 @@ export default function TestRunner({ isRunning = false, onRunTests }: TestRunner
           </button>
         </div>
       </div>
-
-      {/* <ResultsTable results={results} /> */}
     </div>
   );
 }
