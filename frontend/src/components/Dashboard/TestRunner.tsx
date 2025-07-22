@@ -4,6 +4,8 @@ import PatientDetailsPanel from './PatientDetailsPanel';
 import ProviderDetailsPanel from './ProviderDetailsPanel';
 import InterventionSelector from './InterventionSelector';
 import UseSelector from './UseSelector';
+import { InterventionItem } from '@/lib/types';
+import { TestResult } from '@/lib/api';
 
 const TEST_PACKAGES = [
   { id: 'SHA-01', name: 'Ambulance and Emergency Services' },
@@ -36,6 +38,11 @@ const INTERVENTION_CODES = {
   'SHA-05': [
     { code: 'SHA-05-001', name: 'Consultation and prescription and issuing of glasses' },
   ],
+};
+
+type TestRunnerProps = {
+  isRunning?: boolean;
+  onRunTests?: (testConfig: any) => void;
 };
 
 export default function TestRunner({ isRunning = false, onRunTests }: TestRunnerProps) {
