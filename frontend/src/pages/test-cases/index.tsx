@@ -1,16 +1,17 @@
 // TestCasesRunner.tsx
-import { useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { StopIcon, PlayIcon, TrashIcon } from '@heroicons/react/16/solid';
 import UseSelector from '@/components/Dashboard/UseSelector';
 import InterventionSelector from '@/components/Dashboard/InterventionSelector';
 import { InterventionItem, TestCase } from '@/lib/types';
 import { runTestSuite, TestResult } from '@/lib/api';
 import TestcaseDetails from '@/components/testCases/TestcaseDetails';
-import { negativeSha01003, postiveSha01003 } from '@/components/testCases/sha_01';
+import { negativeSha01003, postiveSha01003, testCasesPackages } from '@/components/testCases/sha_01';
 import ResultsTable from '@/components/Dashboard/ResultsTable';
 
+const DEFAULT_PACKAGE = 'SHA-01';
 const TEST_PACKAGES = [
-  { id: 'SHA-01', name: 'Ambulance and Emergency Services' },
+  { id: 'SHA-01', name: 'Ambulance and Emergency Services',},
   { id: 'SHA-03', name: 'Critical Care Services' },
   { id: 'SHA-05', name: 'Optical Health Services' },
 ];
@@ -48,19 +49,17 @@ type TestRunnerProps = {
 };
 
 export default function TestCasesRunner({ isRunning = false, onRunTests }: TestRunnerProps) {
-  const [selectedPackage, setSelectedPackage] = useState('');
+  const [selectedPackage, setSelectedPackage] = useState(DEFAULT_PACKAGE);
   const [selectedUse, setSelectedUse] = useState<any>(null);
   const [selectedProvider, setSelectedProvider] = useState<any>(null);
   const [selectedIntervention, setSelectedIntervention] = useState('');
   const [runningSection, setRunningSection] = useState<string | null>(null);
-
-  const [interventions, setInterventions] = useState<InterventionItem[]>([]);
   const [availableInterventions, setAvailableInterventions] = useState<any[]>([]);
   const [results, setResults] = useState<TestResult[]>([]);
-  const [selectedPositiveTests, setSelectedPositiveTests] = useState<string[]>([]);
-  const [selectedNegativeTests, setSelectedNegativeTests] = useState<string[]>([]);
-
-  // Current intervention form state
+  const [currentTestCases, setCurrentTestCases] = useState<{
+    positive: TestCase[];
+    negative: TestCase[];
+  }>({ positive: [], negative: [] });
   const [currentIntervention, setCurrentIntervention] = useState({
     serviceQuantity: '',
     unitPrice: '',
@@ -68,18 +67,53 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
     serviceEnd: '',
   });
 
-  // Update available interventions when package changes
   useEffect(() => {
     if (selectedPackage) {
-      setAvailableInterventions(INTERVENTION_CODES[selectedPackage as keyof typeof INTERVENTION_CODES] || []);
+      const interventions = INTERVENTION_CODES[selectedPackage as keyof typeof INTERVENTION_CODES] || [];
+      setAvailableInterventions(interventions);
       setSelectedIntervention('');
+
+      setCurrentTestCases({
+        positive: [],
+        negative: []
+      });
     }
   }, [selectedPackage]);
 
+  useEffect(() => {
+    if (selectedIntervention && selectedPackage) {
+      const packageData = testCasesPackages.find(pkg => pkg.id === selectedPackage);
+      if (packageData) {
+        const interventionData = packageData.SHA01InteventionTestCases.find(
+          item => item.code === selectedIntervention
+        );
+        if (interventionData) {
+          setCurrentTestCases({
+            positive: interventionData.positive || [],
+            negative: interventionData.negative || []
+          });
+        } else {
+          setCurrentTestCases({ positive: [], negative: [] });
+        }
+      } else if (selectedPackage) {
+        const packageData = testCasesPackages.find(pkg => pkg.id === selectedPackage);
+        if (packageData) {
+          const allPositive = packageData.SHA01InteventionTestCases.flatMap(item => item.positive || []);
+          const allNegative = packageData.SHA01InteventionTestCases.flatMap(item => item.negative || []);
+          setCurrentTestCases({
+            positive: allPositive,
+            negative: allNegative
+          });
+        }
+      }
+    }
+  }, [selectedIntervention, selectedPackage]);
+
+
   const buildTestPayload = (tests: string[], type: 'positive' | 'negative') => {
-  const allTestCases: TestCase[] = [
-    ...((postiveSha01003 as TestCase[]) ?? []),
-    ...((negativeSha01003 as TestCase[]) ?? [])
+  const allTestCases = [
+    ...currentTestCases.positive,
+    ...currentTestCases.negative
   ];
   return tests.map(testTitle => {
     const testCase = allTestCases.find(tc => tc.formData.title === testTitle);
@@ -94,26 +128,24 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
 };
 
   const handleRunPositiveTests = (selectedItems: string[]) => {
-    setSelectedPositiveTests(selectedItems);
     runTests(selectedItems, 'positive');
   };
 
   const handleRunNegativeTests = (selectedItems: string[]) => {
-    setSelectedNegativeTests(selectedItems);
     runTests(selectedItems, 'negative');
   };
 
   const handleRunAllTests = async () => {
 
-    const allSelectedTests = [...postiveSha01003, ...negativeSha01003];
+    const allSelectedTests = [...currentTestCases.positive, ...currentTestCases.negative];
     if (allSelectedTests.length === 0) {
       alert('Please select at least one test case to run');
       return;
     }
 
     const testConfig = {
-      positive: buildTestPayload(postiveSha01003.map(tc => tc.formData.title), 'positive'),
-      negative: buildTestPayload(negativeSha01003.map(tc => tc.formData.title), 'negative')
+      positive: buildTestPayload(currentTestCases.positive.map(tc => tc.formData.title), 'positive'),
+      negative: buildTestPayload(currentTestCases.negative.map(tc => tc.formData.title), 'negative')
     };
     console.log('Running all tests with config:', testConfig);
     
@@ -231,13 +263,13 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <TestcaseDetails 
             title={'Positive'} 
-            testCases={postiveSha01003}
+            testCases={currentTestCases.positive}
             onRunTests={handleRunPositiveTests}
             isRunning={isRunning && runningSection === 'positive'}
           />
           <TestcaseDetails 
             title='Negative' 
-            testCases={negativeSha01003}
+            testCases={currentTestCases.negative}
             onRunTests={handleRunNegativeTests}
             isRunning={isRunning && runningSection === 'negative'}
           />

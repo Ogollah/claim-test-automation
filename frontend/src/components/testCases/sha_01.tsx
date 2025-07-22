@@ -218,3 +218,15 @@ export const negativeSha01003 = [
   }
 }
 ]
+
+export const testCasePackageSHA01 = {
+  id: 'SHA-01',
+  name: 'Ambulance and Emergency Services',
+  SHA01InteventionTestCases: [
+    { code: 'SHA-01-003', positive: postiveSha01003, negative: negativeSha01003, }
+  ]
+}
+
+export const testCasesPackages = [
+  testCasePackageSHA01,
+]
