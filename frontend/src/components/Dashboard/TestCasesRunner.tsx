@@ -6,9 +6,9 @@ import InterventionSelector from '@/components/Dashboard/InterventionSelector';
 import { InterventionItem, TestCase } from '@/lib/types';
 import { runTestSuite, TestResult } from '@/lib/api';
 import TestcaseDetails from '@/components/testCases/TestcaseDetails';
-import { testCasesPackages } from '@/components/testCases/sha_01';
 import ResultsTable from '@/components/Dashboard/ResultsTable';
 import { DEFAULT_PACKAGE, INTERVENTION_CODES, TEST_PACKAGES } from '@/packages/ShaPackages';
+import { testCasesPackages } from '@/lib/utils';
 
 type TestRunnerProps = {
   isRunning?: boolean;
