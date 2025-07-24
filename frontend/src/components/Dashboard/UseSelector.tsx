@@ -8,7 +8,7 @@ export default function UseSelector({ use, onSelectUse }: {
   const [uses, setUses] = useState([{
     id:"claim"
   },{
-    id:"pre-auth"
+    id:"preauthorization"
   },
   ]);
 
