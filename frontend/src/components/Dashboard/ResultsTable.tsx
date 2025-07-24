@@ -1,9 +1,10 @@
 import { TestResult } from '@/lib/api';
-import { CheckCircleIcon, XCircleIcon, ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/16/solid';
+import { CheckCircleIcon, XCircleIcon, ChevronDownIcon, ChevronRightIcon, ArrowDownTrayIcon } from '@heroicons/react/16/solid';
 import { useState } from 'react';
 
 export default function ResultsTable({ results }: { results: TestResult[] }) {
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
+  const [expandedPayloads, setExpandedPayloads] = useState<Record<string, { request: boolean; response: boolean }>>({});
 
   const toggleRow = (id: string) => {
     setExpandedRows(prev => ({
@@ -11,6 +12,34 @@ export default function ResultsTable({ results }: { results: TestResult[] }) {
       [id]: !prev[id],
     }));
   };
+
+  const togglePayload = (id: string, type: 'request' | 'response') => {
+    setExpandedPayloads(prev => ({
+      ...prev,
+      [id]: {
+        ...prev[id],
+        [type]: !prev[id]?.[type]
+      }
+    }));
+  };
+
+  const downloadPayload = (content: any, filename: string) => {
+    const blob = new Blob([JSON.stringify(content, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const outcome = (result: TestResult) => {
+    const entry = result.details.response?.entry?.find((e: any) => e.resource?.resourceType === 'ClaimResponse');
+    const outcome = entry?.resource?.outcome || 'unknown';
+    return outcome;
+  }
 
   return (
     <div className="bg-white shadow overflow-hidden sm:rounded-lg">
@@ -66,12 +95,18 @@ export default function ResultsTable({ results }: { results: TestResult[] }) {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   <button
                     onClick={() => toggleRow(result.id)}
-                    className="text-blue-600 hover:text-blue-900"
+                    className="text-blue-600 hover:text-blue-900 flex items-center"
                   >
                     {expandedRows[result.id] ? (
-                      <ChevronDownIcon className="h-5 w-5" />
+                      <>
+                        <ChevronDownIcon className="h-5 w-5 mr-1" />
+                        Hide
+                      </>
                     ) : (
-                      <ChevronRightIcon className="h-5 w-5" />
+                      <>
+                        <ChevronRightIcon className="h-5 w-5 mr-1" />
+                        Show
+                      </>
                     )}
                   </button>
                 </td>
@@ -80,31 +115,88 @@ export default function ResultsTable({ results }: { results: TestResult[] }) {
                 <tr>
                   <td colSpan={5} className="px-6 py-4 bg-gray-50">
                     <div className="space-y-4">
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-700">Request Payload</h4>
-                        <pre className="mt-1 p-2 bg-gray-100 rounded text-xs overflow-x-auto">
-                          {JSON.stringify(result.details.request, null, 2)}
-                        </pre>
+                      <div className="border rounded-lg overflow-hidden">
+                        <div className="flex justify-between items-center bg-gray-100 p-3">
+                          <div className="flex items-center">
+                            <button 
+                              onClick={() => togglePayload(result.id, 'request')}
+                              className="flex items-center text-gray-700 hover:text-gray-900"
+                            >
+                              {expandedPayloads[result.id]?.request ? (
+                                <ChevronDownIcon className="h-5 w-5 mr-2" />
+                              ) : (
+                                <ChevronRightIcon className="h-5 w-5 mr-2" />
+                              )}
+                              <span className="font-medium">Request Payload</span>
+                            </button>
+                          </div>
+                          <button
+                            onClick={() => downloadPayload(result.details.request, `${result.id}-request.json`)}
+                            className="flex items-center text-blue-600 hover:text-blue-800 text-sm"
+                          >
+                            <ArrowDownTrayIcon className="h-4 w-4 mr-1" />
+                            Download
+                          </button>
+                        </div>
+                        {expandedPayloads[result.id]?.request && (
+                          <pre className="p-3 bg-white text-xs overflow-x-auto">
+                            {JSON.stringify(result.details.request, null, 2)}
+                          </pre>
+                        )}
                       </div>
 
                       {result.details.response && (
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-700">Response</h4>
-                          <pre className="mt-1 p-2 bg-gray-100 rounded text-xs overflow-x-auto">
-                            {`${result?.message}: ${result?.claimId}`}
-                          </pre>
-                        </div>
+                        <>
+                          <div className="border rounded-lg overflow-hidden">
+                            <div className="flex justify-between items-center bg-gray-100 p-3">
+                              <div className="flex items-center">
+                                <button 
+                                  onClick={() => togglePayload(result.id, 'response')}
+                                  className="flex items-center text-gray-700 hover:text-gray-900"
+                                >
+                                  {expandedPayloads[result.id]?.response ? (
+                                    <ChevronDownIcon className="h-5 w-5 mr-2" />
+                                  ) : (
+                                    <ChevronRightIcon className="h-5 w-5 mr-2" />
+                                  )}
+                                  <span className="font-medium">Response Payload</span>
+                                </button>
+                              </div>
+                              <button
+                                onClick={() => downloadPayload(result.details.response, `${result.id}-response.json`)}
+                                className="flex items-center text-blue-600 hover:text-blue-800 text-sm"
+                              >
+                                <ArrowDownTrayIcon className="h-4 w-4 mr-1" />
+                                Download
+                              </button>
+                            </div>
+                            {expandedPayloads[result.id]?.response && (
+                              <pre className="p-3 bg-white text-xs overflow-x-auto">
+                                {JSON.stringify(result.details.response, null, 2)}
+                              </pre>
+                            )}
+                          </div>
+
+                          <div className="bg-gray-100 p-3 rounded-lg">
+                            <h4 className="text-sm font-medium text-gray-700 mb-2">Response Summary</h4>
+                            <div className="bg-white p-3 rounded text-xs">
+                              <div className="mb-1"><span className="font-medium">Message:</span> {result?.message}</div>
+                              <div className="mb-1"><span className="font-medium">Claim ID:</span> {result?.claimId}</div>
+                              <div><span className="font-medium">Outcome:</span> {outcome(result)}</div>
+                            </div>
+                          </div>
+                        </>
                       )}
 
                       {result.details.error && (
-                        <div>
+                        <div className="bg-red-50 p-3 rounded-lg">
                           <h4 className="text-sm font-medium text-red-700">Error</h4>
                           <p className="mt-1 text-sm text-red-600">{result.details.error}</p>
                         </div>
                       )}
 
                       {result.details.validationErrors && result.details.validationErrors.length > 0 && (
-                        <div>
+                        <div className="bg-red-50 p-3 rounded-lg">
                           <h4 className="text-sm font-medium text-red-700">Validation Errors</h4>
                           <ul className="mt-1 space-y-1">
                             {result.details.validationErrors.map((error:any, index:any) => (
@@ -112,9 +204,11 @@ export default function ResultsTable({ results }: { results: TestResult[] }) {
                                 <span className="font-medium">{error.path}:</span> {error.message}
                               </li>
                             ))}
-                            <li className="text-sm text-red-600">
-                                <span className="font-medium">{result.details?.error}</span>
+                            {result.details?.error && (
+                              <li className="text-sm text-red-600">
+                                <span className="font-medium">Error:</span> {result.details.error}
                               </li>
+                            )}
                           </ul>
                         </div>
                       )}
