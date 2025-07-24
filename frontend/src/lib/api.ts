@@ -26,6 +26,7 @@ interface ApiResponseData {
   timestamp?: string;
   entry?: any[];
   responseTime?: number;
+  outcome?: string;
 }
 
 // Enhanced server response interface to include error details
