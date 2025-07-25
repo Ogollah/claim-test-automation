@@ -7,6 +7,7 @@ import UseSelector from './UseSelector';
 import { InterventionItem } from '@/lib/types';
 import { TestResult } from '@/lib/api';
 import { INTERVENTION_CODES, TEST_PACKAGES } from '@/packages/ShaPackages';
+import { title } from 'process';
 
 type TestRunnerProps = {
   isRunning?: boolean;
@@ -95,6 +96,7 @@ export default function TestRunner({ isRunning = false, onRunTests }: TestRunner
   const buildTestPayload = () => {
     return {
       formData: {
+        title: `Test for ${selectedIntervention}`,
         patient: selectedPatient,
         provider: selectedProvider,
         use: selectedUse,

@@ -50,6 +50,9 @@ export default function ResultsTable({ results }: { results: TestResult[] }) {
               Test
             </th>
             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Use
+            </th>
+            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Status
             </th>
             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -69,6 +72,9 @@ export default function ResultsTable({ results }: { results: TestResult[] }) {
               <tr key={result.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                   {result.name}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {result.use?.id || 'N/A'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
@@ -113,7 +119,7 @@ export default function ResultsTable({ results }: { results: TestResult[] }) {
               </tr>
               {expandedRows[result.id] && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-4 bg-gray-50">
+                  <td colSpan={6} className="px-6 py-4 bg-gray-50">
                     <div className="space-y-4">
                       <div className="border rounded-lg overflow-hidden">
                         <div className="flex justify-between items-center bg-gray-100 p-3">
