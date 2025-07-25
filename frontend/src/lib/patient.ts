@@ -179,7 +179,7 @@ export const patients = [
         id: 'CR0667877990791-6',
         name: 'VIRGINIA MUMBUA MUTHOKA',
         gender: 'female',
-        birthDate: '1993-07-01',
+        birthDate: '1993-07-02',
         identifiers: [
           { 
             system: 'SHA', 

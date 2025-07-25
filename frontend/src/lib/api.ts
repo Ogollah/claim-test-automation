@@ -49,6 +49,7 @@ interface ApiResponse {
 export interface TestResult {
   id: string;
   name: string;
+  use?: { id: string }; 
   status: 'passed' | 'failed' | 'running';
   duration: number;
   timestamp: string;
@@ -92,6 +93,7 @@ export const runTestSuite = async (testData: any): Promise<TestResult[]> => {
     const result: TestResult = {
       id: response.data.data?.id || 'generated-id',
       name: testData?.formData?.title || 'Claim Submission',
+      use: testData?.formData?.use,
       status: response.data.success ? 'passed' : 'failed',
       duration: responseTime,
       timestamp: new Date().toISOString(),
@@ -135,6 +137,7 @@ export const runTestSuite = async (testData: any): Promise<TestResult[]> => {
       id: 'error-' + Date.now().toString(),
       name: testData?.formData?.title || 'Claim Submission',
       status: 'failed',
+      use: testData?.formData?.use,
       duration: 0,
       timestamp: new Date().toISOString(),
       message: errorMessage,
