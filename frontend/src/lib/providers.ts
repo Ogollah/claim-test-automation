@@ -92,5 +92,65 @@ export const providers: Provider[] = [
             value: '5885' 
           }
         ]
+      },
+       {
+        id: 'FID-43-112246-5',
+        name: 'Hawi Family Hospital',
+        level: 'LEVEL 4',
+        identifiers: [
+          { 
+            system: 'FID', 
+            value: 'FID-43-112246-5'
+          },
+          { 
+            system: 'SladeCode',
+            value: '5885' 
+          }
+        ]
+      },
+      {
+        id: 'FID-39-102645-6',
+        name: 'BUNGOMA COUNTY REFERRAL HOSPITAL',
+        level: 'LEVEL 4',
+        identifiers: [
+          { 
+            system: 'FID', 
+            value: 'FID-39-102645-6'
+          },
+          { 
+            system: 'SladeCode',
+            value: '5885' 
+          }
+        ]
+      },
+        {
+        id: 'FID-47-105577-8',
+        name: 'FIGO CARE PLUS (K) LIMITED UPPER HILL',
+        level: 'LEVEL 3A',
+        identifiers: [
+          { 
+            system: 'FID', 
+            value: 'FID-47-105577-8'
+          },
+          { 
+            system: 'SladeCode',
+            value: '5885' 
+          }
+        ]
+      },
+         {
+        id: 'FID-47-108846-4',
+        name: 'NAIROBI WEST HOSPITAL',
+        level: 'LEVEL 6B',
+        identifiers: [
+          { 
+            system: 'FID', 
+            value: 'FID-47-108846-4'
+          },
+          { 
+            system: 'SladeCode',
+            value: '5885' 
+          }
+        ]
       }
   ]

@@ -94,5 +94,101 @@ export const patients = [
             value: '-'
           }
         ]
+      },
+      {
+        id: 'CR4840792843761-1',
+        name: 'BEATRICE KANYUOKIE WACERA',
+        gender: 'female',
+        birthDate: '1996-31-12',
+        identifiers: [
+          { 
+            system: 'SHA', 
+            value: 'CR4840792843761-1' 
+          },
+          { 
+            system: 'NationalID', 
+            value: '-'
+          }
+        ]
+      },
+      {
+        id: 'CR5771662566066-5',
+        name: 'charlton githaiga ngatia',
+        gender: 'male',
+        birthDate: '2013-29-06',
+        identifiers: [
+          { 
+            system: 'SHA', 
+            value: 'CR5771662566066-5' 
+          },
+          { 
+            system: 'NationalID', 
+            value: '-'
+          }
+        ]
+      },
+      {
+        id: 'CR9778513470154-4',
+        name: 'JAMES MURIUNGI MURIUKI',
+        gender: 'male',
+        birthDate: '1980-23-01',
+        identifiers: [
+          { 
+            system: 'SHA', 
+            value: 'CR9778513470154-4' 
+          },
+          { 
+            system: 'NationalID', 
+            value: '-'
+          }
+        ]
+      },
+      {
+        id: 'CR5017841212527-8',
+        name: 'BIBIANA BLESSING MWENDE MUTHIANI',
+        gender: 'male',
+        birthDate: '2009-23-02',
+        identifiers: [
+          { 
+            system: 'SHA', 
+            value: 'CR5017841212527-8' 
+          },
+          { 
+            system: 'NationalID', 
+            value: '-'
+          }
+        ]
+      },
+       {
+        id: 'CR5662527999993-4',
+        name: 'JULIUS KIPKIRUI',
+        gender: 'male',
+        birthDate: '1963-31-12',
+        identifiers: [
+          { 
+            system: 'SHA', 
+            value: 'CR5662527999993-4' 
+          },
+          { 
+            system: 'NationalID', 
+            value: '-'
+          }
+        ]
+      },
+        {
+        id: 'CR0667877990791-6',
+        name: 'VIRGINIA MUMBUA MUTHOKA',
+        gender: 'female',
+        birthDate: '1993-07-01',
+        identifiers: [
+          { 
+            system: 'SHA', 
+            value: 'CR0667877990791-6' 
+          },
+          { 
+            system: 'NationalID', 
+            value: '-'
+          }
+        ]
       }
   ]
