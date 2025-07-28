@@ -1,3 +1,4 @@
+"use client";
 import { HomeIcon, DocumentTextIcon, ChartBarIcon, CogIcon } from '@heroicons/react/16/solid'
 import Link from 'next/link'
 import { usePathname, useRouter } from "next/navigation";

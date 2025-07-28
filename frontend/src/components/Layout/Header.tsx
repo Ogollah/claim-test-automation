@@ -1,28 +1,66 @@
-import { Fragment } from 'react'
-import { Menu, Transition } from '@headlessui/react'
-import { BellIcon, UserCircleIcon } from '@heroicons/react/16/solid'
-import Link from "next/link";
+"use client";
+import {
+  Header,
+  HeaderContainer,
+  HeaderName,
+  HeaderNavigation,
+  HeaderMenuButton,
+  HeaderMenuItem,
+  HeaderGlobalBar,
+  HeaderGlobalAction,
+  SkipToContent,
+  SideNav,
+  SideNavItems,
+  HeaderSideNavItems,
+} from '@carbon/react';
+import { Switcher, Notification, UserAvatar } from '@carbon/icons-react';
 
-export default function Header() {
-  return (
-    <header className="top-0 z-50 bg-gray shadow w-full bg-blue-50">
-      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16 items-center">
-          <div className="flex-shrink-0 flex items-center">
-            <Link href="/" className="text-xl font-bold text-gray-900">
-              Claim Test Cases Automation
-            </Link>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Link href="/" className="text-gray-700 hover:text-blue-600 font-medium">
-              Dashboard
-            </Link>
-            <Link href="/test-cases" className="text-gray-700 hover:text-blue-600 font-medium">
-              Test Cases
-            </Link>
-          </div>
-        </div>
-      </nav>
-    </header>
-  )
-}
+const AutomationHeader = () => (
+  <HeaderContainer
+    render={({ isSideNavExpanded, onClickSideNavExpand }) => (
+      <Header aria-label="Test automation">
+        <SkipToContent />
+        <HeaderMenuButton
+          aria-label="Open menu"
+          onClick={onClickSideNavExpand}
+          isActive={isSideNavExpanded}
+        />
+        <HeaderName href="/" prefix="Automation">
+          Claim Test Automation
+        </HeaderName>
+        <HeaderNavigation aria-label="Test automation">
+          <HeaderMenuItem href="/test-cases">Test cases</HeaderMenuItem>
+        </HeaderNavigation>
+        <SideNav
+          aria-label="Side navigation"
+          expanded={isSideNavExpanded}
+          isPersistent={false}>
+          <SideNavItems>
+            <HeaderSideNavItems>
+              <HeaderMenuItem href="/test-config">Test Configuration</HeaderMenuItem>
+            </HeaderSideNavItems>
+          </SideNavItems>
+        </SideNav>
+        <HeaderGlobalBar>
+        <HeaderGlobalAction
+          aria-label="Notifications"
+          tooltipAlignment="center"
+          className="action-icons">
+          <Notification size={20} />
+        </HeaderGlobalAction>
+        <HeaderGlobalAction
+          aria-label="User Avatar"
+          tooltipAlignment="center"
+          className="action-icons">
+          <UserAvatar size={20} />
+        </HeaderGlobalAction>
+        <HeaderGlobalAction aria-label="App Switcher" tooltipAlignment="end">
+          <Switcher size={20} />
+        </HeaderGlobalAction>
+      </HeaderGlobalBar>
+      </Header>
+    )}
+  />
+);
+
+export default AutomationHeader;

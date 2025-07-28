@@ -3,11 +3,11 @@ import { negativeSha01004, postiveSha01004 } from "@/components/testCases/config
 import { negativeSha01005, postiveSha01005 } from "@/components/testCases/config/sha_01_005"
 import { negativeSha01006, postiveSha01006 } from "@/components/testCases/config/sha_01_006"
 import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+// import { twMerge } from "tailwind-merge"
 
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
-}
+// export function cn(...inputs: ClassValue[]) {
+//   return twMerge(clsx(inputs))
+// }
 
 export const testCasePackageSHA01 = {
   id: 'SHA-01',
