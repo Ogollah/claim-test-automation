@@ -8,6 +8,7 @@ import { InterventionItem } from '@/lib/types';
 import { TestResult } from '@/lib/api';
 import { INTERVENTION_CODES, TEST_PACKAGES } from '@/packages/ShaPackages';
 import { title } from 'process';
+import PractitionerDetailsPanel from './PractitionerDetailsPanel';
 
 type TestRunnerProps = {
   isRunning?: boolean;
@@ -19,6 +20,7 @@ export default function TestRunner({ isRunning = false, onRunTests }: TestRunner
   const [selectedPatient, setSelectedPatient] = useState<any>(null);
   const [selectedUse, setSelectedUse] = useState<any>(null);
   const [selectedProvider, setSelectedProvider] = useState<any>(null);
+  const [selectedPractitioner, setSelectedPractitioner] = useState<any>(null);
   const [selectedIntervention, setSelectedIntervention] = useState('');
   const [selectedDates, setSelectedDates] = useState({
     billableStart: '',
@@ -100,6 +102,7 @@ export default function TestRunner({ isRunning = false, onRunTests }: TestRunner
         patient: selectedPatient,
         provider: selectedProvider,
         use: selectedUse,
+        practitioner: selectedPractitioner,
         productOrService: interventions.map((intervention, index) => ({
           code: intervention.code,
           display: intervention.name,
@@ -318,7 +321,7 @@ export default function TestRunner({ isRunning = false, onRunTests }: TestRunner
           </div>
         )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <PatientDetailsPanel
             patient={selectedPatient}
             onSelectPatient={setSelectedPatient}
@@ -327,6 +330,11 @@ export default function TestRunner({ isRunning = false, onRunTests }: TestRunner
           <ProviderDetailsPanel
             provider={selectedProvider}
             onSelectProvider={setSelectedProvider}
+          />
+
+          <PractitionerDetailsPanel
+            practitioner={selectedPractitioner}
+            onSelectPractitioner={setSelectedPractitioner}
           />
         </div>
 

@@ -12,6 +12,25 @@ export interface Provider {
   type?: string
 }
 
+export interface Practitioner {
+  id: string,
+  status: boolean,
+  gender: string,
+  qualification: Qualification[],
+  nationalID: string,
+  regNumber: string,
+  sladeCode: string,
+  regID?: string,
+  name: string,
+  phone: string,
+  email: string,
+  address: string
+}
+
+export interface Qualification {
+  text: string
+}
+
 interface ProviderDetailsPanelProps {
   provider: Provider | null
   onSelectProvider: (provider: Provider) => void
