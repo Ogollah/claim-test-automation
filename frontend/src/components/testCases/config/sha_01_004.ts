@@ -236,13 +236,13 @@ export const negativeSha01004 = [
       ]
     },
     "provider": {
-      "id": "FID-22-104568-7",
-      "name": "GATUNDU COUNTY REFERRAL HOSPITAL",
+      "id": "FID-43-112246-5",
+      "name": "Hawi Family Hospital",
       "level": "LEVEL 4",
       "identifiers": [
         {
           "system": "FID",
-          "value": "FID-22-104568-7"
+          "value": "FID-43-112246-5"
         },
         {
           "system": "SladeCode",
@@ -353,6 +353,77 @@ export const negativeSha01004 = [
     },
     "total": {
       "value": 180200,
+      "currency": "KES"
+    }
+  }
+},
+{
+  "formData": {
+    "test": "negative",
+    "title": "Test Private Facility",
+    "patient": {
+      "id": "CR9690669737702-4",
+      "name": "MILLICENT OCHOL AKINYI",
+      "gender": "female",
+      "birthDate": "1970-10-08",
+      "identifiers": [
+        {
+          "system": "SHA",
+          "value": "CR9690669737702-4"
+        },
+        {
+          "system": "NationalID",
+          "value": "-"
+        }
+      ]
+    },
+    "provider": {
+      "id": "FID-47-106767-4",
+      "name": "AAR HOSPITAL LIMITED MUTHAIGA",
+      "level": "LEVEL 5",
+      "identifiers": [
+        {
+          "system": "FID",
+          "value": "FID-47-106767-4"
+        },
+        {
+          "system": "SladeCode",
+          "value": "5885"
+        }
+      ]
+    },
+    "use": {
+      "id": "claim"
+    },
+    "productOrService": [
+      {
+        "code": "SHA-01-004",
+        "display": "Major Trauma",
+        "quantity": {
+          "value": "1"
+        },
+        "unitPrice": {
+          "value": "93042",
+          "currency": "KES"
+        },
+        "net": {
+          "value": 93042,
+          "currency": "KES"
+        },
+        "servicePeriod": {
+          "start": "2025-07-08",
+          "end": "2025-07-10"
+        },
+        "sequence": 1
+      }
+    ],
+    "billablePeriod": {
+      "billableStart": "2025-07-08",
+      "billableEnd": "2025-07-10",
+      "created": "2025-07-18"
+    },
+    "total": {
+      "value": 93042,
       "currency": "KES"
     }
   }
