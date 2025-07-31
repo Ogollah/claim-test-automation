@@ -1,7 +1,14 @@
 import axios from 'axios';
 import { request } from 'http';
+import { Provider } from './types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    "Content-Type": "application/json"
+  }
+})
 
 // Interface for the FHIR Bundle in the response
 interface FhirBundle {
@@ -159,3 +166,12 @@ export const getTestHistory = async (): Promise<TestResult[]> => {
   const response = await axios.get(`${API_BASE_URL}/tests/history`);
   return response.data;
 };
+
+export const getProvide = async () => {
+  try {
+      const resp = await api.get<Provider[]>("/providers");
+      return resp.data;
+  } catch (error) {
+    console.error(error);
+  }
+}
