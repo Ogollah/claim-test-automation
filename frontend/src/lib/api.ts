@@ -167,11 +167,143 @@ export const getTestHistory = async (): Promise<TestResult[]> => {
   return response.data;
 };
 
+// Provider
+
 export const getProvide = async () => {
   try {
-      const resp = await api.get<Provider[]>("/providers");
-      return resp.data;
+    const resp = await api.get<Provider[]>("/providers");
+    return resp.data;
   } catch (error) {
     console.error(error);
   }
 }
+
+export const searchProvider = async(search: string) => {
+  try {
+    const resp = await api.get<Provider>(`/providers/${search}`);
+    return resp;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+export const postProvider = async(data: Provider) => {
+  try {
+    const resp = await api.post<Provider>("/providers", data)
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// Patient
+interface Patient {
+  cd_id: string, 
+  name: string, 
+  gender: string, 
+  birthdate: string,
+  national_id: string,
+  email: string
+}
+
+export const getPatient = async () => {
+  try {
+    const resp = await api.get<Patient[]>("/patients");
+    return resp.data;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+export const searchPatient = async(search: string) => {
+  try {
+    const resp = await api.get<Patient>(`/patients/${search}`);
+    return resp;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+export const postPatient = async(data: Patient) => {
+  try {
+    const resp = await api.post<Patient>("/patients", data)
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// Practitioner
+interface Practitioner {
+  pu_id: string,
+  name: string, 
+  gender: string, 
+  phone: string, 
+  address: string, 
+  national_id: string, 
+  email: string,
+  status: string
+}
+
+export const getPractitioner = async () => {
+  try {
+    const resp = await api.get<Practitioner[]>("/practitioners");
+    return resp.data;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+export const searchPractitioner = async(search: string) => {
+  try {
+    const resp = await api.get<Patient>(`/practitioners/${search}`);
+    return resp;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+export const postPractitioner = async(data: Patient) => {
+  try {
+    const resp = await api.post<Patient>("/practitioners", data)
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// Practitioner
+interface Practitioner {
+  pu_id: string,
+  name: string, 
+  gender: string, 
+  phone: string, 
+  address: string, 
+  national_id: string, 
+  email: string,
+  status: string
+}
+
+export const getPractitioner = async () => {
+  try {
+    const resp = await api.get<Practitioner[]>("/practitioners");
+    return resp.data;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+export const searchPractitioner = async(search: string) => {
+  try {
+    const resp = await api.get<Patient>(`/practitioners/${search}`);
+    return resp;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+export const postPractitioner = async(data: Patient) => {
+  try {
+    const resp = await api.post<Patient>("/practitioners", data)
+  } catch (error) {
+    console.error(error);
+  }
+}
+
