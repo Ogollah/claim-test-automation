@@ -1,6 +1,6 @@
 import axios from 'axios';
-import { request } from 'http';
-import { Provider } from './types';
+import { Provider, TestCase, Patient } from './types';
+import { patients } from './patient';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
 const api = axios.create({
@@ -190,25 +190,17 @@ export const searchProvider = async(search: string) => {
 export const postProvider = async(data: Provider) => {
   try {
     const resp = await api.post<Provider>("/providers", data)
+    return resp;
   } catch (error) {
     console.error(error);
   }
 }
 
 // Patient
-interface Patient {
-  cd_id: string, 
-  name: string, 
-  gender: string, 
-  birthdate: string,
-  national_id: string,
-  email: string
-}
-
-export const getPatient = async () => {
+export const getPatients = async () => {
   try {
-    const resp = await api.get<Patient[]>("/patients");
-    return resp.data;
+    const resp = await api.get<Patient[]>("/api/patients");
+    return patients(resp.data);
   } catch (error) {
     console.error(error);
   }
@@ -216,7 +208,7 @@ export const getPatient = async () => {
 
 export const searchPatient = async(search: string) => {
   try {
-    const resp = await api.get<Patient>(`/patients/${search}`);
+    const resp = await api.get<Patient>(`/api/patients/${search}`);
     return resp;
   } catch (error) {
     console.error(error);
@@ -225,7 +217,8 @@ export const searchPatient = async(search: string) => {
 
 export const postPatient = async(data: Patient) => {
   try {
-    const resp = await api.post<Patient>("/patients", data)
+    const resp = await api.post<Patient>("/api/patients", data);
+    return resp;
   } catch (error) {
     console.error(error);
   }
@@ -245,7 +238,7 @@ interface Practitioner {
 
 export const getPractitioner = async () => {
   try {
-    const resp = await api.get<Practitioner[]>("/practitioners");
+    const resp = await api.get<Practitioner[]>("/api/practitioners");
     return resp.data;
   } catch (error) {
     console.error(error);
@@ -254,7 +247,7 @@ export const getPractitioner = async () => {
 
 export const searchPractitioner = async(search: string) => {
   try {
-    const resp = await api.get<Patient>(`/practitioners/${search}`);
+    const resp = await api.get<Patient>(`/api/practitioners/${search}`);
     return resp;
   } catch (error) {
     console.error(error);
@@ -263,47 +256,106 @@ export const searchPractitioner = async(search: string) => {
 
 export const postPractitioner = async(data: Patient) => {
   try {
-    const resp = await api.post<Patient>("/practitioners", data)
+    const resp = await api.post<Patient>("/api/practitioners", data);
+    return resp;
   } catch (error) {
     console.error(error);
   }
 }
 
-// Practitioner
-interface Practitioner {
-  pu_id: string,
+// Intervention
+interface Intervention {
+  id?: number,
   name: string, 
-  gender: string, 
-  phone: string, 
-  address: string, 
-  national_id: string, 
-  email: string,
-  status: string
+  code: string, 
 }
 
-export const getPractitioner = async () => {
+export const getIntervention = async () => {
   try {
-    const resp = await api.get<Practitioner[]>("/practitioners");
+    const resp = await api.get<Intervention[]>("/api/interventions");
     return resp.data;
   } catch (error) {
     console.error(error);
   }
 }
 
-export const searchPractitioner = async(search: string) => {
+export const searchIntervention = async(search: string) => {
   try {
-    const resp = await api.get<Patient>(`/practitioners/${search}`);
+    const resp = await api.get<Intervention>(`/api/interventions/${search}`);
     return resp;
   } catch (error) {
     console.error(error);
   }
 }
 
-export const postPractitioner = async(data: Patient) => {
+export const postIntervention = async(data: Intervention) => {
   try {
-    const resp = await api.post<Patient>("/practitioners", data)
+    const resp = await api.post<Intervention>("/api/interventions", data);
+    return resp;
   } catch (error) {
     console.error(error);
   }
 }
 
+// Package
+export const getPackages = async () => {
+  try {
+    const resp = await api.get<Intervention[]>("/api/packages");
+    return resp.data;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+export const searchPackage = async(search: string) => {
+  try {
+    const resp = await api.get<Intervention>(`/api/packages/${search}`);
+    return resp;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+export const postPackage = async(data: Intervention) => {
+  try {
+    const resp = await api.post<Intervention>("/api/packages", data);
+    return resp;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// Test case
+interface TestCaseItem {
+  id?: number,
+  name: string, 
+  description: string,
+  test_config:  TestCase;
+}
+
+export const getTestcases = async () => {
+  try {
+    const resp = await api.get<TestCaseItem[]>("/api/test-cases");
+    return resp.data;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+export const searchTestCase = async(search: string) => {
+  try {
+    const resp = await api.get<TestCaseItem>(`/api/test-cases/${search}`);
+    return resp;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+export const postTestCase = async(data: TestCaseItem) => {
+  try {
+    const resp = await api.post<TestCaseItem>("/api/test-cases", data);
+    return resp;
+  } catch (error) {
+    console.error(error);
+  }
+}

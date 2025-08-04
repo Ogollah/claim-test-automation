@@ -1,5 +1,7 @@
-import { patients } from '@/lib/patient';
-import { useState } from 'react';
+// import { patients } from '@/lib/patient';
+import { getPatients } from '@/lib/api';
+import { useEffect, useState } from 'react';
+import {FormatPatient } from '@/lib/types'
 
 function getAge(birthDate: string): number {
   const birth = new Date(birthDate);
@@ -17,6 +19,17 @@ export default function PatientDetailsPanel({ patient, onSelectPatient }: {
   onSelectPatient: (patient: any) => void;
 }) {
   const [isExpanded, setIsExpanded] = useState(true);
+  const [patients, setPatients] = useState<FormatPatient[]>([]);
+
+  useEffect(() => {
+    const fetchPatients = async () => {
+      const result = await getPatients();
+      if (result) {
+        setPatients(result);
+      }
+    };
+    fetchPatients();
+  }, []);
 
   return (
     <div className="border border-gray-200 rounded-lg p-4">

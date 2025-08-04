@@ -97,12 +97,22 @@ interface Identifier {
   value: string;
 }
 
-interface Patient {
+export interface FormatPatient {
   id: string;
   name: string;
   gender: string;
   birthDate: string;
   identifiers: Identifier[];
+}
+
+export interface Patient {
+  cr_id: string, 
+  name: string, 
+  gender: string, 
+  birthdate: string,
+  national_id: string,
+  email: string,
+  system_value: string
 }
 
 /* Duplicate Provider interface removed to avoid redeclaration error */
