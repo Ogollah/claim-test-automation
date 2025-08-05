@@ -1,7 +1,8 @@
 // import { patients } from '@/lib/patient';
-import { getPatients } from '@/lib/api';
+import { getPatients, searchPatientHie } from '@/lib/api';
 import { useEffect, useState } from 'react';
 import {FormatPatient } from '@/lib/types'
+import { hiePatients } from '@/lib/patient';
 
 function getAge(birthDate: string): number {
   const birth = new Date(birthDate);
@@ -21,13 +22,18 @@ export default function PatientDetailsPanel({ patient, onSelectPatient }: {
   const [isExpanded, setIsExpanded] = useState(true);
   const [patients, setPatients] = useState<FormatPatient[]>([]);
 
-  useEffect(() => {
+    useEffect(() => {
     const fetchPatients = async () => {
-      const result = await getPatients();
-      if (result) {
-        setPatients(result);
+      try {
+        const localPatients = await getPatients();
+        const hieRawBundle = await searchPatientHie("gender", "female");
+        const combined = [...(localPatients || []), ...hieRawBundle];
+        setPatients(combined);
+      } catch (error) {
+        console.error("Failed to fetch patients:", error);
       }
     };
+
     fetchPatients();
   }, []);
 
@@ -62,7 +68,8 @@ export default function PatientDetailsPanel({ patient, onSelectPatient }: {
               value={patient?.id || ''}
               onChange={(e) => {
                 const selected = patients.find(p => p.id === e.target.value);
-                if (selected) onSelectPatient(selected);
+                if (selected) {onSelectPatient(selected)
+                };
               }}
             >
               <option value="">Select a patient</option>
@@ -90,7 +97,7 @@ export default function PatientDetailsPanel({ patient, onSelectPatient }: {
                 <p className="text-sm font-medium text-gray-500">Date of Birth</p>
                 <p className="text-sm text-gray-900">{patient.birthDate}</p>
               </div>
-              <div>
+              {/* <div>
                 <p className="text-sm font-medium text-gray-500">Identifiers</p>
                 <ul className="text-sm text-gray-900 space-y-1">
                   {patient.identifiers.map((id: any, index: number) => (
@@ -99,7 +106,7 @@ export default function PatientDetailsPanel({ patient, onSelectPatient }: {
                     </li>
                   ))}
                 </ul>
-              </div>
+              </div> */}
             </div>
           )}
         </div>

@@ -23,4 +23,19 @@ export const testCasePackageSHA01 = {
 }
 export const testCasesPackages = [
   testCasePackageSHA01,
-] 
+];
+
+export const HIE_URL = {
+  BASE_URL: 'https://qa-mis.apeiro-digital.com/fhir',
+  PATHS: {
+    PATIENT: 'Patient',
+    ORGANIZATION: 'Organization',
+    CLAIM: 'Claim',
+    COVERAGE: 'Coverage'
+  },
+  VALUE_STRINGS: {
+    SHA: 'SOCIAL HEALTH AUTHORITY',
+    COVERAGE: 'sha-coverage',
+    CAT_SHA: 'CAT-SHA-001'
+  }
+};

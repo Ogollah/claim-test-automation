@@ -1,4 +1,5 @@
-import { FormatPatient, Patient } from "./types";
+import { email } from "zod";
+import { FhirPatientResource, FormatPatient, Patient, PatientBundle } from "./types";
 
 export const patients =  (data: Patient[]): FormatPatient[] => {
     return data.map((p) => ({
@@ -19,6 +20,32 @@ export const patients =  (data: Patient[]): FormatPatient[] => {
   }));
 };
 
+export const hiePatients =  (data: FhirPatientResource[]): FormatPatient[] => {
+  return data.map((entry) => {
+    return {
+      id: entry.id,
+      name: entry.name?.[0]?.text ?? "Unknown",
+      gender: entry.gender,
+      birthDate: entry.birthDate,
+      identifiers: entry.identifier ?? [],
+    };
+  });
+};
+
+export const patientPayload = (data: FormatPatient): Patient => {
+  const shaIdentifier = data.identifiers.find((id) => id.system === "SHA");
+  const nationalId = data.identifiers.find((id) => id.system === "NationalID");
+
+  return {
+    cr_id: data.id,
+    name: data.name,
+    gender: data.gender,
+    birthdate: data.birthDate,
+    system_value: shaIdentifier?.system || "",
+    national_id: nationalId?.value || "",
+    email: ""
+  };
+};
 // [
 //     {
 //         id: 'CR0680969605010-6',

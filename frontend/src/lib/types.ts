@@ -69,29 +69,6 @@ export type InterventionItem = {
   netValue: number;
 };
 
-// interface Patient {
-//   id: string;
-//   name: string;
-//   gender: number;
-//   birthDate: string;
-//   identifiers: Identifier[];
-// };
-// interface Provider {
-//   id: string;
-//   name: string;
-//   level: string;
-//   identifiers: Identifier[];
-// };
-// export type TestCaseFormData = {
-
-//   patient: Patient;
-//   provider: Provider;
-//   use: {id: string;};
-//   productOrService: InterventionItem[];
-//   billablePeriod: { billableStart: string; billableEnd: string; created: string; };
-//   total: { value: number; currency: string; };
-// }
-
 interface Identifier {
   system: string;
   value: string;
@@ -114,6 +91,29 @@ export interface Patient {
   email: string,
   system_value: string
 }
+
+export interface PatientBundle {
+  resourceType: "Bundle";
+  entry: {
+    fullUrl: string;
+    resource: FhirPatientResource;
+    search?: { mode: string };
+  }[];
+}
+
+export interface FhirPatientResource {
+  resourceType: "Patient";
+  id: string;
+  gender: string;
+  birthDate: string;
+  name: {
+    text: string;
+    family?: string;
+    given?: string[];
+  }[];
+  identifier: Identifier[];
+}
+
 
 /* Duplicate Provider interface removed to avoid redeclaration error */
 
@@ -156,7 +156,7 @@ interface Total {
 interface FormData {
   test: string;
   title: string;
-  patient: Patient;
+  patient: FormatPatient;
   provider: Provider;
   use: Use;
   productOrService: ProductOrService[];

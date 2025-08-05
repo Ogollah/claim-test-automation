@@ -1,6 +1,7 @@
 import axios from 'axios';
-import { Provider, TestCase, Patient } from './types';
-import { patients } from './patient';
+import { Provider, TestCase, Patient, PatientBundle, FormatPatient } from './types';
+import { hiePatients, patientPayload, patients } from './patient';
+import { HIE_URL } from './utils';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
 const api = axios.create({
@@ -117,6 +118,23 @@ export const runTestSuite = async (testData: any): Promise<TestResult[]> => {
     };
 
     console.log('Test execution result:', result);
+    try {
+  const crID = testData.formData?.patient?.id;
+
+  if (!crID) {
+    throw new Error("Patient ID (cr_id) is missing in form data.");
+  }
+
+  const existingPatient = await searchPatient("cr_id", crID);
+
+  if (!existingPatient) {
+    const payload = patientPayload(testData.formData.patient);
+    await postPatient(payload);
+  }
+} catch (error) {
+  console.error("Error psting patient:", error);
+}
+
     return [result];
   } catch (error: any) {
     console.error('Error running tests:', error?.response?.data || error.message);
@@ -206,14 +224,28 @@ export const getPatients = async () => {
   }
 }
 
-export const searchPatient = async(search: string) => {
+export const searchPatient = async(param: string, search: string) => {
   try {
-    const resp = await api.get<Patient>(`/api/patients/${search}`);
+    const resp = await api.get<Patient>(`/api/patients/${param}?${search}`);
     return resp;
   } catch (error) {
     console.error(error);
   }
 }
+
+export const searchPatientHie = async (param: string, search: string): Promise<FormatPatient[]> => {
+  try {
+    const resp = await api.get<PatientBundle>(
+      `${HIE_URL.BASE_URL}/${HIE_URL.PATHS.PATIENT}?${param}=${search}`
+    );
+
+    const resources = resp.data.entry?.map((e) => e.resource) ?? [];
+    return hiePatients(resources);
+  } catch (error) {
+    console.error("Error fetching HIE patient: ", error);
+    return [];
+  }
+};
 
 export const postPatient = async(data: Patient) => {
   try {
