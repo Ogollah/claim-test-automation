@@ -1,5 +1,4 @@
-import { email } from "zod";
-import { FhirPatientResource, FormatPatient, Patient, PatientBundle } from "./types";
+import { FhirPatientResource, FormatPatient, Patient } from "./types";
 
 export const patients =  (data: Patient[]): FormatPatient[] => {
     return data.map((p) => ({

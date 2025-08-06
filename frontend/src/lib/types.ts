@@ -16,11 +16,9 @@ export interface Practitioner {
   id: string,
   status: boolean,
   gender: string,
-  qualification: Qualification[],
   nationalID: string,
   regNumber: string,
   sladeCode: string,
-  regID?: string,
   name: string,
   phone: string,
   email: string,
@@ -114,6 +112,31 @@ export interface FhirPatientResource {
   identifier: Identifier[];
 }
 
+export interface PractitionerBundle {
+  resourceType: "Bundle";
+  entry: {
+    fullUrl: string;
+    resource: FhirPractitionerResource;
+    search?: { mode: string };
+  }[];
+}
+
+export interface FhirPractitionerResource {
+  resourceType: "Practitioner";
+  id: string;
+  gender: string;
+  birthDate?: string;
+  active: boolean,
+  address: {
+    text: string
+  }[],
+  telecom: Identifier[]
+  name: {
+    text: string;
+  }[];
+  identifier: Identifier[];
+}
+
 
 /* Duplicate Provider interface removed to avoid redeclaration error */
 
@@ -168,16 +191,52 @@ export interface TestCase {
   formData: FormData;
 }
 
-// type ProviderIdentifier = {
-//   system: string;
-//   value: string;
-// };
+export interface ProviderIdentifier {
+  system: string;
+  value: string;
+};
 
-// type Provider = {
-//   id: string;
-//   name: string;
-//   level: string;
-//   identifiers: ProviderIdentifier[];
-//   active?: boolean;
-//   type?: string;
-// };
+export interface FormatProvider {
+  id: string;
+  name: string;
+  level: string;
+  identifiers: ProviderIdentifier[];
+  active?: boolean;
+};
+
+export interface ProviderItem {
+  f_id: string; 
+  name: string; 
+  level: string; 
+  slade_code: string; 
+  status: number
+}
+
+export interface ProviderBundle {
+  resourceType: "Bundle";
+  entry: {
+    fullUrl: string;
+    resource: FhirProviderResource;
+    search?: { mode: string };
+  }[];
+}
+export interface Coding {
+  system?:string,
+  code?: string,
+  display: string
+}
+export interface ValueCodeableConcept{
+  coding: Coding[]
+}
+export interface Extension{
+  valueCodeableConcept: ValueCodeableConcept
+}
+
+export interface FhirProviderResource {
+  resourceType: "Organization";
+  id: string;
+  active: boolean;
+  name: string;
+  identifier: Identifier[];
+  extension: Extension[]
+}

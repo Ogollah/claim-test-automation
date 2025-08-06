@@ -1,7 +1,12 @@
-import { providers } from '@/lib/providers';
-import { Provider } from '@/lib/types';
+// import { providers } from '@/lib/providers';
+import { getProvide, searchProviderHie } from '@/lib/api';
+import { FormatProvider, Provider } from '@/lib/types';
 import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/16/solid'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Button } from '../ui/button';
+import { Check, ChevronsUpDown, Loader2 } from 'lucide-react';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command';
 
 type ProviderDetailsPanelProps = {
   provider: Provider | null;
@@ -10,8 +15,43 @@ type ProviderDetailsPanelProps = {
 
 export default function ProviderDetailsPanel({ provider, onSelectProvider }: ProviderDetailsPanelProps) {
   const [isExpanded, setIsExpanded] = useState(true)
+  const [providers, setProviders] = useState<FormatProvider[]>([]);
+
+  const [query, setQuery] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+
+
+  useEffect(() => {
+    const fetchLocalProviders = async () => {
+      try {
+        const localProviders = await getProvide();
+        setProviders(localProviders);
+      } catch (error) {
+        console.error('Failed to fetch local provider: ', error);
+      }
+    };
+    fetchLocalProviders();
+  }, []);
+
+   const handleSearch = async (q: string) => {
+      if (!q || q.length < 3) return;
+      setLoading(true);
+      try {
+        const hieProviders = await searchProviderHie('name', q);
+        setProviders((prev) => {
+          const ids = new Set(prev.map((p) => p.id));
+          const newOnes = hieProviders.filter((p: FormatProvider) => !ids.has(p.id));
+          return [...prev, ...newOnes];
+        });
+      } catch (err) {
+        console.error('HIE search failed:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
   
-  const validateProvider = (provider: Provider) => {
+  const validateProvider = (provider: FormatProvider) => {
     const errors = []
     
     if (!provider.id.startsWith('FID')) {
@@ -24,6 +64,13 @@ export default function ProviderDetailsPanel({ provider, onSelectProvider }: Pro
     
     return errors
   }
+
+  const filteredProviders = query
+  ? providers.filter((p) =>
+      p.name.toLowerCase().includes(query.toLowerCase())
+    )
+  : providers;
+
 
   return (
     <div className="border border-gray-200 rounded-lg p-4 bg-white">
@@ -49,25 +96,55 @@ export default function ProviderDetailsPanel({ provider, onSelectProvider }: Pro
 
       {isExpanded && (
         <div className="mt-4 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Select Provider</label>
-            <select
-              className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md border"
-              value={provider?.id || ''}
-              onChange={(e) => {
-                const selected = providers.find(p => p.id === e.target.value)
-                if (selected) onSelectProvider(selected)
-              }}
-            >
-              <option value="">Select a provider</option>
-              {providers.map((prov) => (
-                <option key={prov.id} value={prov.id} className='text-sm'>
-                  {prov.name} ({prov.level})
-                </option>
-              ))}
-            </select>
-          </div>
-
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant='outline'
+                role='combobox'
+                aria-expanded={open}
+                className='block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md border'>
+                  {provider? `${provider.name}(${provider.level})`:'Select provider'}
+                  <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent>
+              <Command>
+                <CommandInput
+                  placeholder='Search Provider...'
+                  className='h-9'
+                  onValueChange={(val) =>{
+                    setQuery(val);
+                    if (val.length >=3) handleSearch(val);
+                  }}
+                />
+                <CommandList>
+                  {loading && (
+                    <div className='flex items-center justify-center p-2'>
+                      <Loader2 className='h-4 w-4 animate-spin text-gray-500'/>
+                    </div>
+                  )}
+                  <CommandEmpty>No provider found</CommandEmpty>
+                  <CommandGroup>
+                    {filteredProviders.map((p)=>(
+                      <CommandItem
+                        key={p.id}
+                        onSelect={() => {
+                          onSelectProvider(p);
+                          setOpen(false);
+                          setQuery('');
+                        }}
+                      >
+                        {p.name} ({p.level})
+                        {provider?.id === p.id && (
+                          <Check className='ml-auto h-4 w-4' />
+                        )}
+                      </CommandItem>  
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
           {provider && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">

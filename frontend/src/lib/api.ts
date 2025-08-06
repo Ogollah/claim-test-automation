@@ -1,8 +1,9 @@
 import axios from 'axios';
-import { Provider, TestCase, Patient, PatientBundle, FormatPatient } from './types';
-import { hiePatients, patientPayload, patients } from './patient';
+import { Provider, TestCase, Patient, PatientBundle, FormatPatient, FormatProvider, ProviderItem, Practitioner, PractitionerBundle } from './types';
+import { hiePatients, patientPayload, patients, ProviderBundle } from './patient';
 import { HIE_URL } from './utils';
-
+import { hieProviders } from './providers';
+import { hiePractitioners } from './practitioner';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -187,18 +188,53 @@ export const getTestHistory = async (): Promise<TestResult[]> => {
 
 // Provider
 
-export const getProvide = async () => {
+// export const getProvide = async () => {
+//   try {
+//     const resp = await api.get<ProviderIntem[]>("/providers");
+//     return providers(resp.data);
+//   } catch (error) {
+//     console.error(error);
+//   }
+// }
+
+export const getProvide = async (): Promise<FormatProvider[]> => {
   try {
-    const resp = await api.get<Provider[]>("/providers");
-    return resp.data;
+    const resp = await api.get<ProviderItem[]>('/api/providers');
+    return resp.data.map((item): FormatProvider => ({
+      id: item.f_id,
+      name: item.name,
+      level: item.level,
+      identifiers: [
+        {
+          system: 'slade_code',
+          value: item.slade_code,
+        },
+      ],
+      active: item.status === 1,
+    }));
   } catch (error) {
-    console.error(error);
+    console.error('Error fetching providers:', error);
+    return [];
   }
-}
+};
+
+export const searchProviderHie = async (param: string, search: string): Promise<FormatProvider[]> => {
+  try {
+    const resp = await api.get<ProviderBundle>(
+      `${HIE_URL.BASE_URL}/${HIE_URL.PATHS.ORGANIZATION}?${param}=${search}`
+    );
+
+    const resources = resp.data.entry?.map((e) => e.resource) ?? [];
+    return hieProviders(resources);
+  } catch (error) {
+    console.error("Error fetching HIE provider: ", error);
+    return [];
+  }
+};
 
 export const searchProvider = async(search: string) => {
   try {
-    const resp = await api.get<Provider>(`/providers/${search}`);
+    const resp = await api.get<Provider>(`/api/providers/${search}`);
     return resp;
   } catch (error) {
     console.error(error);
@@ -207,7 +243,7 @@ export const searchProvider = async(search: string) => {
 
 export const postProvider = async(data: Provider) => {
   try {
-    const resp = await api.post<Provider>("/providers", data)
+    const resp = await api.post<Provider>("/api/providers", data)
     return resp;
   } catch (error) {
     console.error(error);
@@ -257,7 +293,7 @@ export const postPatient = async(data: Patient) => {
 }
 
 // Practitioner
-interface Practitioner {
+interface PractitionerItem {
   pu_id: string,
   name: string, 
   gender: string, 
@@ -265,17 +301,45 @@ interface Practitioner {
   address: string, 
   national_id: string, 
   email: string,
-  status: string
+  slade_code: string,
+  reg_number:string,
+  status: number
 }
 
-export const getPractitioner = async () => {
+export const getPractitioner = async (): Promise<Practitioner[]> => {
   try {
-    const resp = await api.get<Practitioner[]>("/api/practitioners");
-    return resp.data;
+    const resp = await api.get<PractitionerItem[]>("/api/practitioners");
+    return resp.data.map((item): Practitioner => ({
+      id: item.pu_id,
+      name: item.name,
+      gender: item.gender,
+      phone: item.phone,
+      address: item.address,
+      nationalID: item.national_id,
+      email: item.email,
+      sladeCode: item.slade_code,
+      regNumber:item.reg_number,
+      status: item.status === 1
+    }));
   } catch (error) {
-    console.error(error);
+    console.error("Error fetching HIE practitioner: ",error);
+    return [];
   }
 }
+
+export const searchPractitionerHie = async (param: string, search: string): Promise<Practitioner[]> => {
+  try {
+    const resp = await api.get<PractitionerBundle>(
+      `${HIE_URL.BASE_URL}/${HIE_URL.PATHS.PARCTITIONER}?${param}=${search}`
+    );
+
+    const resources = resp.data.entry?.map((e) => e.resource) ?? [];
+    return hiePractitioners(resources);
+  } catch (error) {
+    console.error("Error fetching HIE provider: ", error);
+    return [];
+  }
+};
 
 export const searchPractitioner = async(search: string) => {
   try {

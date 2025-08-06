@@ -1,7 +1,11 @@
-import { practitioners } from '@/lib/practitioner';
 import { Practitioner } from '@/lib/types';
 import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/16/solid'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Button } from '../ui/button';
+import { Check, ChevronsUpDown, Loader2 } from 'lucide-react';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command';
+import { getPractitioner, searchPractitionerHie } from '@/lib/api';
 
 type PractitionerDetailsPanelProps = {
   practitioner: Practitioner | null;
@@ -10,6 +14,24 @@ type PractitionerDetailsPanelProps = {
 
 export default function PractitionerDetailsPanel({ practitioner, onSelectPractitioner }: PractitionerDetailsPanelProps) {
   const [isExpanded, setIsExpanded] = useState(true)
+  const [practitioners, setPractitioners] = useState<Practitioner[]>([]);
+  const [query, setQuery] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const fetchLocalPatients = async () => {
+      try {
+        const localPractioners = await getPractitioner();
+        setPractitioners(localPractioners);
+      } catch (error) {
+        console.error('Failed to fetch local practitioner:', error);
+      }
+    };
+
+    fetchLocalPatients();
+  }, []);
+
   
   const validatePractitioner = (practitioner: Practitioner) => {
     const errors = []
@@ -24,6 +46,31 @@ export default function PractitionerDetailsPanel({ practitioner, onSelectPractit
     
     return errors
   }
+
+  // Search HIE on demand
+  const handleSearch = async (q: string) => {
+    if (!q || q.length < 3) return;
+    setLoading(true);
+    try {
+      const hiePractitioners = await searchPractitionerHie('name', q);
+      setPractitioners((prev) => {
+        const ids = new Set(prev.map((p) => p.id));
+        const newOnes = hiePractitioners.filter((p: Practitioner) => !ids.has(p.id));
+        return [...prev, ...newOnes];
+      });
+    } catch (err) {
+      console.error('HIE search failed:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredPractitioners = query
+  ? practitioners.filter((p) =>
+      p.name.toLowerCase().includes(query.toLowerCase())
+    )
+  : practitioners;
+
 
   return (
     <div className="border border-gray-200 rounded-lg p-4 bg-white">
@@ -49,24 +96,55 @@ export default function PractitionerDetailsPanel({ practitioner, onSelectPractit
 
       {isExpanded && (
         <div className="mt-4 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Select Practitioner</label>
-            <select
-              className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md border"
-              value={practitioner?.id || ''}
-              onChange={(e) => {
-                const selected = practitioners.find(p => p.id === e.target.value)
-                if (selected) onSelectPractitioner(selected)
-              }}
-            >
-              <option value="">Select a practitioner</option>
-              {practitioners.map((prac) => (
-                <option key={prac.id} value={prac.id} className='text-sm'>
-                  {prac.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant='outline'
+                role='combobox'
+                aria-expanded={open}
+                className='block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md border'>
+                  {practitioner? `${practitioner.name}`:'Select practitioner'}
+                <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className=''>
+              <Command>
+                <CommandInput
+                placeholder='Search practitioner...'
+                className='h-9'
+                onValueChange={(val) => {
+                  setQuery(val);
+                  if (val.length >= 3) handleSearch(val);
+                }}
+                />
+                <CommandList>
+                  {loading && (
+                    <div className='flex items-center justify-center p-2'>
+                      <Loader2 className='h-4 w-4 animate-spin text-gray-500' />
+                    </div>
+                  )}
+                  <CommandEmpty>No practitioner found</CommandEmpty>
+                  <CommandGroup>
+                    {filteredPractitioners.map((p) => (
+                      <CommandItem
+                        key={p.id}
+                        onSelect={() => {
+                          onSelectPractitioner(p);
+                          setOpen(false);
+                          setQuery('')
+                        }}
+                        >
+                          {p.name}
+                          {practitioner?.id === p.id && (
+                            <Check className='ml-auto h-4 w-4' />
+                          )}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
 
           {practitioner && (
             <div className="space-y-4">
@@ -102,17 +180,6 @@ export default function PractitionerDetailsPanel({ practitioner, onSelectPractit
                   <p className="text-sm font-medium text-gray-500">Phone</p>
                   <p className="text-sm text-gray-900">{practitioner.phone || 'Not specified'}</p>
                 </div>
-              </div>
-
-              <div>
-                <p className="text-sm font-medium text-gray-500">Qualification</p>
-                <ul className="mt-1 space-y-1">
-                  {practitioner.qualification.map((qua, index) => (
-                    <li key={index} className="text-sm text-gray-900">
-                      <span className="font-medium">Qualification:</span> {qua.text}
-                    </li>
-                  ))}
-                </ul>
               </div>
 
               <div className="pt-2">

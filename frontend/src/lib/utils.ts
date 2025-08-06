@@ -31,7 +31,7 @@ export const HIE_URL = {
     PATIENT: 'Patient',
     ORGANIZATION: 'Organization',
     CLAIM: 'Claim',
-    COVERAGE: 'Coverage'
+    PARCTITIONER: 'Practitioner'
   },
   VALUE_STRINGS: {
     SHA: 'SOCIAL HEALTH AUTHORITY',
