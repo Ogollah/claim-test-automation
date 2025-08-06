@@ -1,25 +1,4 @@
-import { FhirProviderResource, FormatProvider, ProviderItem } from "./types";
-
-
-
-export const providers = (data: ProviderItem[]):  FormatProvider[] => {
-  return data.map((p) => ({
-    id: p.f_id,
-    name: p.name,
-    level: p.level,
-    active: p.status===1,
-    identifiers: [
-      {
-        system: 'FID',
-        value: p.f_id
-      },
-      {
-        system: 'SladeCode',
-        value: p.slade_code
-      }
-    ],
-  }));
-};
+import { FhirProviderResource, FormatProvider, Provider, ProviderItem } from "./types";
 
 export const hieProviders =  (data: FhirProviderResource[]): FormatProvider[] => {
   return data.map((entry) => {
@@ -27,11 +6,29 @@ export const hieProviders =  (data: FhirProviderResource[]): FormatProvider[] =>
       id: entry.id,
       name: entry.name,
       level: entry.extension[0].valueCodeableConcept.coding[0].display,
-      identifiers:entry.identifier,
+      identifiers:[{
+        system: 'FID',
+        value: entry.id,
+      },
+      {
+        system: 'SladeCode',
+        value: '5885'
+      }
+    ],
       active: entry.active
     };
   });
 };
+
+export const providerPayload = (data: Provider): ProviderItem => {
+  return {
+    f_id: data.id,
+    name: data.name,
+    level: data.level,
+    status: data.active ? 1 : 0,
+    slade_code: data.identifiers.find(i => i.system === "SladeCode")?.value,
+  }
+}
 
 // [
 //     {

@@ -52,7 +52,7 @@ export default function PractitionerDetailsPanel({ practitioner, onSelectPractit
     if (!q || q.length < 3) return;
     setLoading(true);
     try {
-      const hiePractitioners = await searchPractitionerHie('name', q);
+      const hiePractitioners = await searchPractitionerHie('gender', q);
       setPractitioners((prev) => {
         const ids = new Set(prev.map((p) => p.id));
         const newOnes = hiePractitioners.filter((p: Practitioner) => !ids.has(p.id));

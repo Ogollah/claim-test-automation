@@ -1,23 +1,22 @@
-import { FhirPractitionerResource, Practitioner } from "./types";
+import { FhirPractitionerResource, Practitioner, PractitionerItem } from "./types";
 
 
 
-export const practitioners: Practitioner[] = [
-    {
-        id: 'PUID-0004658-2',
-        status: true,
-        gender: "female",
-        nationalID: "21342123",
-        regNumber: "A5079",
-        sladeCode: "807460",
-        name: "Dr OMAO KEVIN NYAMBAKA",
-        phone: "+254722***646",
-        email: "n***k@gmail.com",
-        address: "P.O BOX 1274 00208 NGONG"
-
-      }
-  ];
-
+export const practitionerPayload = (data: Practitioner): PractitionerItem => {
+  
+    return {
+        pu_id: data.id,
+        name: data.name,
+        gender: data.gender,
+        phone: data.phone,
+        address: data.address,
+        national_id: data.nationalID,
+        email: data.email,
+        slade_code: data.sladeCode,
+        reg_number: data.regNumber,
+        status: data.status ? 1 : 0
+    }
+}
 export const hiePractitioners = (data: FhirPractitionerResource[]): Practitioner[] => {
   return data.map((entry) => {
     const name = entry.name?.[0]?.text ?? "Unknown";

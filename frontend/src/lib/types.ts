@@ -8,7 +8,7 @@ export interface Provider {
   name: string
   level: string
   identifiers: Identifier[]
-  active?: boolean
+  active: boolean
   type?: string
 }
 
@@ -25,6 +25,19 @@ export interface Practitioner {
   address: string
 }
 
+export interface PractitionerItem {
+  pu_id: string,
+  name: string, 
+  gender: string, 
+  phone: string, 
+  address: string, 
+  national_id: string, 
+  email: string,
+  slade_code: string,
+  reg_number:string,
+  status: number
+}
+ 
 export interface Qualification {
   text: string
 }
@@ -201,15 +214,15 @@ export interface FormatProvider {
   name: string;
   level: string;
   identifiers: ProviderIdentifier[];
-  active?: boolean;
+  active: boolean;
 };
 
 export interface ProviderItem {
   f_id: string; 
   name: string; 
   level: string; 
-  slade_code: string; 
-  status: number
+  slade_code?: string; 
+  status?: number
 }
 
 export interface ProviderBundle {

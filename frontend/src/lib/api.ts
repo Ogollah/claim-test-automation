@@ -1,9 +1,9 @@
 import axios from 'axios';
-import { Provider, TestCase, Patient, PatientBundle, FormatPatient, FormatProvider, ProviderItem, Practitioner, PractitionerBundle } from './types';
-import { hiePatients, patientPayload, patients, ProviderBundle } from './patient';
+import { Provider, TestCase, Patient, PatientBundle, FormatPatient, FormatProvider, ProviderItem, Practitioner, PractitionerBundle, ProviderBundle, PractitionerItem } from './types';
+import { hiePatients, patientPayload, patients } from './patient';
 import { HIE_URL } from './utils';
-import { hieProviders } from './providers';
-import { hiePractitioners } from './practitioner';
+import { hieProviders, providerPayload } from './providers';
+import { hiePractitioners, practitionerPayload } from './practitioner';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -121,16 +121,23 @@ export const runTestSuite = async (testData: any): Promise<TestResult[]> => {
     console.log('Test execution result:', result);
     try {
   const crID = testData.formData?.patient?.id;
+  const fID = testData.formData?.provider?.id;
+  const puID = testData.formData?.practitioner?.id;
+  const existingPractitioner = await getPractitionerByPuID(puID);
+  const existingProvider = await getProviderByFID(fID);
+  const existingPatient = await getPatientByCrID(crID);
 
-  if (!crID) {
-    throw new Error("Patient ID (cr_id) is missing in form data.");
+  if (!existingPractitioner) {
+    const payload = practitionerPayload(testData.formData.practitioner);
+    await postPractitioner(payload);
   }
-
-  const existingPatient = await searchPatient("cr_id", crID);
-
   if (!existingPatient) {
     const payload = patientPayload(testData.formData.patient);
     await postPatient(payload);
+  }
+  if (!existingProvider) {
+    const providerpayload = providerPayload(testData.formData.provider);
+    await postProvider(providerpayload);
   }
 } catch (error) {
   console.error("Error psting patient:", error);
@@ -186,17 +193,6 @@ export const getTestHistory = async (): Promise<TestResult[]> => {
   return response.data;
 };
 
-// Provider
-
-// export const getProvide = async () => {
-//   try {
-//     const resp = await api.get<ProviderIntem[]>("/providers");
-//     return providers(resp.data);
-//   } catch (error) {
-//     console.error(error);
-//   }
-// }
-
 export const getProvide = async (): Promise<FormatProvider[]> => {
   try {
     const resp = await api.get<ProviderItem[]>('/api/providers');
@@ -207,7 +203,7 @@ export const getProvide = async (): Promise<FormatProvider[]> => {
       identifiers: [
         {
           system: 'slade_code',
-          value: item.slade_code,
+          value: item?.slade_code || "",
         },
       ],
       active: item.status === 1,
@@ -232,21 +228,31 @@ export const searchProviderHie = async (param: string, search: string): Promise<
   }
 };
 
-export const searchProvider = async(search: string) => {
+export const searchProvider = async(param: string, search: string) => {
   try {
-    const resp = await api.get<Provider>(`/api/providers/${search}`);
+    const resp = await api.get<Provider>(`/api/providers?${param}=${search}`);
     return resp;
   } catch (error) {
     console.error(error);
   }
 }
 
-export const postProvider = async(data: Provider) => {
+export const postProvider = async(data: ProviderItem) => {
   try {
-    const resp = await api.post<Provider>("/api/providers", data)
+    const resp = await api.post<ProviderItem>("/api/providers", data)
     return resp;
   } catch (error) {
     console.error(error);
+  }
+}
+
+export const getProviderByFID = async(fID: string) => {
+  try {
+    const resp = await api.get<ProviderItem>(`/api/providers/${fID}`);
+    return resp;
+  } catch (error) {
+    console.error('--> Error getting provider',error);
+    
   }
 }
 
@@ -262,7 +268,7 @@ export const getPatients = async () => {
 
 export const searchPatient = async(param: string, search: string) => {
   try {
-    const resp = await api.get<Patient>(`/api/patients/${param}?${search}`);
+    const resp = await api.get<Patient>(`/api/patients?${param}=${search}`);
     return resp;
   } catch (error) {
     console.error(error);
@@ -292,20 +298,16 @@ export const postPatient = async(data: Patient) => {
   }
 }
 
-// Practitioner
-interface PractitionerItem {
-  pu_id: string,
-  name: string, 
-  gender: string, 
-  phone: string, 
-  address: string, 
-  national_id: string, 
-  email: string,
-  slade_code: string,
-  reg_number:string,
-  status: number
+export const getPatientByCrID = async(crID: string) => {
+  try {
+    const resp = await api.get<Patient>(`/api/patients/${crID}`);
+    return resp;
+  } catch (error) {
+    console.error('Error fetching patient with CRID: ', error);
+  }
 }
 
+// Practitioner
 export const getPractitioner = async (): Promise<Practitioner[]> => {
   try {
     const resp = await api.get<PractitionerItem[]>("/api/practitioners");
@@ -341,21 +343,30 @@ export const searchPractitionerHie = async (param: string, search: string): Prom
   }
 };
 
-export const searchPractitioner = async(search: string) => {
+export const searchPractitioner = async(param: string, search: string) => {
   try {
-    const resp = await api.get<Patient>(`/api/practitioners/${search}`);
+    const resp = await api.get<PractitionerItem>(`/api/practitioners?${param}=${search}`);
     return resp;
   } catch (error) {
     console.error(error);
   }
 }
 
-export const postPractitioner = async(data: Patient) => {
+export const postPractitioner = async(data: PractitionerItem) => {
   try {
-    const resp = await api.post<Patient>("/api/practitioners", data);
+    const resp = await api.post<PractitionerItem>("/api/practitioners", data);
     return resp;
   } catch (error) {
     console.error(error);
+  }
+}
+
+export const getPractitionerByPuID = async(puID: string) => {
+  try {
+    const resp = await api.get<PractitionerItem>(`/api/practitioners/${puID}`);
+    return resp;
+  } catch (error) {
+    console.error('--> Error fetching practitioner: ', error);
   }
 }
 
