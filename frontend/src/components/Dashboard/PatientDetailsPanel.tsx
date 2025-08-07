@@ -1,94 +1,150 @@
-import { patients } from '@/lib/patient';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { getPatients, searchPatientHie } from '@/lib/api';
+import { FormatPatient } from '@/lib/types';
+import { Command, CommandInput, CommandList, CommandEmpty, CommandItem, CommandGroup } from '@/components/ui/command';
+import { Check, ChevronsUpDown, Loader2 } from 'lucide-react';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from '@/components/ui/button';
 
 function getAge(birthDate: string): number {
   const birth = new Date(birthDate);
   const today = new Date();
   let age = today.getFullYear() - birth.getFullYear();
   const m = today.getMonth() - birth.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
-    age--;
-  }
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
   return age;
 }
 
-export default function PatientDetailsPanel({ patient, onSelectPatient }: {
-  patient: any;
-  onSelectPatient: (patient: any) => void;
+export default function PatientDetailsPanel({
+  patient,
+  onSelectPatient,
+}: {
+  patient: FormatPatient | null;
+  onSelectPatient: (patient: FormatPatient) => void;
 }) {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [patients, setPatients] = useState<FormatPatient[]>([]);
+  const [query, setQuery] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  // Fetch local patients on mount
+  useEffect(() => {
+    const fetchLocalPatients = async () => {
+      try {
+        const localPatients = await getPatients();
+        setPatients(localPatients);
+      } catch (error) {
+        console.error('Failed to fetch local patients:', error);
+      }
+    };
+
+    fetchLocalPatients();
+  }, []);
+
+  // Search HIE on demand
+  const handleSearch = async (q: string) => {
+    if (!q || q.length < 3) return;
+    setLoading(true);
+    try {
+      const hiePatients = await searchPatientHie('name', q);
+      setPatients((prev) => {
+        const ids = new Set(prev.map((p) => p.id));
+        const newOnes = hiePatients.filter((p: FormatPatient) => !ids.has(p.id));
+        return [...prev, ...newOnes];
+      });
+    } catch (err) {
+      console.error('HIE search failed:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredPatients = query
+    ? patients.filter((p) =>
+        p.name.toLowerCase().includes(query.toLowerCase())
+      )
+    : patients;
 
   return (
     <div className="border border-gray-200 rounded-lg p-4">
-      <div 
-        className="flex justify-between items-center cursor-pointer"
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        <h3 className="text-lg font-medium text-gray-800">Patient Details</h3>
-        <svg
-          className={`h-5 w-5 text-gray-500 transform transition-transform ${
-            isExpanded ? 'rotate-180' : ''
-          }`}
-          viewBox="0 0 20 20"
-          fill="currentColor"
-        >
-          <path
-            fillRule="evenodd"
-            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-            clipRule="evenodd"
-          />
-        </svg>
+      <h3 className="text-lg font-medium text-gray-800 mb-2">Patient Details</h3>
+
+      <div className="mb-4 space-y-4">
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={open}
+              className="w-[300px] justify-between"
+            >
+              {patient
+                ? `${patient.name} (${patient.gender}, ${getAge(patient.birthDate)} yrs)`
+                : 'Select a patient'}
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+
+          <PopoverContent className="w-[300px] p-0">
+            <Command>
+              <CommandInput
+                placeholder="Search patient..."
+                className="h-9"
+                onValueChange={(val) => {
+                  setQuery(val);
+                  if (val.length >= 3) handleSearch(val);
+                }}
+              />
+              <CommandList>
+                {loading && (
+                  <div className="flex items-center justify-center p-2">
+                    <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
+                  </div>
+                )}
+                <CommandEmpty>No patients found.</CommandEmpty>
+                <CommandGroup>
+                  {filteredPatients.map((p) => (
+                    <CommandItem
+                      key={p.id}
+                      onSelect={() => {
+                        onSelectPatient(p);
+                        setOpen(false);
+                        setQuery('');
+                      }}
+                    >
+                      {p.name} ({p.gender}, {getAge(p.birthDate)} yrs)
+                      {patient?.id === p.id && (
+                        <Check className="ml-auto h-4 w-4" />
+                      )}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
       </div>
 
-      {isExpanded && (
-        <div className="mt-4 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Select Patient</label>
-            <select
-              className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md border"
-              value={patient?.id || ''}
-              onChange={(e) => {
-                const selected = patients.find(p => p.id === e.target.value);
-                if (selected) onSelectPatient(selected);
-              }}
-            >
-              <option value="">Select a patient</option>
-              {patients.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name} ({p.gender}, {getAge(p.birthDate)} yrs)
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {patient && (
-            <div className="space-y-2">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Name</p>
-                  <p className="text-sm text-gray-900">{patient.name}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Gender</p>
-                  <p className="text-sm text-gray-900">{patient.gender}</p>
-                </div>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-500">Date of Birth</p>
-                <p className="text-sm text-gray-900">{patient.birthDate}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-500">Identifiers</p>
-                <ul className="text-sm text-gray-900 space-y-1">
-                  {patient.identifiers.map((id: any, index: number) => (
-                    <li key={index}>
-                      {id.system}: {id.value}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+      {patient && (
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm font-medium text-gray-500">Name</p>
+              <p className="text-sm text-gray-900">{patient.name}</p>
             </div>
-          )}
+            <div>
+              <p className="text-sm font-medium text-gray-500">Gender</p>
+              <p className="text-sm text-gray-900">{patient.gender}</p>
+            </div>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-500">Date of Birth</p>
+            <p className="text-sm text-gray-900">{patient.birthDate}</p>
+          </div>
         </div>
       )}
     </div>

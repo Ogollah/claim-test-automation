@@ -8,7 +8,7 @@ export interface Provider {
   name: string
   level: string
   identifiers: Identifier[]
-  active?: boolean
+  active: boolean
   type?: string
 }
 
@@ -16,17 +16,28 @@ export interface Practitioner {
   id: string,
   status: boolean,
   gender: string,
-  qualification: Qualification[],
   nationalID: string,
   regNumber: string,
   sladeCode: string,
-  regID?: string,
   name: string,
   phone: string,
   email: string,
   address: string
 }
 
+export interface PractitionerItem {
+  pu_id: string,
+  name: string, 
+  gender: string, 
+  phone: string, 
+  address: string, 
+  national_id: string, 
+  email: string,
+  slade_code: string,
+  reg_number:string,
+  status: number
+}
+ 
 export interface Qualification {
   text: string
 }
@@ -69,41 +80,76 @@ export type InterventionItem = {
   netValue: number;
 };
 
-// interface Patient {
-//   id: string;
-//   name: string;
-//   gender: number;
-//   birthDate: string;
-//   identifiers: Identifier[];
-// };
-// interface Provider {
-//   id: string;
-//   name: string;
-//   level: string;
-//   identifiers: Identifier[];
-// };
-// export type TestCaseFormData = {
-
-//   patient: Patient;
-//   provider: Provider;
-//   use: {id: string;};
-//   productOrService: InterventionItem[];
-//   billablePeriod: { billableStart: string; billableEnd: string; created: string; };
-//   total: { value: number; currency: string; };
-// }
-
 interface Identifier {
   system: string;
   value: string;
 }
 
-interface Patient {
+export interface FormatPatient {
   id: string;
   name: string;
   gender: string;
   birthDate: string;
   identifiers: Identifier[];
 }
+
+export interface Patient {
+  cr_id: string, 
+  name: string, 
+  gender: string, 
+  birthdate: string,
+  national_id: string,
+  email: string,
+  system_value: string
+}
+
+export interface PatientBundle {
+  resourceType: "Bundle";
+  entry: {
+    fullUrl: string;
+    resource: FhirPatientResource;
+    search?: { mode: string };
+  }[];
+}
+
+export interface FhirPatientResource {
+  resourceType: "Patient";
+  id: string;
+  gender: string;
+  birthDate: string;
+  name: {
+    text: string;
+    family?: string;
+    given?: string[];
+  }[];
+  identifier: Identifier[];
+}
+
+export interface PractitionerBundle {
+  resourceType: "Bundle";
+  entry: {
+    fullUrl: string;
+    resource: FhirPractitionerResource;
+    search?: { mode: string };
+  }[];
+}
+
+export interface FhirPractitionerResource {
+  resourceType: "Practitioner";
+  id: string;
+  gender: string;
+  birthDate?: string;
+  active: boolean,
+  address: {
+    text: string
+  }[],
+  telecom: Identifier[]
+  name: {
+    text: string;
+  }[];
+  identifier: Identifier[];
+}
+
 
 /* Duplicate Provider interface removed to avoid redeclaration error */
 
@@ -146,7 +192,7 @@ interface Total {
 interface FormData {
   test: string;
   title: string;
-  patient: Patient;
+  patient: FormatPatient;
   provider: Provider;
   use: Use;
   productOrService: ProductOrService[];
@@ -158,16 +204,52 @@ export interface TestCase {
   formData: FormData;
 }
 
-// type ProviderIdentifier = {
-//   system: string;
-//   value: string;
-// };
+export interface ProviderIdentifier {
+  system: string;
+  value: string;
+};
 
-// type Provider = {
-//   id: string;
-//   name: string;
-//   level: string;
-//   identifiers: ProviderIdentifier[];
-//   active?: boolean;
-//   type?: string;
-// };
+export interface FormatProvider {
+  id: string;
+  name: string;
+  level: string;
+  identifiers: ProviderIdentifier[];
+  active: boolean;
+};
+
+export interface ProviderItem {
+  f_id: string; 
+  name: string; 
+  level: string; 
+  slade_code?: string; 
+  status?: number
+}
+
+export interface ProviderBundle {
+  resourceType: "Bundle";
+  entry: {
+    fullUrl: string;
+    resource: FhirProviderResource;
+    search?: { mode: string };
+  }[];
+}
+export interface Coding {
+  system?:string,
+  code?: string,
+  display: string
+}
+export interface ValueCodeableConcept{
+  coding: Coding[]
+}
+export interface Extension{
+  valueCodeableConcept: ValueCodeableConcept
+}
+
+export interface FhirProviderResource {
+  resourceType: "Organization";
+  id: string;
+  active: boolean;
+  name: string;
+  identifier: Identifier[];
+  extension: Extension[]
+}

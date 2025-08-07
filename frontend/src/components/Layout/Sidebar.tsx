@@ -36,6 +36,20 @@ export default function Sidebar() {
               <DocumentTextIcon className="mr-3 h-6 w-6 text-gray-400 group-hover:text-gray-500" />
               Test Cases
             </Link>
+
+                        <Link
+              href="/add-test"
+              className={
+                `group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
+                  pathname ===  "/test-cases"
+                    ? 'bg-gray-100 text-gray-900' 
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                }`
+              }
+            >
+              <DocumentTextIcon className="mr-3 h-6 w-6 text-gray-400 group-hover:text-gray-500" />
+              Add test case
+            </Link>
             
             {/* <Link
               href="/reports"
