@@ -1,3 +1,5 @@
+import { Label } from "../ui/label";
+
 export default function InterventionSelector({
   packageId,
   interventions,
@@ -11,7 +13,7 @@ export default function InterventionSelector({
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">Intervention Code</label>
+      <Label className="block text-sm font-medium text-gray-700 mb-1">Intervention Code</Label>
       <div className="relative">
         <select
           className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md border"

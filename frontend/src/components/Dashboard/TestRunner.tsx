@@ -4,8 +4,8 @@ import PatientDetailsPanel from './PatientDetailsPanel';
 import ProviderDetailsPanel from './ProviderDetailsPanel';
 import InterventionSelector from './InterventionSelector';
 import UseSelector from './UseSelector';
-import { InterventionItem } from '@/lib/types';
-import { TestResult } from '@/lib/api';
+import { Intervention, InterventionItem, Package } from '@/lib/types';
+import { getInterventionByPackageId, getPackages, TestResult } from '@/lib/api';
 import { INTERVENTION_CODES, TEST_PACKAGES } from '@/packages/ShaPackages';
 import { title } from 'process';
 import PractitionerDetailsPanel from './PractitionerDetailsPanel';
@@ -16,7 +16,7 @@ type TestRunnerProps = {
 };
 
 export default function TestRunner({ isRunning = false, onRunTests }: TestRunnerProps) {
-  const [selectedPackage, setSelectedPackage] = useState('');
+  const [selectedPackage, setSelectedPackage] = useState();
   const [selectedPatient, setSelectedPatient] = useState<any>(null);
   const [selectedUse, setSelectedUse] = useState<any>(null);
   const [selectedProvider, setSelectedProvider] = useState<any>(null);
@@ -27,11 +27,10 @@ export default function TestRunner({ isRunning = false, onRunTests }: TestRunner
     billableEnd: '',
     created: new Date().toISOString().split('T')[0],
   });
-
+  const [packages, setPackages] = useState<Package[]>([])
   const [interventions, setInterventions] = useState<InterventionItem[]>([]);
   const [total, setTotal] = useState<number>(0);
-  const [availableInterventions, setAvailableInterventions] = useState<any[]>([]);
-  const [results, setResults] = useState<TestResult[]>([]);
+  const [availableInterventions, setAvailableInterventions] = useState<Intervention[]>([]);
 
   // Current intervention form state
   const [currentIntervention, setCurrentIntervention] = useState({
@@ -46,19 +45,46 @@ export default function TestRunner({ isRunning = false, onRunTests }: TestRunner
     ? Number(currentIntervention.serviceQuantity) * Number(currentIntervention.unitPrice)
     : 0;
 
+  // GET ALL PACKAGES
+  useEffect(() => {
+    const fetchPackages = async () => {
+      try{
+        const pck = await getPackages();
+        setPackages(pck);
+      } catch (error) {
+        console.error('--> Error fetching package: ', error);
+      }
+    };
+    fetchPackages();
+  }, []);
+
+  // GET INTERVENTIONS
+
   // Update total whenever interventions change
   useEffect(() => {
     const newTotal = interventions.reduce((sum, item) => sum + item.netValue, 0);
     setTotal(newTotal);
   }, [interventions]);
 
+  console.log('--> selected package',selectedPackage);
+  
   // Update available interventions when package changes
-  useEffect(() => {
-    if (selectedPackage) {
-      setAvailableInterventions(INTERVENTION_CODES[selectedPackage as keyof typeof INTERVENTION_CODES] || []);
-      setSelectedIntervention('');
-    }
-  }, [selectedPackage]);
+ useEffect(() => {
+  if (selectedPackage) {
+    const fetchInterventions = async () => {
+      try {
+        const intevents = await getInterventionByPackageId(selectedPackage);
+        setAvailableInterventions(intevents || []);
+        setSelectedIntervention('');
+      } catch (error) {
+        console.error('--> Error fetching interventions: ', error);
+      }
+    };
+    fetchInterventions();
+  } else {
+    setAvailableInterventions([]);
+  }
+}, [selectedPackage]);
 
   const addIntervention = () => {
     if (!selectedPackage || !selectedIntervention) {
@@ -159,9 +185,9 @@ export default function TestRunner({ isRunning = false, onRunTests }: TestRunner
                 onChange={(e) => setSelectedPackage(e.target.value)}
               >
                 <option value="">Select a package</option>
-                {TEST_PACKAGES.map((pkg) => (
+                {packages.map((pkg) => (
                   <option key={pkg.id} value={pkg.id}>
-                    {pkg.name} ({pkg.id})
+                    {pkg.name} ({pkg.code})
                   </option>
                 ))}
               </select>

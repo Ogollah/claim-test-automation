@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Provider, TestCase, Patient, PatientBundle, FormatPatient, FormatProvider, ProviderItem, Practitioner, PractitionerBundle, ProviderBundle, PractitionerItem } from './types';
+import { Provider, TestCase, Patient, PatientBundle, FormatPatient, FormatProvider, ProviderItem, Practitioner, PractitionerBundle, ProviderBundle, PractitionerItem, Intervention, Package } from './types';
 import { hiePatients, patientPayload, patients } from './patient';
 import { HIE_URL } from './utils';
 import { hieProviders, providerPayload } from './providers';
@@ -370,12 +370,7 @@ export const getPractitionerByPuID = async(puID: string) => {
   }
 }
 
-// Intervention
-interface Intervention {
-  id?: number,
-  name: string, 
-  code: string, 
-}
+
 
 export const getIntervention = async () => {
   try {
@@ -404,10 +399,20 @@ export const postIntervention = async(data: Intervention) => {
   }
 }
 
+export const getInterventionByPackageId = async(package_id: number) => {
+  try {
+    const resp = await api.get<Intervention>(`/api/interventions/${package_id}`);
+    return resp.data;
+  } catch (error) {
+    console.error('--> Error fetching interventions by package id: ', error);
+    
+  }
+}
+
 // Package
 export const getPackages = async () => {
   try {
-    const resp = await api.get<Intervention[]>("/api/packages");
+    const resp = await api.get<Package[]>("/api/packages");
     return resp.data;
   } catch (error) {
     console.error(error);
@@ -416,16 +421,16 @@ export const getPackages = async () => {
 
 export const searchPackage = async(search: string) => {
   try {
-    const resp = await api.get<Intervention>(`/api/packages/${search}`);
+    const resp = await api.get<Package>(`/api/packages/${search}`);
     return resp;
   } catch (error) {
     console.error(error);
   }
 }
 
-export const postPackage = async(data: Intervention) => {
+export const postPackage = async(data: Package) => {
   try {
-    const resp = await api.post<Intervention>("/api/packages", data);
+    const resp = await api.post<Package>("/api/packages", data);
     return resp;
   } catch (error) {
     console.error(error);
