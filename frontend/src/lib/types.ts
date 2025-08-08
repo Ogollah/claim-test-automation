@@ -8,7 +8,7 @@ export interface Provider {
   name: string
   level: string
   identifiers: Identifier[]
-  active: boolean
+  active?: boolean
   type?: string
 }
 

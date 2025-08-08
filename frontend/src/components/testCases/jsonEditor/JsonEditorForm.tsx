@@ -4,8 +4,6 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { JsonEditor } from 'json-edit-react'
-// import { saveTestcase, getTestcase } from '@/lib/api/testcase'
-
 interface JsonEditorFormProps {
   testcaseId?: string
   initialData?: any

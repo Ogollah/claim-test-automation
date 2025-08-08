@@ -103,7 +103,7 @@ export const runTestSuite = async (testData: any): Promise<TestResult[]> => {
       id: response.data.data?.id || 'generated-id',
       name: testData?.formData?.title || 'Claim Submission',
       use: testData?.formData?.use,
-      status: response.data.success ? 'passed' : 'failed',
+      status: response.data.success && testData.formData.test != 'negative' ? 'passed' : 'failed',
       duration: responseTime,
       timestamp: new Date().toISOString(),
       message: response.data.message,
@@ -169,7 +169,7 @@ export const runTestSuite = async (testData: any): Promise<TestResult[]> => {
     const errorResult: TestResult = {
       id: 'error-' + Date.now().toString(),
       name: testData?.formData?.title || 'Claim Submission',
-      status: 'failed',
+      status: testData.formData.test != "positive" ? 'passed' : 'failed',
       use: testData?.formData?.use,
       duration: 0,
       timestamp: new Date().toISOString(),
@@ -438,6 +438,7 @@ interface TestCaseItem {
   name: string, 
   description: string,
   test_config:  TestCase;
+  code: string
 }
 
 export const getTestcases = async () => {

@@ -135,7 +135,7 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
         setResults(prev => [...prev, ...testResult]);
 
         if (index < allTests.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 3000));
         }
       }
     } catch (error) {
@@ -176,7 +176,7 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
         setResults(prev => [...prev, ...testResult]);
 
         if (index < allTests.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 3000));
         }
       }
     } catch (error) {
