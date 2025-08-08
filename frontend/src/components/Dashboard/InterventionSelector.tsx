@@ -1,4 +1,17 @@
-import { Label } from "../ui/label";
+// components/InterventionSelector.tsx
+import { Label } from "../ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select"
+
+type Intervention = {
+  code: string
+  name: string
+}
 
 export default function InterventionSelector({
   packageId,
@@ -6,36 +19,39 @@ export default function InterventionSelector({
   selectedIntervention,
   onSelectIntervention,
 }: {
-  packageId: string;
-  interventions: any[];
-  selectedIntervention: string;
-  onSelectIntervention: (code: string) => void;
+  packageId: string
+  interventions: Intervention[]
+  selectedIntervention: string
+  onSelectIntervention: (code: string) => void
 }) {
+  const selected = interventions.find((i) => i.code === selectedIntervention)
+
   return (
-    <div>
-      <Label className="block text-sm font-medium text-gray-700 mb-1">Intervention Code</Label>
-      <div className="relative">
-        <select
-          className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md border"
-          value={selectedIntervention}
-          onChange={(e) => onSelectIntervention(e.target.value)}
-          disabled={!packageId}
-        >
-          <option value="">Select an intervention</option>
+    <div className="space-y-2">
+      <Label htmlFor="intervention">Intervention Code</Label>
+
+      <Select
+        onValueChange={onSelectIntervention}
+        value={selectedIntervention}
+        disabled={!packageId}
+      >
+        <SelectTrigger id="intervention" className="w-full">
+          <SelectValue placeholder="Select an intervention" />
+        </SelectTrigger>
+        <SelectContent>
           {interventions.map((intervention) => (
-            <option key={intervention.code} value={intervention.code}>
+            <SelectItem key={intervention.code} value={intervention.code}>
               {intervention.name} ({intervention.code})
-            </option>
+            </SelectItem>
           ))}
-        </select>
-      </div>
-      {selectedIntervention && (
-        <div className="mt-2">
-          <p className="text-sm text-gray-600">
-            Selected: {interventions.find(i => i.code === selectedIntervention)?.name}
-          </p>
-        </div>
+        </SelectContent>
+      </Select>
+
+      {selected && (
+        <p className="text-sm text-muted-foreground">
+          Selected: {selected.name}
+        </p>
       )}
     </div>
-  );
+  )
 }
