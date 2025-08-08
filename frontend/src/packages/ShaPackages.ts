@@ -3,8 +3,17 @@ export const TEST_PACKAGES = [
   { id: 'SHA-01', name: 'Ambulance and Emergency Services' },
   { id: 'SHA-03', name: 'Critical Care Services' },
   { id: 'SHA-05', name: 'Optical Health Services' },
-  {id: 'SHA-16', name: 'Renal Care Services' },
+  {id: 'SHA-06', name: 'Hematology and Oncology Services'},
   { id: 'SHA-07', name: 'Inpatient ' },
+  {id: 'SHA-08', name: 'Maternity and Child Health Services'},
+  {id: 'SHA-09', name:'Medical Imaging & Other Investigations'},
+  {id: 'SHA-10', name: 'Mental Wellness Services'},
+  {id: 'SHA-12', name: 'Outpatient Services'},
+  {id: 'SHA-13', name: 'Inpatient Services'},
+  {id: 'SHA-16', name: 'Renal Care Services' },
+  {id: 'SHA-18', name: 'Essential Diagnostic Laboratory listing for NCDs'},
+  {id: 'SHA-19', name: 'Surgical Services'},
+  {id: 'SHA-20', name: 'Overseas treatment'}
 ];
 
 export const INTERVENTION_CODES = {
@@ -40,4 +49,8 @@ export const INTERVENTION_CODES = {
     { code: 'SHA-16-001', name: 'Hemo dialysis' },
     { code: 'SHA-16-002', name: 'Hemodiafiltration' },
   ],
+  'SHA-12':[
+    {code: 'SHA-12-001', name:'Consultation'},
+    {code: 'SHA-12-002', name:'Laboratory investigations'}
+  ]
 };
