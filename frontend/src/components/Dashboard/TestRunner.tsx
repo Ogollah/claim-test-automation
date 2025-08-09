@@ -1,99 +1,139 @@
-import { useEffect, useState } from 'react';
-import { StopIcon, PlayIcon, TrashIcon } from '@heroicons/react/16/solid';
-import PatientDetailsPanel from './PatientDetailsPanel';
-import ProviderDetailsPanel from './ProviderDetailsPanel';
-import InterventionSelector from './InterventionSelector';
-import UseSelector from './UseSelector';
-import { Intervention, InterventionItem, Package } from '@/lib/types';
-import { getInterventionByPackageId, getPackages, TestResult } from '@/lib/api';
-import { INTERVENTION_CODES, TEST_PACKAGES } from '@/packages/ShaPackages';
-import { title } from 'process';
-import PractitionerDetailsPanel from './PractitionerDetailsPanel';
+import { useEffect, useState } from "react"
+import {
+  StopIcon,
+  PlayIcon,
+  TrashIcon,
+} from "@heroicons/react/16/solid"
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "../ui/select"
+import { Label } from "../ui/label"
+import PatientDetailsPanel from "./PatientDetailsPanel"
+import ProviderDetailsPanel from "./ProviderDetailsPanel"
+import InterventionSelector from "./InterventionSelector"
+import UseSelector from "./UseSelector"
+import PractitionerDetailsPanel from "./PractitionerDetailsPanel"
+import {
+  getInterventionByPackageId,
+  getPackages,
+} from "@/lib/api"
+import {
+  Intervention,
+  InterventionItem,
+  Package,
+} from "@/lib/types"
+import { Input } from "../ui/input"
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover"
+import { Button } from "../ui/button"
+import { Calendar } from "../ui/calendar"
+import { CalendarIcon, Ghost, Plus } from "lucide-react"
+import { format } from "date-fns/format"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table"
 
 type TestRunnerProps = {
-  isRunning?: boolean;
-  onRunTests?: (testConfig: any) => void;
-};
+  isRunning?: boolean
+  onRunTests?: (testConfig: any) => void
+}
 
-export default function TestRunner({ isRunning = false, onRunTests }: TestRunnerProps) {
-  const [selectedPackage, setSelectedPackage] = useState();
-  const [selectedPatient, setSelectedPatient] = useState<any>(null);
-  const [selectedUse, setSelectedUse] = useState<any>(null);
-  const [selectedProvider, setSelectedProvider] = useState<any>(null);
-  const [selectedPractitioner, setSelectedPractitioner] = useState<any>(null);
-  const [selectedIntervention, setSelectedIntervention] = useState('');
-  const [selectedDates, setSelectedDates] = useState({
-    billableStart: '',
-    billableEnd: '',
-    created: new Date().toISOString().split('T')[0],
-  });
+export default function TestRunner({
+  isRunning = false,
+  onRunTests,
+}: TestRunnerProps) {
+  const [selectedPackage, setSelectedPackage] = useState<string>("")
+  const [selectedPatient, setSelectedPatient] = useState<any>(null)
+  const [selectedUse, setSelectedUse] = useState<any>(null)
+  const [selectedProvider, setSelectedProvider] = useState<any>(null)
+  const [selectedPractitioner, setSelectedPractitioner] =
+    useState<any>(null)
+  const [selectedIntervention, setSelectedIntervention] =
+    useState<string>("")
+const [selectedDates, setSelectedDates] = useState<{
+  billableStart: Date | undefined
+  billableEnd: Date | undefined
+  created: Date
+}>({
+  billableStart: undefined,
+  billableEnd: undefined,
+  created: new Date(),
+})
+
   const [packages, setPackages] = useState<Package[]>([])
-  const [interventions, setInterventions] = useState<InterventionItem[]>([]);
-  const [total, setTotal] = useState<number>(0);
-  const [availableInterventions, setAvailableInterventions] = useState<Intervention[]>([]);
+  const [interventions, setInterventions] = useState<
+    InterventionItem[]
+  >([])
+  const [availableInterventions, setAvailableInterventions] =
+    useState<Intervention[]>([])
+  const [total, setTotal] = useState<number>(0)
 
-  // Current intervention form state
   const [currentIntervention, setCurrentIntervention] = useState({
-    serviceQuantity: '',
-    unitPrice: '',
-    serviceStart: '',
-    serviceEnd: '',
-  });
+    serviceQuantity: "",
+    unitPrice: "",
+    serviceStart: "",
+    serviceEnd: "",
+  })
+  const [open, setOpen] = useState(false)
 
-  // Calculate net value for current intervention
-  const currentNetValue = currentIntervention.serviceQuantity && currentIntervention.unitPrice
-    ? Number(currentIntervention.serviceQuantity) * Number(currentIntervention.unitPrice)
-    : 0;
+  const currentNetValue =
+    currentIntervention.serviceQuantity &&
+    currentIntervention.unitPrice
+      ? Number(currentIntervention.serviceQuantity) *
+        Number(currentIntervention.unitPrice)
+      : 0
 
-  // GET ALL PACKAGES
   useEffect(() => {
     const fetchPackages = async () => {
-      try{
-        const pck = await getPackages();
-        setPackages(pck);
-      } catch (error) {
-        console.error('--> Error fetching package: ', error);
-      }
-    };
-    fetchPackages();
-  }, []);
-
-  // GET INTERVENTIONS
-
-  // Update total whenever interventions change
-  useEffect(() => {
-    const newTotal = interventions.reduce((sum, item) => sum + item.netValue, 0);
-    setTotal(newTotal);
-  }, [interventions]);
-
-  console.log('--> selected package',selectedPackage);
-  
-  // Update available interventions when package changes
- useEffect(() => {
-  if (selectedPackage) {
-    const fetchInterventions = async () => {
       try {
-        const intevents = await getInterventionByPackageId(selectedPackage);
-        setAvailableInterventions(intevents || []);
-        setSelectedIntervention('');
+        const pck = await getPackages()
+        setPackages(pck)
       } catch (error) {
-        console.error('--> Error fetching interventions: ', error);
+        console.error("--> Error fetching packages:", error)
       }
-    };
-    fetchInterventions();
-  } else {
-    setAvailableInterventions([]);
-  }
-}, [selectedPackage]);
+    }
+    fetchPackages()
+  }, [])
+
+  useEffect(() => {
+    if (selectedPackage) {
+      const fetchInterventions = async () => {
+        try {
+          const intevents = await getInterventionByPackageId(
+            selectedPackage
+          )
+          setAvailableInterventions(intevents || [])
+          setSelectedIntervention("")
+        } catch (error) {
+          console.error("--> Error fetching interventions:", error)
+        }
+      }
+      fetchInterventions()
+    } else {
+      setAvailableInterventions([])
+    }
+  }, [selectedPackage])
+
+  useEffect(() => {
+    const newTotal = interventions.reduce(
+      (sum, item) => sum + item.netValue,
+      0
+    )
+    setTotal(newTotal)
+  }, [interventions])
 
   const addIntervention = () => {
     if (!selectedPackage || !selectedIntervention) {
-      alert('Please select a package and intervention');
-      return;
+      alert("Please select a package and intervention")
+      return
     }
 
-    const interventionName = availableInterventions.find(i => i.code === selectedIntervention)?.name || '';
-    
+    const interventionName =
+      availableInterventions.find(
+        (i) => i.code === selectedIntervention
+      )?.name || ""
+
     const newIntervention: InterventionItem = {
       id: `${selectedIntervention}-${Date.now()}`,
       packageId: selectedPackage,
@@ -104,94 +144,103 @@ export default function TestRunner({ isRunning = false, onRunTests }: TestRunner
       serviceStart: currentIntervention.serviceStart,
       serviceEnd: currentIntervention.serviceEnd,
       netValue: currentNetValue,
-    };
+    }
 
-    setInterventions([...interventions, newIntervention]);
-    
-    // Reset current intervention form
+    setInterventions([...interventions, newIntervention])
     setCurrentIntervention({
-      serviceQuantity: '',
-      unitPrice: '',
-      serviceStart: '',
-      serviceEnd: '',
-    });
-  };
+      serviceQuantity: "",
+      unitPrice: "",
+      serviceStart: "",
+      serviceEnd: "",
+    })
+  }
 
   const removeIntervention = (id: string) => {
-    setInterventions(interventions.filter(item => item.id !== id));
-  };
+    setInterventions(
+      interventions.filter((item) => item.id !== id)
+    )
+  }
 
-  const buildTestPayload = () => {
-    return {
-      formData: {
-        title: `Test for ${selectedIntervention}`,
-        patient: selectedPatient,
-        provider: selectedProvider,
-        use: selectedUse,
-        practitioner: selectedPractitioner,
-        productOrService: interventions.map((intervention, index) => ({
-          code: intervention.code,
-          display: intervention.name,
-          quantity: { value: intervention.serviceQuantity },
-          unitPrice: { value: intervention.unitPrice, currency: 'KES' },
-          net: { value: intervention.netValue, currency: 'KES' },
-          servicePeriod: {
-            start: intervention.serviceStart,
-            end: intervention.serviceEnd,
-          },
-          sequence: index + 1
-        })),
-        billablePeriod: selectedDates,
-        total: { value: total, currency: 'KES' },
-      }
-    };
-  };
+  const buildTestPayload = () => ({
+    formData: {
+      title: `Test for ${selectedIntervention}`,
+      patient: selectedPatient,
+      provider: selectedProvider,
+      use: selectedUse,
+      practitioner: selectedPractitioner,
+      productOrService: interventions.map((intervention, index) => ({
+        code: intervention.code,
+        display: intervention.name,
+        quantity: { value: intervention.serviceQuantity },
+        unitPrice: {
+          value: intervention.unitPrice,
+          currency: "KES",
+        },
+        net: {
+          value: intervention.netValue,
+          currency: "KES",
+        },
+        servicePeriod: {
+          start: intervention.serviceStart,
+          end: intervention.serviceEnd,
+        },
+        sequence: index + 1,
+      })),
+      billablePeriod: selectedDates,
+      total: { value: total, currency: "KES" },
+    },
+  })
 
-  const handleRunTests = async () => {
-    if (!selectedPatient || !selectedProvider || interventions.length === 0) {
-      alert('Please select all required fields and add at least one intervention');
-      return;
+  const handleRunTests = () => {
+    if (
+      !selectedPatient ||
+      !selectedProvider ||
+      interventions.length === 0
+    ) {
+      alert(
+        "Please select all required fields and add at least one intervention"
+      )
+      return
     }
 
-    const testConfig = buildTestPayload();
-
-    if (onRunTests) {
-      onRunTests(testConfig);
-      return;
-    }
-  };
+    const testConfig = buildTestPayload()
+    onRunTests?.(testConfig)
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Claims Test Automation</h1>
-      
+      <h1 className="text-2xl font-bold text-gray-800 mb-6">
+        Claims Test Automation
+      </h1>
+
       <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-        <h2 className="text-xl font-semibold text-gray-700 mb-4">Test Configuration</h2>
+        <h2 className="text-xl font-semibold text-gray-700 mb-4">
+          Test Configuration
+        </h2>
 
         <div className="grid grid-cols-1 gap-6 mb-6">
-          <UseSelector
-            use={selectedUse}
-            onSelectUse={setSelectedUse}
-          />
+          <UseSelector use={selectedUse} onSelectUse={setSelectedUse} />
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Package</label>
-            <div className="relative">
-              <select
-                className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md border"
-                value={selectedPackage}
-                onChange={(e) => setSelectedPackage(e.target.value)}
-              >
-                <option value="">Select a package</option>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 text-gray-500">
+          {/* Package Selector (ShadCN Style) */}
+          <div className="space-y-2">
+            <Label htmlFor="package">Package</Label>
+            <Select
+              value={selectedPackage || ""}
+              onValueChange={(value) => setSelectedPackage(value)}
+            >
+              <SelectTrigger id="package" className="w-full">
+                <SelectValue placeholder="Select a package" />
+              </SelectTrigger>
+              <SelectContent>
                 {packages.map((pkg) => (
-                  <option key={pkg.id} value={pkg.id}>
+                  <SelectItem key={pkg.id} value={pkg.id}>
                     {pkg.name} ({pkg.code})
-                  </option>
+                  </SelectItem>
                 ))}
-              </select>
-            </div>
+              </SelectContent>
+            </Select>
           </div>
 
           <InterventionSelector
@@ -202,186 +251,218 @@ export default function TestRunner({ isRunning = false, onRunTests }: TestRunner
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Billable Start Date</label>
-            <input
-              type="date"
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              value={selectedDates.billableStart}
-              onChange={(e) => setSelectedDates({...selectedDates, billableStart: e.target.value})}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Billable End Date</label>
-            <input
-              type="date"
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              value={selectedDates.billableEnd}
-              onChange={(e) => setSelectedDates({...selectedDates, billableEnd: e.target.value})}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Created Date</label>
-            <input
-              type="date"
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              value={selectedDates.created}
-              disabled
-              onChange={(e) => setSelectedDates({...selectedDates, created: e.target.value})}
-            />
-          </div>
+        {/* Dates help fix this part*/}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-gray-500">
+          {["billableStart", "billableEnd", "created"].map((key) => {
+            const label =
+              key === "billableStart"
+                ? "Billable Start Date"
+                : key === "billableEnd"
+                ? "Billable End Date"
+                : "Created Date"
+
+            const dateValue = selectedDates[key as keyof typeof selectedDates] as Date | undefined
+            const isCreated = key === "created"
+
+            return (
+              <div key={key} className="flex flex-col gap-2">
+                <Label htmlFor={key}>{label}</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="justify-start text-left font-normal"
+                      disabled={isCreated}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dateValue ? format(dateValue, "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={dateValue}
+                      onSelect={(date) =>
+                        setSelectedDates((prev) => ({
+                          ...prev,
+                          [key]: date ?? undefined,
+                        }))
+                      }
+                      captionLayout="dropdown"
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )
+          })}
         </div>
 
-        <div className="border-t border-gray-200 pt-4 mb-6">
-          {/* <h3 className="text-lg font-medium text-gray-700 mb-4">Add Intervention</h3> */}
-          
+
+        {/* Add Intervention */}
+        <div className="border-t border-gray-200 pt-4 mb-6 text-gray-500">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Service quantity</label>
-              <input
-                type="number"
-                min={0}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                value={currentIntervention.serviceQuantity}
-                onChange={(e) => setCurrentIntervention({...currentIntervention, serviceQuantity: e.target.value})}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Unit price</label>
-              <input
-                type="number"
-                min={0}
-                step={0.10}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                value={currentIntervention.unitPrice}
-                onChange={(e) => setCurrentIntervention({...currentIntervention, unitPrice: e.target.value})}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Net value</label>
-              <input
-                type="number"
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                value={currentNetValue}
-                disabled
-              />
-            </div>
+            {[
+              {
+                label: "Service quantity",
+                value: currentIntervention.serviceQuantity,
+                key: "serviceQuantity",
+              },
+              {
+                label: "Unit price",
+                value: currentIntervention.unitPrice,
+                key: "unitPrice",
+              },
+              {
+                label: "Net value",
+                value: currentNetValue,
+                key: "netValue",
+                disabled: true,
+              },
+            ].map(({ label, value, key, disabled }) => (
+              <div key={key}>
+                <Label>{label}</Label>
+                <Input
+                  type="number"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  value={value}
+                  disabled={disabled}
+                  onChange={(e) =>
+                    setCurrentIntervention({
+                      ...currentIntervention,
+                      [key]: e.target.value,
+                    })
+                  }
+                />
+              </div>
+            ))}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Service Start Date</label>
-              <input
-                type="date"
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                value={currentIntervention.serviceStart}
-                onChange={(e) => setCurrentIntervention({...currentIntervention, serviceStart: e.target.value})}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Service End Date</label>
-              <input
-                type="date"
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                value={currentIntervention.serviceEnd}
-                onChange={(e) => setCurrentIntervention({...currentIntervention, serviceEnd: e.target.value})}
-              />
-            </div>
-                        <div className="flex items-end">
-              <button
+            {["serviceStart", "serviceEnd"].map((key) => (
+              <div key={key}>
+                <Label>
+                  {key === "serviceStart"
+                    ? "Service Start Date"
+                    : "Service End Date"}
+                </Label>
+                <Input
+                  type="date"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  value={currentIntervention[key]}
+                  onChange={(e) =>
+                    setCurrentIntervention({
+                      ...currentIntervention,
+                      [key]: e.target.value,
+                    })
+                  }
+                />
+              </div>
+            ))}
+            <div className="flex items-end">
+              <Button
                 type="button"
                 onClick={addIntervention}
                 disabled={!selectedPackage || !selectedIntervention}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
+                <Plus className="h-5 w-5"/>
                 Add Intervention
-              </button>
+              </Button>
             </div>
           </div>
         </div>
 
+        {/* Selected Interventions Table */}
         {interventions.length > 0 && (
           <div className="mb-6">
-            <h3 className="text-lg font-medium text-gray-700 mb-2">Selected Interventions</h3>
+            <h3 className="text-lg font-medium text-gray-500 mb-2">
+              Selected Interventions
+            </h3>
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Package</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Intervention</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Price</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Net Value</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service Period</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {interventions.map((intervention) => (
-                    <tr key={intervention.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{intervention.packageId}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <div className="font-medium">{intervention.code}</div>
-                        <div>{intervention.name}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{intervention.serviceQuantity}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{intervention.unitPrice}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{intervention.netValue.toFixed(2)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {intervention.serviceStart} to {intervention.serviceEnd}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <button
-                          onClick={() => removeIntervention(intervention.id)}
-                          className="text-red-600 hover:text-red-900"
+              <Table className="min-w-full divide-y divide-gray-200">
+                <TableHeader className="bg-gray-50">
+                  <TableRow>
+                    {["Package",
+                      "Intervention",
+                      "Quantity",
+                      "Unit Price",
+                      "Net Value",
+                      "Service Period",
+                      "Actions",].map((header) =>(
+                        <TableHead 
+                        key={header}
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        scope="col"
                         >
-                          <TrashIcon className="h-5 w-5" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                          {header}
+                        </TableHead>
+                      ))}
+                  </TableRow>
+                </TableHeader>
+                    <TableBody className="bg-white divide-y divide-gray-200">
+                      {interventions.map((intervention) => (
+                        <TableRow key={intervention.id}>
+                          <TableCell className="px-6 py-4 text-sm text-gray-500">{intervention.packageId}</TableCell>
+                          <TableCell className="px-6 py-4 text-sm text-gray-500">{intervention.code}</TableCell>
+                          <TableCell className="px-6 py-4 text-sm text-gray-500">{intervention.serviceQuantity}</TableCell>
+                          <TableCell className="px-6 py-4 text-sm text-gray-500">{intervention.unitPrice}</TableCell>
+                          <TableCell className="px-6 py-4 text-sm text-gray-500">{intervention.netValue}</TableCell>
+                          <TableCell className="px-6 py-4 text-sm text-gray-500">{intervention.serviceStart} to {" "} {intervention.serviceEnd}</TableCell>
+                          <TableCell className="px-6 py-4 text-sm text-gray-500">
+                            <Button
+                              variant="ghost"
+                              onClick={()=>
+                                removeIntervention(intervention.id)
+                              }
+                              className="text-red-500 hover:text-red-900"
+                            >
+                              <TrashIcon className="h-6 w-6" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+              </Table>
             </div>
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        {/* Patient, Provider, Practitioner */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 text-gray-500">
           <PatientDetailsPanel
             patient={selectedPatient}
             onSelectPatient={setSelectedPatient}
           />
-
           <ProviderDetailsPanel
             provider={selectedProvider}
             onSelectProvider={setSelectedProvider}
           />
-
           <PractitionerDetailsPanel
             practitioner={selectedPractitioner}
             onSelectPractitioner={setSelectedPractitioner}
           />
         </div>
 
+        {/* Footer */}
         <div className="flex justify-between w-full">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Total</label>
-            <input
+          <div className="text-gray-500">
+            <Label>Total</Label>
+            <Input
               type="number"
               className="block w-full px-3 py-2 bg-green-100 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               value={total.toFixed(2)}
               disabled
             />
           </div>
-          <button
+          <Button
             type="button"
             onClick={handleRunTests}
             disabled={isRunning || interventions.length === 0}
-            className={`inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${
+            className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${
               isRunning || interventions.length === 0
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             }`}
           >
             {isRunning ? (
@@ -395,9 +476,9 @@ export default function TestRunner({ isRunning = false, onRunTests }: TestRunner
                 Run Tests
               </>
             )}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
-  );
+  )
 }
