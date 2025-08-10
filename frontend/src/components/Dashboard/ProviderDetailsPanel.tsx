@@ -89,7 +89,7 @@ export default function ProviderDetailsPanel({
         className="flex justify-between items-center cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <h3 className="text-lg font-medium text-gray-800">Provider Details</h3>
+        <h3 className="text-lg font-medium text-gray-500">Provider Details</h3>
         <svg
           className={`h-5 w-5 text-gray-500 transform transition-transform ${
             isExpanded ? 'rotate-180' : ''
@@ -168,18 +168,18 @@ export default function ProviderDetailsPanel({
                   <p className="text-sm font-medium text-gray-500">
                     Facility Name
                   </p>
-                  <p className="text-sm text-gray-900">{provider.name}</p>
+                  <p className="text-sm text-gray-500">{provider.name}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500">Level</p>
-                  <p className="text-sm text-gray-900">{provider.level}</p>
+                  <p className="text-sm text-gray-500">{provider.level}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm font-medium text-gray-500">Status</p>
-                  <p className="text-sm text-gray-900">
+                  <p className="text-sm text-gray-500">
                     {provider.active ? (
                       <span className="inline-flex items-center text-green-600">
                         <CheckCircleIcon className="h-4 w-4 mr-1" />
@@ -195,7 +195,7 @@ export default function ProviderDetailsPanel({
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500">Type</p>
-                  <p className="text-sm text-gray-900">
+                  <p className="text-sm text-gray-500">
                     {provider.type || 'Not specified'}
                   </p>
                 </div>
@@ -205,7 +205,7 @@ export default function ProviderDetailsPanel({
                 <p className="text-sm font-medium text-gray-500">Identifiers</p>
                 <ul className="mt-1 space-y-1">
                   {provider.identifiers.map((identifier, index) => (
-                    <li key={index} className="text-sm text-gray-900">
+                    <li key={index} className="text-sm text-gray-500">
                       <span className="font-medium">
                         {identifier.system}:
                       </span>{' '}
@@ -216,7 +216,7 @@ export default function ProviderDetailsPanel({
               </div>
 
               <div className="pt-2">
-                <h4 className="text-sm font-medium text-gray-700 mb-1">
+                <h4 className="text-sm font-medium text-gray-500 mb-1">
                   Validation
                 </h4>
                 {validateProvider(provider).length > 0 ? (

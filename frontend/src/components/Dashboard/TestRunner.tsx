@@ -94,7 +94,7 @@ const [selectedDates, setSelectedDates] = useState<{
       }
     }
     fetchPackages()
-  }, [])
+  }, []);
 
   useEffect(() => {
     if (selectedPackage) {
@@ -113,7 +113,7 @@ const [selectedDates, setSelectedDates] = useState<{
     } else {
       setAvailableInterventions([])
     }
-  }, [selectedPackage])
+  }, [selectedPackage]);
 
   useEffect(() => {
     const newTotal = interventions.reduce(
@@ -208,13 +208,13 @@ const [selectedDates, setSelectedDates] = useState<{
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">
+    <div className="container mx-auto px-4 py-8 text-gay-500">
+      <h1 className="text-2xl font-bold text-gray-500 mb-6">
         Claims Test Automation
       </h1>
 
       <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-        <h2 className="text-xl font-semibold text-gray-700 mb-4">
+        <h2 className="text-xl font-semibold text-gray-500 mb-4">
           Test Configuration
         </h2>
 

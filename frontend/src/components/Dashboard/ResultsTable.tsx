@@ -70,7 +70,7 @@ export default function ResultsTable({ results }: { results: TestResult[] }) {
           {results.map((result) => (
             <>
               <tr key={result.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-500">
                   {result.name}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

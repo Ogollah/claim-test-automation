@@ -1,14 +1,18 @@
 // TestCasesRunner.tsx
 import { use, useEffect, useState } from 'react';
-import { StopIcon, PlayIcon, TrashIcon } from '@heroicons/react/16/solid';
+import { StopIcon, TrashIcon } from '@heroicons/react/16/solid';
 import UseSelector from '@/components/Dashboard/UseSelector';
 import InterventionSelector from '@/components/Dashboard/InterventionSelector';
-import { InterventionItem, TestCase } from '@/lib/types';
-import { runTestSuite, TestResult } from '@/lib/api';
+import { InterventionItem, Package, TestCase } from '@/lib/types';
+import { getInterventionByPackageId, getPackages, runTestSuite, TestResult } from '@/lib/api';
 import TestcaseDetails from '@/components/testCases/TestcaseDetails';
 import ResultsTable from '@/components/Dashboard/ResultsTable';
-import { DEFAULT_PACKAGE, INTERVENTION_CODES, TEST_PACKAGES } from '@/packages/ShaPackages';
+import { DEFAULT_PACKAGE } from '@/packages/ShaPackages';
 import { testCasesPackages } from '@/lib/utils';
+import { Button } from '../ui/button';
+import { Label } from '../ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { PlayIcon } from 'lucide-react';
 
 type TestRunnerProps = {
   isRunning?: boolean;
@@ -22,6 +26,7 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
   const [runningSection, setRunningSection] = useState<string | null>(null);
   const [availableInterventions, setAvailableInterventions] = useState<any[]>([]);
   const [results, setResults] = useState<TestResult[]>([]);
+  const [packages, setPackages] = useState<Package[]>([])
   const [currentTestCases, setCurrentTestCases] = useState<{
     positive: TestCase[];
     negative: TestCase[];
@@ -34,15 +39,33 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
   });
 
   useEffect(() => {
-    if (selectedPackage) {
-      const interventions = INTERVENTION_CODES[selectedPackage as keyof typeof INTERVENTION_CODES] || [];
-      setAvailableInterventions(interventions);
-      setSelectedIntervention('');
+    const fetchPackages = async () => {
+      try {
+        const pck = await getPackages()
+        setPackages(pck)
+      } catch (error) {
+        console.error("--> Error fetching packages:", error)
+      }
+    }
+    fetchPackages()
+  }, []);
 
-      setCurrentTestCases({
-        positive: [],
-        negative: []
-      });
+  useEffect(() => {
+    if (selectedPackage) {
+      const fetchInterventions = async () => {
+        try {
+          const intevents = await getInterventionByPackageId(
+            selectedPackage
+          )
+          setAvailableInterventions(intevents || [])
+          setSelectedIntervention("")
+        } catch (error) {
+          console.error("--> Error fetching interventions:", error)
+        }
+      }
+      fetchInterventions()
+    } else {
+      setAvailableInterventions([])
     }
   }, [selectedPackage]);
 
@@ -169,8 +192,6 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
         ...testConfig.negative ? testConfig.negative : []
       ];
       for (const [index, testCase] of allTests.entries()) {
-        console.log(`Running test ${index + 1}/${allTests.length}: ${testCase.formData.title}`);
-        console.log('Test case details:', testCase);
         
         const testResult = await runTestSuite(testCase);
         setResults(prev => [...prev, ...testResult]);
@@ -188,35 +209,30 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Claims Bundle Automation Test</h1>
+      <h1 className="text-2xl font-bold text-gray-500 mb-6">Claims Bundle Automation Test</h1>
       
       <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-        <h2 className="text-xl font-semibold text-gray-700 mb-4">Test Configuration</h2>
+        <h2 className="text-xl font-semibold text-gray-500 mb-4">Test Configuration</h2>
 
-        <div className="grid grid-cols-1 gap-6 mb-6">
-          <UseSelector
-            use={selectedUse}
-            onSelectUse={setSelectedUse}
-          />
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Package</label>
-            <div className="relative">
-              <select
-                className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md border"
-                value={selectedPackage}
-                onChange={(e) => setSelectedPackage(e.target.value)}
-              >
-                <option value="">Select a package</option>
-                {TEST_PACKAGES.map((pkg) => (
-                  <option key={pkg.id} value={pkg.id}>
-                    {pkg.name} ({pkg.id})
-                  </option>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 text-gray-500">
+          {/* Package Selector (ShadCN Style) */}
+          <div className="space-y-2">
+            <Label htmlFor="package">Package</Label>
+            <Select
+              value={selectedPackage || ""}
+              onValueChange={(value) => setSelectedPackage(value)}
+            >
+              <SelectTrigger id="package" className="w-full">
+                <SelectValue placeholder="Select a package" />
+              </SelectTrigger>
+              <SelectContent>
+                {packages.map((pkg) => (
+                  <SelectItem key={pkg.id} value={pkg.id}>
+                    {pkg.name} ({pkg.code})
+                  </SelectItem>
                 ))}
-              </select>
-            </div>
+              </SelectContent>
+            </Select>
           </div>
 
           <InterventionSelector
@@ -226,6 +242,7 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
             onSelectIntervention={setSelectedIntervention}
           />
         </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <TestcaseDetails 
             title={'Positive'} 
@@ -242,7 +259,7 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
         </div>
 
         <div className="flex justify-between w-full">
-          <button
+          <Button
             type="button"
             onClick={handleRunAllTests}
             disabled={isRunning}
@@ -263,7 +280,7 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
                 Run All Tests
               </>
             )}
-          </button>
+          </Button>
         </div>
       </div>
       <ResultsTable results={results} />

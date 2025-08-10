@@ -81,10 +81,10 @@ useEffect(() => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">JSON Testcase Editor</h1>
+      <h1 className="text-2xl font-bold text-gray-500 mb-6">JSON Testcase Editor</h1>
       <div className="bg-white rounded-lg shadow-md p-6 mb-8">
         <div className="mb-4 bg-gray-50">
-            <Label className="mb-1 block">Testcase JSON</Label>
+            {/* <Label className="mb-1 block">Testcase JSON</Label> */}
             <div className="rounded-md border bg-white">
             <JSONInput
                 id="json-editor"
@@ -109,7 +109,7 @@ useEffect(() => {
           </ul>
         </div>
       )}
-        <Button variant="secondary" onClick={handleSave} disabled={isSubmitting}>
+        <Button variant="secondary" onClick={handleSave} disabled={isSubmitting} className='bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 text-white'>
             {isSubmitting ? (
                 <span className="flex items-center gap-2">
                 <Loader2Icon className="h-4 w-4 animate-spin" />

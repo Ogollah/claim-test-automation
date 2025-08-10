@@ -96,7 +96,7 @@ export default function TestcaseDetails({ title, testCases, onRunTests, isRunnin
               </FormItem>
             )}
           />
-          <Button type="submit" disabled={isRunning} className={`inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${
+          <Button type="button" disabled={isRunning} className={`inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${
               isRunning
                 ? 'bg-gray-400 cursor-not-allowed'
                 : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
