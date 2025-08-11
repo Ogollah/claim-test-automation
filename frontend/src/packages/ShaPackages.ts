@@ -39,7 +39,7 @@ export const INTERVENTION_CODES = {
     { code: 'SHA-03-005', name: 'Intensive care Burns Unit' }
   ],
   'SHA-05': [
-    { code: 'SHA-05-001', name: 'Consultation and prescription and issuing of glasses' },
+    { code: 'SHA-05-001', name: 'Consultation and prescription and issuing of glasses' }
   ],
   'SHA-07': [
     { code: 'SHA-07-001', name: ' Management of medical cases' },
@@ -112,7 +112,21 @@ export const INTERVENTION_CODES = {
   'SHA-13':[
     {code: 'SHA-13-001', name:'Palliative Care'}
   ],
-  'SHA-':[
-    {code: 'SHA-13-001', name:'Palliative Care'}
+  'SHA-09': [
+    { code: 'SHA-09-001', name: 'CT Head with Contrast'},
+    { code: 'SHA-09-012', name: 'CT Head non contrast' },
+    { code: 'SHA-09-055', name: 'MRI Knee joint' },
+    { code: 'SHA-09-065', name: 'MRI Neck and Post nasal space' },
+    { code: 'SHA-09-074', name: 'Fluroscopy' },
+    { code: 'SHA-09-077', name: 'Echo: Transthoracic echocardiography_adult'}
   ],
+  'SHA-19':[
+    {code: 'SHA-19-309', name:'Laparotomy: Ovarian cystectomy'},
+    {code: 'SHA-19-324', name:'Operative Laparoscopy: Ectopic Pregnancy'},
+    {code: 'SHA-19-463', name:'	Total hip replacement (THR) (Including implants, MUST have a peer review of three doctors)'},
+    {code: 'SHA-19-464', name:'Total knee replacement (TKR) (Including implants, MUST have a peer review of three doctors)'},
+    {code: 'SHA-19-474', name:'Laparotomy: Intussusception'},
+    {code: 'SHA-19-518', name:'Orchidopexy bilateral'},
+    {code: 'SHA-19-520', name:'Penectomy'}
+  ]
 };
