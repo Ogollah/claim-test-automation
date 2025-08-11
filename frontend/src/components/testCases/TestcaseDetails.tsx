@@ -16,6 +16,7 @@ import {
 import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Play, PlayIcon } from 'lucide-react';
+import { Label } from '../ui/label';
 
 interface TestcaseDetailsProps {
   title: string;
@@ -45,7 +46,7 @@ export default function TestcaseDetails({ title, testCases, onRunTests, isRunnin
     if (onRunTests) {
       onRunTests(data.items);
     } else {
-      toast("You selected the following items", {
+      toast.info("You selected the following items", {
         description: (
           <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
             <code className="text-white">
@@ -75,7 +76,11 @@ export default function TestcaseDetails({ title, testCases, onRunTests, isRunnin
                       className="flex flex-row items-start space-x-3 space-y-0"
                     >
                       <FormControl>
+                     <Label className="hover:bg-accent/50 flex items-start gap-3 rounded-lg border p-3 has-[[aria-checked=true]]:border-blue-600 has-[[aria-checked=true]]:bg-blue-50 dark:has-[[aria-checked=true]]:border-blue-900 dark:has-[[aria-checked=true]]:bg-blue-950">
                         <Checkbox
+                          id={item.formData.id}
+                          defaultChecked
+                          className="data-[state=checked]:border-blue-600 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white dark:data-[state=checked]:border-blue-700 dark:data-[state=checked]:bg-blue-700"
                           checked={field.value?.includes(item.formData.title)}
                           onCheckedChange={(checked) => {
                             return checked
@@ -85,10 +90,14 @@ export default function TestcaseDetails({ title, testCases, onRunTests, isRunnin
                                 );
                           }}
                         />
+                        <div className="grid gap-1.5 font-normal">
+                          <p className="text-muted-foreground text-sm leading-none font-normal">
+                            {item.formData.title}
+                          </p>
+                        </div>
+                      </Label>
+
                       </FormControl>
-                      <FormLabel className="font-normal">
-                        {item.formData.title}
-                      </FormLabel>
                     </FormItem>
                   ))}
                 </div>

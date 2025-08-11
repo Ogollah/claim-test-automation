@@ -13,6 +13,7 @@ import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { PlayIcon } from 'lucide-react';
+import { toast } from 'sonner';
 
 type TestRunnerProps = {
   isRunning?: boolean;
@@ -167,7 +168,7 @@ useEffect(() => {
   const runTests = async (selectedItems: string[], type: 'positive' | 'negative') => {
 
     if (selectedItems.length === 0) {
-      alert(`Please select at least one ${type} test case to run`);
+      toast.error(`Please select at least one ${type} test case to run`);
       return;
     }
 
@@ -221,7 +222,7 @@ useEffect(() => {
               <SelectTrigger id="package" className="w-full">
                 <SelectValue placeholder="Select a package" />
               </SelectTrigger>
-              <SelectContent className='text-white bg-blue-600'>
+              <SelectContent className=''>
                 {packages.map((pkg) => (
                   <SelectItem key={pkg.id} value={pkg.id}>
                     {pkg.name} ({pkg.code})
