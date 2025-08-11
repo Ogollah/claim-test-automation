@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Provider, TestCase, Patient, PatientBundle, FormatPatient, FormatProvider, ProviderItem, Practitioner, PractitionerBundle, ProviderBundle, PractitionerItem, Intervention, Package } from './types';
+import { Provider, TestCase, Patient, PatientBundle, FormatPatient, FormatProvider, ProviderItem, Practitioner, PractitionerBundle, ProviderBundle, PractitionerItem, Intervention, Package, TestCaseItem } from './types';
 import { hiePatients, patientPayload, patients } from './patient';
 import { HIE_URL } from './utils';
 import { hieProviders, providerPayload } from './providers';
@@ -448,15 +448,7 @@ export const postPackage = async(data: Package) => {
 }
 
 // Test case
-interface TestCaseItem {
-  id?: number,
-  intervention_id: number,
-  name: string, 
-  description: string,
-  test_config:  TestCase,
-  code: string,
-  error?: {message:string}
-}
+
 export interface Error{
   error: {message: string}
 }
@@ -479,12 +471,21 @@ export const searchTestCase = async(search: string) => {
 }
 
 export const postTestCase = async(data: TestCaseItem) => {
-  console.log('-->testcase data:', data);
   
   try {
     const resp = await api.post<TestCaseItem>("/api/test-cases", data);
     return resp;
   } catch (error) {
     console.error(error);
+  }
+}
+
+export const getTestCaseByCode = async(code: string) => {
+  try {
+    const resp = await api.get<TestCaseItem>(`/api/test-cases/${code}`);
+    return resp;
+  } catch (error) {
+    console.error(error);
+    
   }
 }

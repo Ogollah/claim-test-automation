@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/form";
 import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { PlayIcon } from 'lucide-react';
+import { Play, PlayIcon } from 'lucide-react';
 
 interface TestcaseDetailsProps {
   title: string;
@@ -59,7 +59,7 @@ export default function TestcaseDetails({ title, testCases, onRunTests, isRunnin
 
   return (
     <div className="border border-gray-200 rounded-lg p-4">
-      <h2 className="text-lg font-semibold mb-4">{title}</h2>
+      <h2 className="text-lg font-semibold mb-4 text-gray-500">{title}</h2>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <FormField
@@ -67,7 +67,7 @@ export default function TestcaseDetails({ title, testCases, onRunTests, isRunnin
             name="items"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Select Test Cases</FormLabel>
+                <FormLabel className='text-gray-500'>Select Test Cases</FormLabel>
                 <div className="grid grid-cols-2 gap-4">
                   {items.map((item) => (
                     <FormItem
@@ -101,7 +101,7 @@ export default function TestcaseDetails({ title, testCases, onRunTests, isRunnin
                 ? 'bg-gray-400 cursor-not-allowed'
                 : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
             }`}>
-            <PlayIcon className="-ml-1 mr-2 h-5 w-5" />
+            <Play className="-ml-1 mr-2 h-5 w-5 " />
             {isRunning ? 'Running...' : 'Run selected tests'}
           </Button>
         </form>

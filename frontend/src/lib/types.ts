@@ -266,3 +266,13 @@ export interface Intervention {
   name: string, 
   code: string, 
 }
+
+export interface TestCaseItem {
+  id?: number,
+  intervention_id: number,
+  name: string, 
+  description: string,
+  test_config:  TestCase,
+  code: string,
+  error?: {message:string}
+}

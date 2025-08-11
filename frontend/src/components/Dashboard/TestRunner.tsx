@@ -253,49 +253,53 @@ const [selectedDates, setSelectedDates] = useState<{
 
         {/* Dates help fix this part*/}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-gray-500">
-          {["billableStart", "billableEnd", "created"].map((key) => {
-            const label =
-              key === "billableStart"
-                ? "Billable Start Date"
-                : key === "billableEnd"
-                ? "Billable End Date"
-                : "Created Date"
+            {["billableStart", "billableEnd", "created"].map((key) => {
+              const label =
+                key === "billableStart"
+                  ? "Billable Start Date"
+                  : key === "billableEnd"
+                  ? "Billable End Date"
+                  : "Created Date";
 
-            const dateValue = selectedDates[key as keyof typeof selectedDates] as Date | undefined
-            const isCreated = key === "created"
+              const dateValue = selectedDates[key as keyof typeof selectedDates]
+                ? new Date(selectedDates[key as keyof typeof selectedDates] as string)
+                : undefined;
 
-            return (
-              <div key={key} className="flex flex-col gap-2">
-                <Label htmlFor={key}>{label}</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="justify-start text-left font-normal"
-                      disabled={isCreated}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dateValue ? format(dateValue, "PPP") : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={dateValue}
-                      onSelect={(date) =>
-                        setSelectedDates((prev) => ({
-                          ...prev,
-                          [key]: date ?? undefined,
-                        }))
-                      }
-                      captionLayout="dropdown"
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            )
-          })}
+              const isCreated = key === "created";
+
+              return (
+                <div key={key} className="flex flex-col gap-2">
+                  <Label htmlFor={key}>{label}</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="justify-start text-left font-normal"
+                        disabled={isCreated}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {dateValue ? format(dateValue, "PPP") : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={dateValue}
+                        onSelect={(date) =>
+                          setSelectedDates((prev) => ({
+                            ...prev,
+                            [key]: date ? format(date, "yyyy-MM-dd") : undefined,
+                          }))
+                        }
+                        captionLayout="dropdown"
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              );
+            })}
+
         </div>
 
 
@@ -337,28 +341,47 @@ const [selectedDates, setSelectedDates] = useState<{
               </div>
             ))}
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            {["serviceStart", "serviceEnd"].map((key) => (
-              <div key={key}>
-                <Label>
-                  {key === "serviceStart"
-                    ? "Service Start Date"
-                    : "Service End Date"}
-                </Label>
-                <Input
-                  type="date"
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  value={currentIntervention[key]}
-                  onChange={(e) =>
-                    setCurrentIntervention({
-                      ...currentIntervention,
-                      [key]: e.target.value,
-                    })
-                  }
-                />
-              </div>
-            ))}
+              {["serviceStart", "serviceEnd"].map((key) => {
+                const label =
+                  key === "serviceStart" ? "Service Start Date" : "Service End Date"
+
+                const dateValue = currentIntervention[key]
+                  ? new Date(currentIntervention[key])
+                  : undefined
+
+                return (
+                  <div key={key} className="flex flex-col gap-2">
+                    <Label htmlFor={key}>{label}</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="justify-start text-left font-normal"
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {dateValue ? format(dateValue, "PPP") : <span>Pick a date</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={dateValue}
+                          onSelect={(date) =>
+                            setCurrentIntervention((prev) => ({
+                              ...prev,
+                              [key]: date ? format(date, "yyyy-MM-dd") : "",
+                            }))
+                          }
+                          captionLayout="dropdown"
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                )
+              })}
+
             <div className="flex items-end">
               <Button
                 type="button"

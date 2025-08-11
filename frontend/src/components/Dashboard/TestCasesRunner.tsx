@@ -3,8 +3,8 @@ import { use, useEffect, useState } from 'react';
 import { StopIcon, TrashIcon } from '@heroicons/react/16/solid';
 import UseSelector from '@/components/Dashboard/UseSelector';
 import InterventionSelector from '@/components/Dashboard/InterventionSelector';
-import { InterventionItem, Package, TestCase } from '@/lib/types';
-import { getInterventionByPackageId, getPackages, runTestSuite, TestResult } from '@/lib/api';
+import { InterventionItem, Package, TestCase, TestCaseItem } from '@/lib/types';
+import { getInterventionByPackageId, getPackages, getTestCaseByCode, runTestSuite, TestResult } from '@/lib/api';
 import TestcaseDetails from '@/components/testCases/TestcaseDetails';
 import ResultsTable from '@/components/Dashboard/ResultsTable';
 import { DEFAULT_PACKAGE } from '@/packages/ShaPackages';
@@ -21,23 +21,16 @@ type TestRunnerProps = {
 
 export default function TestCasesRunner({ isRunning = false, onRunTests }: TestRunnerProps) {
   const [selectedPackage, setSelectedPackage] = useState(DEFAULT_PACKAGE);
-  const [selectedUse, setSelectedUse] = useState<any>(null);
   const [selectedIntervention, setSelectedIntervention] = useState('');
   const [runningSection, setRunningSection] = useState<string | null>(null);
   const [availableInterventions, setAvailableInterventions] = useState<any[]>([]);
   const [results, setResults] = useState<TestResult[]>([]);
-  const [packages, setPackages] = useState<Package[]>([])
+  const [packages, setPackages] = useState<Package[]>([]);
+  const [testCases, setTestCases] = useState<TestCaseItem[]>([]);
   const [currentTestCases, setCurrentTestCases] = useState<{
     positive: TestCase[];
     negative: TestCase[];
   }>({ positive: [], negative: [] });
-  const [currentIntervention, setCurrentIntervention] = useState({
-    serviceQuantity: '',
-    unitPrice: '',
-    serviceStart: '',
-    serviceEnd: '',
-  });
-
   useEffect(() => {
     const fetchPackages = async () => {
       try {
@@ -69,35 +62,38 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
     }
   }, [selectedPackage]);
 
-  useEffect(() => {
-    if (selectedIntervention && selectedPackage) {
-      const packageData = testCasesPackages.find(pkg => pkg.id === selectedPackage);
-      if (packageData) {
-        const interventionData = packageData.SHA01InteventionTestCases.find(
-          item => item.code === selectedIntervention
-        );
-        if (interventionData) {
-          setCurrentTestCases({
-            positive: interventionData.positive || [],
-            negative: interventionData.negative || []
-          });
-        } else {
-          setCurrentTestCases({ positive: [], negative: [] });
-        }
-      } else if (selectedPackage) {
-        const packageData = testCasesPackages.find(pkg => pkg.id === selectedPackage);
-        if (packageData) {
-          const allPositive = packageData.SHA01InteventionTestCases.flatMap(item => item.positive || []);
-          const allNegative = packageData.SHA01InteventionTestCases.flatMap(item => item.negative || []);
-          setCurrentTestCases({
-            positive: allPositive,
-            negative: allNegative
-          });
-        }
-      }
+useEffect(() => {
+  const fetchTestCases = async () => {
+    try {
+      const testCase = await getTestCaseByCode(selectedIntervention);
+      setTestCases(testCase?.data || []);
+    } catch (error) {
+      console.error("--> Error fetching test cases: ", error);
     }
-  }, [selectedIntervention, selectedPackage]);
+  };
+  if (selectedIntervention) {
+    fetchTestCases();
+  }
+}, [selectedIntervention]);
 
+useEffect(() => {
+  if (testCases && testCases.length) {
+    const interventionPositive = testCases.find(
+      item => item.description === 'positive'
+    )?.test_config;
+
+    const interventionNegative = testCases.find(
+      item => item.description === 'negative'
+    )?.test_config;
+
+    setCurrentTestCases({
+      positive: interventionPositive ? [interventionPositive] : [],
+      negative: interventionNegative ? [interventionNegative] : []
+    });
+  } else {
+    setCurrentTestCases({ positive: [], negative: [] });
+  }
+}, [testCases]);
 
   const buildTestPayload = (tests: string[], type: 'positive' | 'negative') => {
   const allTestCases = [
@@ -225,7 +221,7 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
               <SelectTrigger id="package" className="w-full">
                 <SelectValue placeholder="Select a package" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className='text-white bg-blue-600'>
                 {packages.map((pkg) => (
                   <SelectItem key={pkg.id} value={pkg.id}>
                     {pkg.name} ({pkg.code})
