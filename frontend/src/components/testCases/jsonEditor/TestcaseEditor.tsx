@@ -6,15 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import Ajv from 'ajv';
-    import JSONInput from 'react-json-editor-ajrm';
-    import locale    from 'react-json-editor-ajrm/locale/en';
+import JSONInput from 'react-json-editor-ajrm';
+import locale    from 'react-json-editor-ajrm/locale/en';
 import { testCaseSchema } from '@/lib/test/schema';
 import { testCaseSample } from '@/lib/test/test';
 import { Loader2Icon } from 'lucide-react';
-import InterventionSelector from '@/components/Dashboard/InterventionSelector';
-import { INTERVENTION_CODES, TEST_PACKAGES } from '@/packages/ShaPackages';
-import { InterventionItem } from '@/lib/types';
-import { postTestCase } from '@/lib/api';
+import { getInterventionByCode, postTestCase } from '@/lib/api';
 
 const ajv = new Ajv({ allErrors: true });
 
@@ -22,11 +19,6 @@ export default function TestcaseEditor() {
     const [jsonData, setJsonData] = useState(testCaseSample);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [validationErrors, setValidationErrors] = useState<string[]>([]);
-    const [selectedPackage, setSelectedPackage] = useState('');
-    const [selectedIntervention, setSelectedIntervention] = useState('');
-    const [interventions, setInterventions] = useState<InterventionItem[]>([]);
-    const [total, setTotal] = useState<number>(0);
-    const [availableInterventions, setAvailableInterventions] = useState<any[]>([]);
 
   const validateJson = (data: any) => {
     const validate = ajv.compile(testCaseSchema);
@@ -44,13 +36,6 @@ export default function TestcaseEditor() {
     return true;
   };
 
-useEffect(() => {
-    if (selectedPackage) {
-    setAvailableInterventions(INTERVENTION_CODES[selectedPackage as keyof typeof INTERVENTION_CODES] || []);
-    setSelectedIntervention('');
-    }
-}, [selectedPackage]);
-  
 
   const handleSave = async () => {
     if (!validateJson(jsonData)) {
@@ -61,19 +46,33 @@ useEffect(() => {
     setIsSubmitting(true);
 
     try {
+      const code = jsonData.formData.productOrService[0].code;
+      const resp = await getInterventionByCode(code);
+      if (resp?.status === 200){
+        const interventionId = resp.data[0].id;
+
       const response = await postTestCase
       (
         {
+          intervention_id: interventionId,
           name: jsonData.formData?.title || 'Unnamed Testcase',
           description: jsonData.formData?.test || '',
+          code: code,
           test_config: jsonData,
-          code: jsonData.formData.productOrService[0].code
         }
       );
-
+      console.log("console response status:", response
+      );
+      
+      if (response?.status === 201){
       toast.success('Testcase saved successfully');
+      } else{
+      toast.error(response?.data?.error?.message);
+      console.error("error: ", (response?.data?.error?.message));
+      }
+    }
     } catch (error) {
-      toast.error('Error saving testcase');
+      console.error('Error saving testcase', error);
     } finally {
       setIsSubmitting(false);
     }

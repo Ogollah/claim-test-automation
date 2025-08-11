@@ -409,6 +409,16 @@ export const getInterventionByPackageId = async(package_id: number) => {
   }
 }
 
+export const getInterventionByCode = async(code: string) => {
+  try {
+    const resp = await api.get(`/api/interventions/code/${code}`);
+    return resp;
+  } catch (error) {
+    console.error('--> Error getting intervention', error);
+  }
+}
+
+
 // Package
 export const getPackages = async () => {
   try {
@@ -440,12 +450,16 @@ export const postPackage = async(data: Package) => {
 // Test case
 interface TestCaseItem {
   id?: number,
+  intervention_id: number,
   name: string, 
   description: string,
-  test_config:  TestCase;
-  code: string
+  test_config:  TestCase,
+  code: string,
+  error?: {message:string}
 }
-
+export interface Error{
+  error: {message: string}
+}
 export const getTestcases = async () => {
   try {
     const resp = await api.get<TestCaseItem[]>("/api/test-cases");
@@ -465,6 +479,8 @@ export const searchTestCase = async(search: string) => {
 }
 
 export const postTestCase = async(data: TestCaseItem) => {
+  console.log('-->testcase data:', data);
+  
   try {
     const resp = await api.post<TestCaseItem>("/api/test-cases", data);
     return resp;
