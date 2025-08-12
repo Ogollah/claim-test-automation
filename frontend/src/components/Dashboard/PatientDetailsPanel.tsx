@@ -71,7 +71,7 @@ export default function PatientDetailsPanel({
 
   return (
     <div className="border border-gray-200 rounded-lg p-4">
-      <h3 className="text-lg font-medium text-gray-800 mb-2">Patient Details</h3>
+      <h3 className="text-lg font-medium text-gray-500 mb-2">Patient Details</h3>
 
       <div className="mb-4 space-y-4">
         <Popover open={open} onOpenChange={setOpen}>
@@ -134,16 +134,16 @@ export default function PatientDetailsPanel({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-sm font-medium text-gray-500">Name</p>
-              <p className="text-sm text-gray-900">{patient.name}</p>
+              <p className="text-sm text-gray-500">{patient.name}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-gray-500">Gender</p>
-              <p className="text-sm text-gray-900">{patient.gender}</p>
+              <p className="text-sm text-gray-500">{patient.gender}</p>
             </div>
           </div>
           <div>
             <p className="text-sm font-medium text-gray-500">Date of Birth</p>
-            <p className="text-sm text-gray-900">{patient.birthDate}</p>
+            <p className="text-sm text-gray-500">{patient.birthDate}</p>
           </div>
         </div>
       )}

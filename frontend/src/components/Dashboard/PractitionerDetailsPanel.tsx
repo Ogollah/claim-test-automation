@@ -73,12 +73,12 @@ export default function PractitionerDetailsPanel({ practitioner, onSelectPractit
 
 
   return (
-    <div className="border border-gray-200 rounded-lg p-4 bg-white">
+    <div className="border border-gray-200 rounded-lg p-4 bg-white text-gray-500">
       <div 
-        className="flex justify-between items-center cursor-pointer"
+        className="flex justify-between items-center cursor-pointer text-gray-500"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <h3 className="text-lg font-medium text-gray-800">Practitioner Details</h3>
+        <h3 className="text-lg font-medium text-gray-500">Practitioner Details</h3>
         <svg
           className={`h-5 w-5 text-gray-500 transform transition-transform ${
             isExpanded ? 'rotate-180' : ''
@@ -95,7 +95,7 @@ export default function PractitionerDetailsPanel({ practitioner, onSelectPractit
       </div>
 
       {isExpanded && (
-        <div className="mt-4 space-y-4">
+        <div className="mt-4 space-y-4 text-gray-500">
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
               <Button
@@ -107,7 +107,7 @@ export default function PractitionerDetailsPanel({ practitioner, onSelectPractit
                 <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className=''>
+            <PopoverContent className='text-gray-500'>
               <Command>
                 <CommandInput
                 placeholder='Search practitioner...'
@@ -151,25 +151,25 @@ export default function PractitionerDetailsPanel({ practitioner, onSelectPractit
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm font-medium text-gray-500">Name</p>
-                  <p className="text-sm text-gray-900">{practitioner.name}</p>
+                  <p className="text-sm text-gray-500">{practitioner.name}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500">Gender</p>
-                  <p className="text-sm text-gray-900">{practitioner.gender}</p>
+                  <p className="text-sm text-gray-500">{practitioner.gender}</p>
                 </div>
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm font-medium text-gray-500">Status</p>
-                  <p className="text-sm text-gray-900">
+                  <p className="text-sm text-gray-500">
                     {practitioner.status ? (
-                      <span className="inline-flex items-center text-green-600">
+                      <span className="inline-flex items-center text-green-500">
                         <CheckCircleIcon className="h-4 w-4 mr-1" />
                         Active
                       </span>
                     ) : (
-                      <span className="inline-flex items-center text-red-600">
+                      <span className="inline-flex items-center text-red-500">
                         <XCircleIcon className="h-4 w-4 mr-1" />
                         Inactive
                       </span>
@@ -178,12 +178,12 @@ export default function PractitionerDetailsPanel({ practitioner, onSelectPractit
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500">Phone</p>
-                  <p className="text-sm text-gray-900">{practitioner.phone || 'Not specified'}</p>
+                  <p className="text-sm text-gray-500">{practitioner.phone || 'Not specified'}</p>
                 </div>
               </div>
 
               <div className="pt-2">
-                <h4 className="text-sm font-medium text-gray-700 mb-1">Validation</h4>
+                <h4 className="text-sm font-medium text-gray-500 mb-1">Validation</h4>
                 {validatePractitioner(practitioner).length > 0 ? (
                   <ul className="text-sm text-red-600 space-y-1">
                     {validatePractitioner(practitioner).map((error, index) => (

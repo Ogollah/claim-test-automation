@@ -253,3 +253,26 @@ export interface FhirProviderResource {
   identifier: Identifier[];
   extension: Extension[]
 }
+
+export interface Package {
+  id?: number,
+  name: string,
+  code: string
+}
+// Intervention
+export interface Intervention {
+  id?: number,
+  package_id: number,
+  name: string, 
+  code: string, 
+}
+
+export interface TestCaseItem {
+  id?: number,
+  intervention_id: number,
+  name: string, 
+  description: string,
+  test_config:  TestCase,
+  code: string,
+  error?: {message:string}
+}
