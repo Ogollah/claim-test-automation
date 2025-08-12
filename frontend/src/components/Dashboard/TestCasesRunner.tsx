@@ -125,7 +125,7 @@ useEffect(() => {
 
     const allSelectedTests = [...currentTestCases.positive, ...currentTestCases.negative];
     if (allSelectedTests.length === 0) {
-      alert('Please select at least one test case to run');
+      toast.error('Please select at least one test case to run');
       return;
     }
 
@@ -166,35 +166,30 @@ useEffect(() => {
   };
 
   const runTests = async (selectedItems: string[], type: 'positive' | 'negative') => {
-
-    if (selectedItems.length === 0) {
+    
+    if (selectedItems.length === 0 ) {
       toast.error(`Please select at least one ${type} test case to run`);
       return;
     }
 
     const testConfig = {
-      [type]: buildTestPayload(selectedItems, type)
+      [type]: buildTestPayload(selectedItems, type),
     };
+
     console.log(`Running ${type} tests with config:`, testConfig);
 
-    if (onRunTests) {
-      setRunningSection(type);
-      await onRunTests(testConfig);
-      setRunningSection(null);
-    }
+    try {
+      const allTests = testConfig[type];
 
-        try {
-      const allTests = [
-        ...testConfig.positive ? testConfig.positive : [],
-        ...testConfig.negative ? testConfig.negative : []
-      ];
       for (const [index, testCase] of allTests.entries()) {
-        
+        console.log(`Running test ${index + 1}/${allTests.length}: ${testCase.formData.title}`);
+        console.log('Test case details:', testCase);
+
         const testResult = await runTestSuite(testCase);
-        setResults(prev => [...prev, ...testResult]);
+        setResults((prev) => [...prev, ...testResult]);
 
         if (index < allTests.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 3000));
+          await new Promise((resolve) => setTimeout(resolve, 3000));
         }
       }
     } catch (error) {
