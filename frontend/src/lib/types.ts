@@ -276,3 +276,16 @@ export interface TestCaseItem {
   code: string,
   error?: {message:string}
 }
+
+export interface Result {
+  id?: number,
+  testcase_id: number,
+  result_status: number,
+  claim_id?: string,
+  response_id?: string,
+  created_date?: string,
+  updates_date?: string,
+  message?: string,
+  detail?: string,
+  status_code?: string
+}

@@ -96,6 +96,7 @@ useEffect(() => {
   }
 }, [testCases]);
 
+
   const buildTestPayload = (tests: string[], type: 'positive' | 'negative') => {
   const allTestCases = [
     ...currentTestCases.positive,
@@ -150,8 +151,11 @@ useEffect(() => {
       for (const [index, testCase] of allTests.entries()) {
         console.log(`Running test ${index + 1}/${allTests.length}: ${testCase.formData.title}`);
         console.log('Test case details:', testCase);
+
+      const response = await getTestCaseByCode(testCase.formData.productOrService[0].code);
+      const testCaseData = response?.data || [];
         
-        const testResult = await runTestSuite(testCase);
+        const testResult = await runTestSuite(testCase, testCaseData);
         setResults(prev => [...prev, ...testResult]);
 
         if (index < allTests.length - 1) {
@@ -185,7 +189,10 @@ useEffect(() => {
         console.log(`Running test ${index + 1}/${allTests.length}: ${testCase.formData.title}`);
         console.log('Test case details:', testCase);
 
-        const testResult = await runTestSuite(testCase);
+      const response = await getTestCaseByCode(testCase.formData.productOrService[0].code);
+      const testCaseData = response?.data || [];
+
+        const testResult = await runTestSuite(testCase, testCaseData);
         setResults((prev) => [...prev, ...testResult]);
 
         if (index < allTests.length - 1) {

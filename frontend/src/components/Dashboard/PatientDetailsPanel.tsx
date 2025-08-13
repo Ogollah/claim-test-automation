@@ -80,7 +80,7 @@ export default function PatientDetailsPanel({
               variant="outline"
               role="combobox"
               aria-expanded={open}
-              className="w-[300px] justify-between"
+              className="w-full justify-between text-pretty md:text-balance"
             >
               {patient
                 ? `${patient.name} (${patient.gender}, ${getAge(patient.birthDate)} yrs)`

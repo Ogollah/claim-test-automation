@@ -1,4 +1,4 @@
-import { TestResult } from '@/lib/api';
+import { TestResult } from '@/lib/types';
 import { CheckCircleIcon, XCircleIcon, ChevronDownIcon, ChevronRightIcon, ArrowDownTrayIcon } from '@heroicons/react/16/solid';
 import { useState } from 'react';
 
@@ -35,11 +35,14 @@ export default function ResultsTable({ results }: { results: TestResult[] }) {
     URL.revokeObjectURL(url);
   };
 
-  const outcome = (result: TestResult) => {
+const outcome = (result: TestResult) => {
     const entry = result.details.response?.entry?.find((e: any) => e.resource?.resourceType === 'ClaimResponse');
-    const outcome = entry?.resource?.outcome || 'unknown';
+    const ext = entry?.resource.extension.find((i: any) => i.url.endsWith('claim-state-extension'));
+    const valueCode = ext?.valueCodeableConcept.coding.find((s: any) => s.system.endsWith('claim-state'));
+    const outcome = valueCode?.display  || '';
     return outcome;
-  }
+}
+
 
   return (
     <div className="bg-white shadow overflow-hidden sm:rounded-lg">
