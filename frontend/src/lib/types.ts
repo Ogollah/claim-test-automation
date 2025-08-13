@@ -47,27 +47,6 @@ interface ProviderDetailsPanelProps {
   onSelectProvider: (provider: Provider) => void
 }
 
-type TestResult = {
-  id: string;
-  name: string;
-  status: 'passed' | 'failed' | 'running';
-  duration: number;
-  timestamp: string;
-  message?: string;
-  claimId?: string;
-  details: {
-    request: any;
-    response?: any;
-    error?: string;
-    errorMessage?: string;
-    validationErrors?: {
-      path: string;
-      message: string;
-      
-    }[];
-  };
-};
-
 export type InterventionItem = {
   id: string;
   packageId: string;
@@ -289,3 +268,90 @@ export interface Result {
   detail?: string,
   status_code?: string
 }
+
+// Interface for the FHIR Bundle in the response
+export interface FhirBundle {
+  resourceType: string;
+  id: string;
+  meta: {
+    profile: string[];
+  };
+  type: string;
+  timestamp: string;
+  entry: any[];
+}
+
+// Interface for the server response data
+export interface ApiResponseData {
+  resourceType: string;
+  id: string;
+  meta?: {
+    profile?: string[];
+  };
+  type?: string;
+  timestamp?: string;
+  entry?: any[];
+  responseTime?: number;
+  outcome?: string;
+}
+
+// Enhanced server response interface to include error details
+export interface ApiResponse {
+  success: boolean;
+  message: string;
+  data?: ApiResponseData;
+  fhirBundle?: FhirBundle;
+  timestamp?: string;
+  responseTime?: number;
+  validation_errors?: {
+    path: string;
+    message: string;
+  }[];
+  error?: string | object; // Added error field to match backend response
+  status?: number; // Added status field
+}
+
+// Updated TestResult interface with better error handling
+export interface TestResult {
+  id: string;
+  name: string;
+  use?: { id: string }; 
+  status: 'passed' | 'failed' | 'running';
+  duration: number;
+  timestamp: string;
+  message?: string;
+  claimId?: string;
+  details: {
+    request: any;
+    response?: ApiResponseData;
+    fhirBundle?: FhirBundle;
+    error?: any;
+    errorMessage?: string;
+    validationErrors?: {
+      path: string;
+      message: string;
+    }[];
+    statusCode?: number;
+  };
+}
+
+// type TestResult = {
+//   id: string;
+//   name: string;
+//   status: 'passed' | 'failed' | 'running';
+//   duration: number;
+//   timestamp: string;
+//   message?: string;
+//   claimId?: string;
+//   details: {
+//     request: any;
+//     response?: any;
+//     error?: string;
+//     errorMessage?: string;
+//     validationErrors?: {
+//       path: string;
+//       message: string;
+      
+//     }[];
+//   };
+// };
