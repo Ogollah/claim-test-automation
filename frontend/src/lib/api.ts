@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Provider, TestCase, Patient, PatientBundle, FormatPatient, FormatProvider, ProviderItem, Practitioner, PractitionerBundle, ProviderBundle, PractitionerItem, Intervention, Package, TestCaseItem, Result, ApiResponse, TestResult } from './types';
+import { Provider, Patient, PatientBundle, FormatPatient, FormatProvider, ProviderItem, Practitioner, PractitionerBundle, ProviderBundle, PractitionerItem, Intervention, Package, TestCaseItem, Result, ApiResponse, TestResult } from './types';
 import { hiePatients, patientPayload, patients } from './patient';
 import { HIE_URL } from './utils';
 import { hieProviders, providerPayload } from './providers';
@@ -143,7 +143,7 @@ export const runTestSuite = async (testData: any, testCase?: TestCaseItem[]): Pr
     const errorResult: TestResult = {
       id: 'error-' + Date.now().toString(),
       name: testData?.formData?.title || 'Claim Submission',
-      status: testData.formData.test != "positive" ? 'passed' : 'failed',
+      status: testData.formData.test === "negative" ? 'passed' : 'failed',
       use: testData?.formData?.use,
       duration: 0,
       timestamp: new Date().toISOString(),
