@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Provider, TestCase, Patient, PatientBundle, FormatPatient, FormatProvider, ProviderItem, Practitioner, PractitionerBundle, ProviderBundle, PractitionerItem, Intervention, Package, TestCaseItem } from './types';
+import { Provider, Patient, PatientBundle, FormatPatient, FormatProvider, ProviderItem, Practitioner, PractitionerBundle, ProviderBundle, PractitionerItem, Intervention, Package, TestCaseItem, Result, ApiResponse, TestResult } from './types';
 import { hiePatients, patientPayload, patients } from './patient';
 import { HIE_URL } from './utils';
 import { hieProviders, providerPayload } from './providers';
@@ -10,78 +10,12 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json"
   }
-})
+});
 
-// Interface for the FHIR Bundle in the response
-interface FhirBundle {
-  resourceType: string;
-  id: string;
-  meta: {
-    profile: string[];
-  };
-  type: string;
-  timestamp: string;
-  entry: any[];
-}
-
-// Interface for the server response data
-interface ApiResponseData {
-  resourceType: string;
-  id: string;
-  meta?: {
-    profile?: string[];
-  };
-  type?: string;
-  timestamp?: string;
-  entry?: any[];
-  responseTime?: number;
-  outcome?: string;
-}
-
-// Enhanced server response interface to include error details
-interface ApiResponse {
-  success: boolean;
-  message: string;
-  data?: ApiResponseData;
-  fhirBundle?: FhirBundle;
-  timestamp?: string;
-  responseTime?: number;
-  validation_errors?: {
-    path: string;
-    message: string;
-  }[];
-  error?: string | object; // Added error field to match backend response
-  status?: number; // Added status field
-}
-
-// Updated TestResult interface with better error handling
-export interface TestResult {
-  id: string;
-  name: string;
-  use?: { id: string }; 
-  status: 'passed' | 'failed' | 'running';
-  duration: number;
-  timestamp: string;
-  message?: string;
-  claimId?: string;
-  details: {
-    request: any;
-    response?: ApiResponseData;
-    fhirBundle?: FhirBundle;
-    error?: any;
-    errorMessage?: string;
-    validationErrors?: {
-      path: string;
-      message: string;
-    }[];
-    statusCode?: number;
-  };
-}
-
-export const runTestSuite = async (testData: any): Promise<TestResult[]> => {
+export const runTestSuite = async (testData: any, testCase?: TestCaseItem[]): Promise<TestResult[]> => {
   try {
     const startTime = Date.now();
-    const response = await axios.post<ApiResponse>(`${API_BASE_URL}/api/claims/submit`, testData);
+    const response = await api.post<ApiResponse>(`${API_BASE_URL}/api/claims/submit`, testData);
     const endTime = Date.now();
     const responseTime = endTime - startTime;
 
@@ -96,18 +30,64 @@ export const runTestSuite = async (testData: any): Promise<TestResult[]> => {
     }
 
     // Create a test result from the API response
+    
+
     const claimEntry = response.data.fhirBundle?.entry?.find((entry: any) => entry.resource?.resourceType === 'Claim');
     const claimId = claimEntry?.resource?.id || 'unknown-claim-id';
+
+    const id = testCase?.find(i => i.name === testData?.formData?.title)?.id || 1;
+    const res = testData?.formData?.test === 'positive' ? 1 : 0;
+    const entry = response.data.data?.entry?.find((e: any) => e.resource?.resourceType === 'ClaimResponse');
+    const ext = entry?.resource.extension.find((i: any) => i.url.endsWith('claim-state-extension'));
+    const valueCode = ext?.valueCodeableConcept.coding.find((s: any) => s.system.endsWith('claim-state'));
+    const outcome = valueCode?.display  || '';
+
+    function delay(time: number) {
+      return new Promise(resolve => setTimeout(resolve, time));
+    }
+
+      const respOutcome = async (out: string) => {
+        await delay(1000);
+        const response = await api.get<any>(`${API_BASE_URL}/api/claims/${out}`);
+        
+        
+        const ext = response.data?.data?.extension?.find(
+          (i: any) => i.url.endsWith('claim-state-extension')
+        );
+
+        const valueCode = ext?.valueCodeableConcept?.coding?.find(
+          (s: any) => s.system.endsWith('claim-state')
+        );
+
+        const outcome = valueCode?.display || '';
+        return outcome;
+      };
+
     
+      
+  const finalOutcome = outcome !== 'Pending' ? outcome : await respOutcome(claimId);
+
+
+    console.log('success:', response?.data?.success);
+console.log('finalOutcome:', finalOutcome?.value);
+console.log('test:', testData?.formData?.test);
+
+
     const result: TestResult = {
       id: response.data.data?.id || 'generated-id',
       name: testData?.formData?.title || 'Claim Submission',
       use: testData?.formData?.use,
-      status: response.data.success && testData.formData.test != 'negative' ? 'passed' : 'failed',
+      status: (
+        response?.data?.success &&
+        (finalOutcome === "Approved" || finalOutcome === "Sent for payment processing") &&
+       ( testData?.formData?.test === 'positive' || testData?.formData?.test === "build")
+      ) ? 'passed' : 'failed',
+
       duration: responseTime,
       timestamp: new Date().toISOString(),
       message: response.data.message,
       claimId: claimId,
+      outcome: finalOutcome,
       details: {
         request: testData,
         response: response.data.data,
@@ -118,8 +98,30 @@ export const runTestSuite = async (testData: any): Promise<TestResult[]> => {
       }
     };
 
-    console.log('Test execution result:', result);
-    try {
+
+    const respResult: Result = {
+      testcase_id: id,
+      result_status: res,
+      message: finalOutcome,
+      detail: response.data.message,
+      status_code: response.status.toString(),
+      claim_id: claimId
+    };
+
+    if (id != null || id != undefined) {
+      try {
+        const resp = await createResult(respResult);
+        console.log('result response', resp);
+        
+      } catch (error) {
+        console.error(error);
+        
+      }
+    }
+
+
+  console.log('Test execution result:', result);
+  try {
   const crID = testData.formData?.patient?.id;
   const fID = testData.formData?.provider?.id;
   const puID = testData.formData?.practitioner?.id;
@@ -169,7 +171,7 @@ export const runTestSuite = async (testData: any): Promise<TestResult[]> => {
     const errorResult: TestResult = {
       id: 'error-' + Date.now().toString(),
       name: testData?.formData?.title || 'Claim Submission',
-      status: testData.formData.test != "positive" ? 'passed' : 'failed',
+      status: testData.formData.test === "negative" ? 'passed' : 'failed',
       use: testData?.formData?.use,
       duration: 0,
       timestamp: new Date().toISOString(),
@@ -184,6 +186,25 @@ export const runTestSuite = async (testData: any): Promise<TestResult[]> => {
       }
     };
 
+    const id = testCase?.find(i => i.name === testData?.formData?.title)?.id || 0;
+    const result = testData?.formData?.test === 'negative' ? 1 : 0;
+    const respData: Result = {
+      testcase_id: id,
+      result_status: result,
+      message: errorMessage,
+      detail: errorDetails,
+      status_code: statusCode
+    };
+    if (id != null || id != undefined) {
+      try {
+        const resp = await createResult(respData);
+        console.log('result response', resp);
+        
+      } catch (error) {
+        console.error(error);
+        
+      }
+    }
     return [errorResult];
   }
 };
@@ -482,7 +503,68 @@ export const postTestCase = async(data: TestCaseItem) => {
 
 export const getTestCaseByCode = async(code: string) => {
   try {
-    const resp = await api.get<TestCaseItem>(`/api/test-cases/${code}`);
+    const resp = await api.get<TestCaseItem[]>(`/api/test-cases/${code}`);
+    return resp;
+  } catch (error) {
+    console.error(error);
+    
+  }
+}
+
+export const updateTestCase = async(id: any, data: any) => {
+  try {
+    const resp = await api.put<TestCaseItem>(`/api/test-cases/update/${id}`, {result_status: data});
+    return resp;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// Results
+
+export const getResults = async ()=> {
+  try{
+    const resp = await api.get<Result[]>("/api/results");
+    return resp;
+  } catch (error) {
+    console.error(error);
+    
+  }
+} 
+
+export const getResultById = async(id: number) => {
+  try {
+    const resp = await api.get<Result>(`/api/results/${id}`);
+    return resp;
+  } catch (error) {
+    console.error(error);
+    
+  }
+}
+
+export const createResult = async(data: Result) => {
+  try {
+    const resp = await api.post<Result>("/api/results", data);
+    return resp;
+  } catch (error) {
+    console.error(error);
+    
+  }
+}
+
+export const updateResult = async(id: number, status: number) => {
+  try {
+    const resp = await api.put<Result>(`/api/results/${id}`, {result_status: status});
+    return resp;
+  } catch (error) {
+    console.error(error);
+    
+  }
+}
+
+export const deleteResult = async(id: number) => {
+  try {
+    const resp = await api.delete<Result>(`/api/results/${id}`);
     return resp;
   } catch (error) {
     console.error(error);

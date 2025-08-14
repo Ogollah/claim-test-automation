@@ -73,7 +73,7 @@ export default function PractitionerDetailsPanel({ practitioner, onSelectPractit
 
 
   return (
-    <div className="border border-gray-200 rounded-lg p-4 bg-white text-gray-500">
+    <div className="border border-gray-200 rounded-lg p-4 bg-white text-gray-500 w-full">
       <div 
         className="flex justify-between items-center cursor-pointer text-gray-500"
         onClick={() => setIsExpanded(!isExpanded)}
@@ -102,16 +102,16 @@ export default function PractitionerDetailsPanel({ practitioner, onSelectPractit
                 variant='outline'
                 role='combobox'
                 aria-expanded={open}
-                className='block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md border'>
+                className='w-full justify-between text-pretty md:text-balance'>
                   {practitioner? `${practitioner.name}`:'Select practitioner'}
                 <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className='text-gray-500'>
+            <PopoverContent className=' w-full p-0 text-gray-500'>
               <Command>
                 <CommandInput
                 placeholder='Search practitioner...'
-                className='h-9'
+                className='h-10'
                 onValueChange={(val) => {
                   setQuery(val);
                   if (val.length >= 3) handleSearch(val);

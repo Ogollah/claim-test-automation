@@ -1,4 +1,4 @@
-import { TestResult } from '@/lib/api';
+import { TestResult } from '@/lib/types';
 import { CheckCircleIcon, XCircleIcon, ChevronDownIcon, ChevronRightIcon, ArrowDownTrayIcon } from '@heroicons/react/16/solid';
 import { useState } from 'react';
 
@@ -35,11 +35,14 @@ export default function ResultsTable({ results }: { results: TestResult[] }) {
     URL.revokeObjectURL(url);
   };
 
-  const outcome = (result: TestResult) => {
+const outcome = (result: TestResult) => {
     const entry = result.details.response?.entry?.find((e: any) => e.resource?.resourceType === 'ClaimResponse');
-    const outcome = entry?.resource?.outcome || 'unknown';
+    const ext = entry?.resource.extension.find((i: any) => i.url.endsWith('claim-state-extension'));
+    const valueCode = ext?.valueCodeableConcept.coding.find((s: any) => s.system.endsWith('claim-state'));
+    const outcome = valueCode?.display  || '';
     return outcome;
-  }
+}
+
 
   return (
     <div className="bg-white shadow overflow-hidden sm:rounded-lg">
@@ -188,7 +191,7 @@ export default function ResultsTable({ results }: { results: TestResult[] }) {
                             <div className="bg-white p-3 rounded text-xs">
                               <div className="mb-1"><span className="font-medium">Message:</span> {result?.message}</div>
                               <div className="mb-1"><span className="font-medium">Claim ID:</span> {result?.claimId}</div>
-                              <div><span className="font-medium">Outcome:</span> {outcome(result)}</div>
+                              <div><span className="font-medium">Outcome:</span> {result.outcome} {result.status}</div>
                             </div>
                           </div>
                         </>

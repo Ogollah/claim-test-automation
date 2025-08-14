@@ -11,7 +11,7 @@ import locale    from 'react-json-editor-ajrm/locale/en';
 import { testCaseSchema } from '@/lib/test/schema';
 import { testCaseSample } from '@/lib/test/test';
 import { Loader2Icon } from 'lucide-react';
-import { getInterventionByCode, postTestCase } from '@/lib/api';
+import { getInterventionByCode, getTestCaseByCode, postTestCase, updateTestCase } from '@/lib/api';
 
 const ajv = new Ajv({ allErrors: true });
 
@@ -37,46 +37,67 @@ export default function TestcaseEditor() {
   };
 
 
-  const handleSave = async () => {
-    if (!validateJson(jsonData)) {
-      toast.error('Validation failed. Fix errors before saving.');
+const handleSave = async () => {
+  if (!validateJson(jsonData)) {
+    toast.error('Validation failed. Fix errors before saving.');
+    return;
+  }
+
+  setIsSubmitting(true);
+
+  const code = jsonData.formData.productOrService?.[0]?.code;
+  const title = jsonData.formData?.title || 'Unnamed Testcase';
+  const description = jsonData.formData?.test || '';
+
+  try {
+    const interventionResp = await getInterventionByCode(code);
+    if (interventionResp?.status !== 200 || !interventionResp.data?.length) {
+      toast.error('Intervention not found.');
       return;
     }
 
-    setIsSubmitting(true);
+    const interventionId = interventionResp.data[0].id;
 
-    try {
-      const code = jsonData.formData.productOrService[0].code;
-      const resp = await getInterventionByCode(code);
-      if (resp?.status === 200){
-        const interventionId = resp.data[0].id;
+    const existingTestsResp = await getTestCaseByCode(code);
+    const existingTest = existingTestsResp?.data?.find(test => test.name === title);
 
-      const response = await postTestCase
-      (
-        {
-          intervention_id: interventionId,
-          name: jsonData.formData?.title || 'Unnamed Testcase',
-          description: jsonData.formData?.test || '',
-          code: code,
-          test_config: jsonData,
-        }
-      );
-      console.log("console response status:", response
-      );
-      
-      if (response?.status === 201){
-      toast.success('Testcase saved successfully');
-      } else{
-      toast.error(response?.data?.error?.message);
-      console.error("error: ", (response?.data?.error?.message));
+    if (existingTest?.id) {
+      const updateResp = await updateTestCase(existingTest.id, {
+        test_config: jsonData,
+      });
+
+      if (updateResp?.status === 200) {
+        toast.success('Test case updated successfully.');
+      } else {
+        console.error('Failed to update test case:', updateResp);
+        toast.error('Error updating test case.');
+      }
+
+    } else {
+      const createResp = await postTestCase({
+        intervention_id: interventionId,
+        name: title,
+        description,
+        code,
+        test_config: jsonData,
+      });
+
+      if (createResp?.status === 201) {
+        toast.success('Test case created successfully.');
+      } else {
+        console.error('Failed to create test case:', createResp);
+        toast.error('Error creating test case.');
       }
     }
-    } catch (error) {
-      console.error('Error saving testcase', error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+
+  } catch (error) {
+    console.error('Error saving test case:', error);
+    toast.error('An unexpected error occurred.');
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
 
   return (
     <div className="container mx-auto px-4 py-8">

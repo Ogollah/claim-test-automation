@@ -164,6 +164,7 @@ const [selectedDates, setSelectedDates] = useState<{
   const buildTestPayload = () => ({
     formData: {
       title: `Test for ${selectedIntervention}`,
+      test: "build",
       patient: selectedPatient,
       provider: selectedProvider,
       use: selectedUse,
