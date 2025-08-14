@@ -42,24 +42,52 @@ export const runTestSuite = async (testData: any, testCase?: TestCaseItem[]): Pr
     const valueCode = ext?.valueCodeableConcept.coding.find((s: any) => s.system.endsWith('claim-state'));
     const outcome = valueCode?.display  || '';
 
-    const respOutcome = async (out: string) => {
-        const response = await api.get<any>(`${API_BASE_URL}/api/claims/status/${claimId}`);
-        const ext = response.data?.extension.find((i: any) => i.url.endsWith('claim-state-extension'));
-        const valueCode = ext?.valueCodeableConcept.coding.find((s: any) => s.system.endsWith('claim-state'));
-        const outcome = valueCode?.display  || '';
-    };
+    function delay(time: number) {
+      return new Promise(resolve => setTimeout(resolve, time));
+    }
 
-    const finalOutcome = outcome != 'Pending' ? outcome : respOutcome(claimId);
+      const respOutcome = async (out: string) => {
+        await delay(1000);
+        const response = await api.get<any>(`${API_BASE_URL}/api/claims/${out}`);
+        
+        
+        const ext = response.data?.data?.extension?.find(
+          (i: any) => i.url.endsWith('claim-state-extension')
+        );
+
+        const valueCode = ext?.valueCodeableConcept?.coding?.find(
+          (s: any) => s.system.endsWith('claim-state')
+        );
+
+        const outcome = valueCode?.display || '';
+        return outcome;
+      };
+
+    
+      
+  const finalOutcome = outcome !== 'Pending' ? outcome : await respOutcome(claimId);
+
+
+    console.log('success:', response?.data?.success);
+console.log('finalOutcome:', finalOutcome?.value);
+console.log('test:', testData?.formData?.test);
+
 
     const result: TestResult = {
       id: response.data.data?.id || 'generated-id',
       name: testData?.formData?.title || 'Claim Submission',
       use: testData?.formData?.use,
-      status: response.data.success && testData.formData.test != 'negative' ? 'passed' : 'failed',
+      status: (
+        response?.data?.success &&
+        (finalOutcome === "Approved" || finalOutcome === "Sent for payment processing") &&
+       ( testData?.formData?.test === 'positive' || testData?.formData?.test === "build")
+      ) ? 'passed' : 'failed',
+
       duration: responseTime,
       timestamp: new Date().toISOString(),
       message: response.data.message,
       claimId: claimId,
+      outcome: finalOutcome,
       details: {
         request: testData,
         response: response.data.data,
@@ -480,6 +508,15 @@ export const getTestCaseByCode = async(code: string) => {
   } catch (error) {
     console.error(error);
     
+  }
+}
+
+export const updateTestCase = async(id: any, data: any) => {
+  try {
+    const resp = await api.put<TestCaseItem>(`/api/test-cases/update/${id}`, {result_status: data});
+    return resp;
+  } catch (error) {
+    console.error(error);
   }
 }
 

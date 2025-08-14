@@ -253,7 +253,7 @@ export interface TestCaseItem {
   description: string,
   test_config:  TestCase,
   code: string,
-  error?: {message:string}
+  error?: {message:string, code: string}
 }
 
 export interface Result {
@@ -321,6 +321,7 @@ export interface TestResult {
   timestamp: string;
   message?: string;
   claimId?: string;
+  outcome?: string;
   details: {
     request: any;
     response?: ApiResponseData;

@@ -191,7 +191,7 @@ const outcome = (result: TestResult) => {
                             <div className="bg-white p-3 rounded text-xs">
                               <div className="mb-1"><span className="font-medium">Message:</span> {result?.message}</div>
                               <div className="mb-1"><span className="font-medium">Claim ID:</span> {result?.claimId}</div>
-                              <div><span className="font-medium">Outcome:</span> {outcome(result)}</div>
+                              <div><span className="font-medium">Outcome:</span> {result.outcome} {result.status}</div>
                             </div>
                           </div>
                         </>
