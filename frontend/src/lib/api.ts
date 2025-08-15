@@ -19,8 +19,6 @@ export const runTestSuite = async (testData: any, testCase?: TestCaseItem[]): Pr
     const endTime = Date.now();
     const responseTime = endTime - startTime;
 
-    console.log('API response:', testData);
-
     if (response.status !== 200) {
       throw new Error(`API call failed with status ${response.status}`);
     }
@@ -48,6 +46,7 @@ export const runTestSuite = async (testData: any, testCase?: TestCaseItem[]): Pr
 
       const respOutcome = async (out: string) => {
         await delay(1000);
+        // this is what needs to be called again to obtain the new outcome status.
         const response = await api.get<any>(`${API_BASE_URL}/api/claims/${out}`);
         
         
