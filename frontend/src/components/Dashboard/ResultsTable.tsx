@@ -239,12 +239,12 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                               {result?.claimId && (
                                 <Button 
                                   onClick={() => handleRefresh(result.id, result.claimId)}
-                                  className='bg-gray-100 hover:bg-gree-200 text-green-500 hover:text-green-600'
+                                  className={`bg-gray-100 hover:bg-gree-200 ${refreshingIds[result.id] ? 'text-orange-500':'text-green-500'} hover:text-green-600`}
                                   size="sm"
                                   disabled={refreshingIds[result.id]}
                                 >
-                                  <RefreshCcwIcon className={`h-4 w-4 mr-1 ${result.id ? 'text-green-500 animate-spin' : 'text-green-600'}`} />
-                                  {result.id ? 'Refreshing...' : 'Refresh'}
+                                  <RefreshCcwIcon className={`h-4 w-4 mr-1 ${refreshingIds[result.id] ? 'text-orange-500 animate-spin' : 'text-green-600'}`} />
+                                  {refreshingIds[result.id] ? 'Refreshing...' : 'Refresh'}
                                 </Button>
                               )}
                             </div>
