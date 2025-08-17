@@ -315,7 +315,7 @@ export interface ApiResponse {
 export interface TestResult {
   id: string;
   name: string;
-  use?: { id: string }; 
+  use?: string; 
   status: 'passed' | 'failed' | 'running';
   duration: number;
   timestamp: string;

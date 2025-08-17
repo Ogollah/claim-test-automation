@@ -105,7 +105,7 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                   {result.name}
                 </TableCell>
                 <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {result.use?.id || 'N/A'}
+                  {result?.use || 'N/A'}
                 </TableCell>
                 <TableCell className="px-6 py-4 whitespace-nowrap">
                   <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
