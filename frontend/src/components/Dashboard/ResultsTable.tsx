@@ -5,25 +5,46 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Button } from '../ui/button';
 import { RefreshCcwIcon } from 'lucide-react';
 
-export default function ResultsTable({ results }: { results: TestResult[] }) {
-  const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
-  const [expandedPayloads, setExpandedPayloads] = useState<Record<string, { request: boolean; response: boolean }>>({});
+interface ResultsTableProps {
+  results: TestResult[];
+  onRefresh?: (claimId: string) => Promise<void>;
+}
 
-  const toggleRow = (id: string) => {
-    setExpandedRows(prev => ({
+export default function ResultsTable({ results, onRefresh }: ResultsTableProps) {
+  const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
+  const [expandedPayloads, setExpandedPayloads] = useState<Record<string, { 
+    request: boolean; 
+    response: boolean;
+    error?: boolean;
+  }>>({});
+
+    const toggleRow = (id: string) => {
+    setExpandedRows(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+  const [refreshingIds, setRefreshingIds] = useState<Record<string, boolean>>({});
+  // const toggleRow = (id: string) => {
+  //   setExpandedRows(prev => ({
+  //     ...prev,
+  //     [id]: !prev[id],
+  //   }));
+  // };
+
+  const togglePayload = (id: string, type: 'request' | 'response' | 'error') => {
+    setExpandedPayloads(prev => ({
       ...prev,
-      [id]: !prev[id],
+      [id]: { ...prev[id], [type]: !prev[id]?.[type] }
     }));
   };
 
-  const togglePayload = (id: string, type: 'request' | 'response') => {
-    setExpandedPayloads(prev => ({
-      ...prev,
-      [id]: {
-        ...prev[id],
-        [type]: !prev[id]?.[type]
-      }
-    }));
+  const handleRefresh = async (resultId: string, claimId: string) => {
+    if (!onRefresh) return;
+    
+    try {
+      setRefreshingIds(prev => ({ ...prev, [resultId]: true }));
+      await onRefresh(claimId);
+    } finally {
+      setRefreshingIds(prev => ({ ...prev, [resultId]: false }));
+    }
   };
 
   const downloadPayload = (content: any, filename: string) => {
@@ -49,26 +70,7 @@ export default function ResultsTable({ results }: { results: TestResult[] }) {
       });
   };
 
-  //   const handleRefresh = async (resultId: string, claimId: any) => {
-  //   if (!onRefresh) return;
-    
-  //   try {
-  //     setLoadingStates(prev => ({ ...prev, [resultId]: true }));
-      
-  //     const updatedData = await onRefresh(claimId);
-      
-  //     setResults(prev => prev.map(result => {
-  //       if (result.id === resultId) {
-  //         return { ...result, ...updatedData };
-  //       }
-  //       return result;
-  //     }));
-  //   } catch (error) {
-  //     console.error('Failed to refresh result:', error);
-  //   } finally {
-  //     setLoadingStates(prev => ({ ...prev, [resultId]: false }));
-  //   }
-  // };
+
 
   return (
     <div className="bg-white shadow overflow-hidden sm:rounded-lg">
@@ -236,9 +238,10 @@ export default function ResultsTable({ results }: { results: TestResult[] }) {
                               <h4 className="text-sm font-medium text-gray-500 mb-2">Response Summary</h4>
                               {result?.claimId && (
                                 <Button 
-                                  // onClick={() => handleRefresh(result.id, result.claimId)}
+                                  onClick={() => handleRefresh(result.id, result.claimId)}
                                   className='bg-gray-100 hover:bg-gree-200 text-green-500 hover:text-green-600'
-                                  // disabled={result.id}
+                                  size="sm"
+                                  disabled={refreshingIds[result.id]}
                                 >
                                   <RefreshCcwIcon className={`h-4 w-4 mr-1 ${result.id ? 'text-green-500 animate-spin' : 'text-green-600'}`} />
                                   {result.id ? 'Refreshing...' : 'Refresh'}
@@ -255,11 +258,26 @@ export default function ResultsTable({ results }: { results: TestResult[] }) {
                       )}
 
                       {result.details.error && (
-                        <div className="bg-red-50 p-3 rounded-lg overflow-outo">
-                          <h4 className="text-sm font-medium text-red-700">Error</h4>
-                              <pre className="mt-1 text-sm text-red-600 whitespace-pre-wrap break-words overflow-hidden">
-      {result.details.error}
-    </pre>
+                        <div className="border border-red-100 rounded-lg overflow-hidden">
+                          <div className="flex justify-between items-center bg-red-50 p-3">
+                            <Button 
+                              onClick={() => togglePayload(result.id, 'error')}
+                              variant="ghost"
+                              className="text-red-700 hover:bg-red-100"
+                            >
+                              {expandedPayloads[result.id]?.error ? (
+                                <ChevronDownIcon className="h-5 w-5 mr-2" />
+                              ) : (
+                                <ChevronRightIcon className="h-5 w-5 mr-2" />
+                              )}
+                              <span className="font-medium">Error Details</span>
+                            </Button>
+                          </div>
+                          {expandedPayloads[result.id]?.error && (
+                            <pre className="p-3 bg-white text-red-600 text-xs whitespace-pre-wrap break-words">
+                              {result.details.errorMessage}
+                            </pre>
+                          )}
                         </div>
                       )}
 
@@ -269,7 +287,7 @@ export default function ResultsTable({ results }: { results: TestResult[] }) {
                           <ul className="mt-1 space-y-1">
                             {result.details.validationErrors.map((error:any, index:any) => (
                               <li key={index} className="text-sm text-red-600">
-                                <span className="font-medium">{error.path}:</span> {error.message}
+                                <span className="font-medium">{error.path}:</span> {error.error}
                               </li>
                             ))}
                             {result.details?.error && (
