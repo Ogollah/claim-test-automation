@@ -33,6 +33,7 @@ import { Calendar } from "../ui/calendar"
 import { CalendarIcon, Ghost, Plus } from "lucide-react"
 import { format } from "date-fns/format"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table"
+import CustomSelector from "./UseSelector"
 
 type TestRunnerProps = {
   isRunning?: boolean
@@ -75,7 +76,8 @@ const [selectedDates, setSelectedDates] = useState<{
     serviceStart: "",
     serviceEnd: "",
   })
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(false);
+  const [selectedClaimSubType, setClaimSubType] = useState<any>(null);
 
   const currentNetValue =
     currentIntervention.serviceQuantity &&
@@ -168,6 +170,7 @@ const [selectedDates, setSelectedDates] = useState<{
       patient: selectedPatient,
       provider: selectedProvider,
       use: selectedUse,
+      claimSubType: selectedClaimSubType,
       practitioner: selectedPractitioner,
       productOrService: interventions.map((intervention, index) => ({
         code: intervention.code,
@@ -219,8 +222,23 @@ const [selectedDates, setSelectedDates] = useState<{
           Test Configuration
         </h2>
 
-        <div className="grid grid-cols-1 gap-6 mb-6">
-          <UseSelector use={selectedUse} onSelectUse={setSelectedUse} />
+        <div className="grid grid-cols-2 gap-6 mb-6">
+          <CustomSelector options={[
+            { id: "claim", label: "Claim" },
+            { id: "preauthorization", label: "Preauthorization" }]}
+            value={selectedUse} 
+            onChange={setSelectedUse}
+            label="Select use"
+            placeholder="Choose use type" />
+          <CustomSelector 
+            options={[
+              { id: "ip", label: "Inpatient (IP)" },
+              { id: "op", label: "Outpatient (OP)" }
+            ]}
+            value={selectedClaimSubType} 
+            onChange={setClaimSubType}
+            label="Select claim subtype"
+            placeholder="Choose claim subtype" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 text-gray-500">
