@@ -3,8 +3,8 @@ import { use, useEffect, useState } from 'react';
 import { StopIcon, TrashIcon } from '@heroicons/react/16/solid';
 import UseSelector from '@/components/Dashboard/UseSelector';
 import InterventionSelector from '@/components/Dashboard/InterventionSelector';
-import { InterventionItem, Package, TestCase, TestCaseItem } from '@/lib/types';
-import { getInterventionByPackageId, getPackages, getTestCaseByCode, runTestSuite, TestResult } from '@/lib/api';
+import { InterventionItem, Package, TestCase, TestCaseItem, TestResult } from '@/lib/types';
+import { getInterventionByPackageId, getPackages, getTestCaseByCode} from '@/lib/api';
 import TestcaseDetails from '@/components/testCases/TestcaseDetails';
 import ResultsTable from '@/components/Dashboard/ResultsTable';
 import { DEFAULT_PACKAGE } from '@/packages/ShaPackages';
@@ -14,6 +14,8 @@ import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { PlayIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { refreshTestResult } from '@/utils/claimUtils';
+import { runTestSuite } from '@/utils/testUtils';
 
 type TestRunnerProps = {
   isRunning?: boolean;
@@ -169,6 +171,33 @@ useEffect(() => {
     }
   };
 
+  const handleRefreshResult = async (claimId: string) => {
+  try {
+    const { outcome, status, message } = await refreshTestResult(claimId);
+    
+    setResults(prevResults => 
+      prevResults.map(result => {
+        if (result.claimId === claimId) {
+          return {
+            ...result,
+            outcome,
+            status,
+            message,
+            timestamp: new Date().toISOString()
+          };
+        }
+        return result;
+      })
+    );
+    
+    toast.success('Result refreshed successfully');
+  } catch (error) {
+    console.error('Error refreshing result:', error);
+    toast.error('Failed to refresh result');
+    throw error;
+  }
+};
+
   const runTests = async (selectedItems: string[], type: 'positive' | 'negative') => {
     
     if (selectedItems.length === 0 ) {
@@ -283,7 +312,7 @@ useEffect(() => {
           </Button>
         </div>
       </div>
-      <ResultsTable results={results} />
+      <ResultsTable results={results} onRefresh={handleRefreshResult} />
     </div>
   );
 }

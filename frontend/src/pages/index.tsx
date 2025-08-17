@@ -7,7 +7,10 @@ import Header from '../components/Layout/Header'
 import Sidebar from '../components/Layout/Sidebar'
 import TestRunner from '../components/Dashboard/TestRunner'
 import ResultsTable from '../components/Dashboard/ResultsTable'
-import { runTestSuite, TestResult } from '@/lib/api'
+import { TestResult } from "@/lib/types";
+import { runTestSuite } from "@/utils/testUtils";
+import { toast } from "sonner";
+import { refreshTestResult } from "@/utils/claimUtils";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,6 +41,33 @@ export default function Home() {
     }
   };
 
+    const handleRefreshResult = async (claimId: string) => {
+  try {
+    const { outcome, status, message } = await refreshTestResult(claimId);
+    
+    setResults(prevResults => 
+      prevResults.map(result => {
+        if (result.claimId === claimId) {
+          return {
+            ...result,
+            outcome,
+            status,
+            message,
+            timestamp: new Date().toISOString()
+          };
+        }
+        return result;
+      })
+    );
+    
+    toast.success('Result refreshed successfully');
+  } catch (error) {
+    console.error('Error refreshing result:', error);
+    toast.error('Failed to refresh result');
+    throw error;
+  }
+};
+
   return (
     <div
       className={`${geistSans.className} ${geistMono.className} grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-3 gap-16 font-[family-name:var(--font-geist-sans)]`}
@@ -52,7 +82,7 @@ export default function Home() {
               onRunTests={handleRunTests}
             />
             
-            <ResultsTable results={results} />
+            <ResultsTable results={results} onRefresh={handleRefreshResult} />
           </div>
         </main>
       </div>
