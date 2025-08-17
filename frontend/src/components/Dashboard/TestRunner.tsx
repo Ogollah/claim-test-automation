@@ -211,6 +211,11 @@ const [selectedDates, setSelectedDates] = useState<{
     onRunTests?.(testConfig)
   }
 
+  const handleTotalChange = (e) => {
+    const newValue = parseFloat(e.target.value) || total;
+    setTotal(newValue);
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 text-gay-500">
       <h1 className="text-2xl font-bold text-gray-500 mb-6">
@@ -485,8 +490,6 @@ const [selectedDates, setSelectedDates] = useState<{
             onSelectPractitioner={setSelectedPractitioner}
           />
         </div>
-
-        {/* Footer */}
         <div className="flex justify-between w-full">
           <div className="text-gray-500">
             <Label>Total</Label>
@@ -494,7 +497,8 @@ const [selectedDates, setSelectedDates] = useState<{
               type="number"
               className="block w-full px-3 py-2 bg-green-100 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               value={total.toFixed(2)}
-              disabled
+              onChange={handleTotalChange}
+              step={0.01}
             />
           </div>
           <Button
