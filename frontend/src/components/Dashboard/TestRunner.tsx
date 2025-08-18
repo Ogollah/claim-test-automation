@@ -78,6 +78,7 @@ const [selectedDates, setSelectedDates] = useState<{
   })
   const [open, setOpen] = useState(false);
   const [selectedClaimSubType, setClaimSubType] = useState<any>(null);
+  const [relatedClaimId, setRelatedClaimId] = useState("");
 
   const currentNetValue =
     currentIntervention.serviceQuantity &&
@@ -172,6 +173,7 @@ const [selectedDates, setSelectedDates] = useState<{
       use: selectedUse,
       claimSubType: selectedClaimSubType,
       practitioner: selectedPractitioner,
+      relatedClaimId: relatedClaimId,
       productOrService: interventions.map((intervention, index) => ({
         code: intervention.code,
         display: intervention.name,
@@ -194,6 +196,9 @@ const [selectedDates, setSelectedDates] = useState<{
       total: { value: total, currency: "KES" },
     },
   })
+
+  console.log('related', relatedClaimId);
+  
 
   const handleRunTests = () => {
     if (
@@ -230,7 +235,8 @@ const [selectedDates, setSelectedDates] = useState<{
         <div className="grid grid-cols-2 gap-6 mb-6">
           <CustomSelector options={[
             { id: "claim", label: "Claim" },
-            { id: "preauthorization", label: "Preauthorization" }]}
+            { id: "preauthorization", label: "Preauthorization" },
+            {id: "related", label: "Related claim"}]}
             value={selectedUse} 
             onChange={setSelectedUse}
             label="Select use"
@@ -275,7 +281,24 @@ const [selectedDates, setSelectedDates] = useState<{
           />
         </div>
 
-        {/* Dates help fix this part*/}
+        {/* add related input field */}
+        {selectedUse === "related" && (
+          <div className="border-t border-gray-200 pt-4 mb-6 text-gray-500">
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mb-4">
+              <div>
+                <Label className="py-3">Related claim ID</Label>
+                <Input
+                  type="text"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  value={relatedClaimId}
+                  onChange={(e) => setRelatedClaimId(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TODO: FIX POPUP  */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-gray-500">
             {["billableStart", "billableEnd", "created"].map((key) => {
               const label =
@@ -354,7 +377,7 @@ const [selectedDates, setSelectedDates] = useState<{
               },
             ].map(({ label, value, key, disabled }) => (
               <div key={key}>
-                <Label>{label}</Label>
+                <Label className="py-3">{label}</Label>
                 <Input
                   type="number"
                   className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
