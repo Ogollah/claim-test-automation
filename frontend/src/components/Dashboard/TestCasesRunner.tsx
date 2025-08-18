@@ -70,6 +70,7 @@ useEffect(() => {
     try {
       const testCase = await getTestCaseByCode(selectedIntervention);
       setTestCases(testCase?.data || []);
+      
     } catch (error) {
       console.error("--> Error fetching test cases: ", error);
     }
@@ -81,23 +82,22 @@ useEffect(() => {
 
 useEffect(() => {
   if (testCases && testCases.length) {
-    const interventionPositive = testCases.find(
-      item => item.description === 'positive'
-    )?.test_config;
+    const positiveCases = testCases
+      .filter(item => item.description === 'positive')
+      .map(item => item.test_config);
 
-    const interventionNegative = testCases.find(
-      item => item.description === 'negative'
-    )?.test_config;
+    const negativeCases = testCases
+      .filter(item => item.description === 'negative')
+      .map(item => item.test_config);
 
     setCurrentTestCases({
-      positive: interventionPositive ? [interventionPositive] : [],
-      negative: interventionNegative ? [interventionNegative] : []
+      positive: positiveCases,
+      negative: negativeCases
     });
   } else {
     setCurrentTestCases({ positive: [], negative: [] });
   }
 }, [testCases]);
-
 
   const buildTestPayload = (tests: string[], type: 'positive' | 'negative') => {
   const allTestCases = [

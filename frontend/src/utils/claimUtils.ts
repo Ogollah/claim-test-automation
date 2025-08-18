@@ -58,11 +58,12 @@ export const refreshTestResult = async (
  */
 export const shouldTestPass = (
   testType: string,
-  outcome: string
+  outcome: string,
+  response: boolean
 ): boolean => {
   const positiveOutcomes = [CLAIM_STATUS.APPROVED, CLAIM_STATUS.SENT_FOR_PAYMENT, CLAIM_STATUS.CLINICAL_REVIEW];
   
-  if (testType === 'positive' || testType === 'build') {
+  if (response === true && (testType === 'positive' || testType === 'build')) {
     return positiveOutcomes.includes(outcome);
   } else if (testType === 'negative') {
     return !positiveOutcomes.includes(outcome);

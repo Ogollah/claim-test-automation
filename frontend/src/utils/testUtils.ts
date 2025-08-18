@@ -54,7 +54,7 @@ export const runTestSuite = async (
       id: response.data.data?.id || `generated-${Date.now()}`,
       name: testData?.formData?.title || 'Claim Submission',
       use: testData?.formData?.use,
-      status: shouldTestPass(testData?.formData?.test, finalOutcome) ? 'passed' : 'failed',
+      status: shouldTestPass(response.data.success,testData?.formData?.test, finalOutcome) ? 'passed' : 'failed',
       duration,
       timestamp: new Date().toISOString(),
       message: response.data.message,
@@ -75,7 +75,7 @@ export const runTestSuite = async (
       try {
         const respResult: Result = {
           testcase_id: testCaseId,
-          result_status: testData?.formData?.test === 'positive' ? 1 : 0,
+          result_status: response.data.success && testData?.formData?.test === 'positive' ? 1 : 0,
           message: finalOutcome,
           detail: response.data.message,
           status_code: response.status.toString(),
