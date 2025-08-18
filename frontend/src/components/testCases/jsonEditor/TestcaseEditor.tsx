@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import Ajv from 'ajv';
-import JSONInput from 'react-json-editor-ajrm';
-import locale from 'react-json-editor-ajrm/locale/en';
+// import JSONInput from 'react-json-editor-ajrm';
+// import locale from 'react-json-editor-ajrm/locale/en';
+import Editor from '@monaco-editor/react';
 import { testCaseSchema } from '@/lib/test/schema';
 import { testCaseSamples } from '@/lib/test/test'; // Changed from testCaseSample to testCaseSamples
 import { Loader2Icon } from 'lucide-react';
@@ -126,17 +127,22 @@ export default function TestcaseEditor() {
             <div className="bg-white rounded-lg shadow-md p-6 mb-8">
                 <div className="mb-4 bg-gray-50">
                     <div className="rounded-md border bg-white">
-                        <JSONInput
-                            id="json-editor"
-                            theme="light_mitsuketa_tribute"
-                            placeholder={jsonData}
-                            locale={locale}
-                            width="100%"
-                            height="600px"
-                            onChange={({ jsObject, error }) => {
-                                if (!error) setJsonData(jsObject);
-                            }}
-                        />
+<Editor
+    height="600px"
+    defaultLanguage="json"
+    defaultValue={JSON.stringify(jsonData, null, 2)}
+    onChange={(value) => {
+        try {
+            if (value) {
+                const parsed = JSON.parse(value);
+                setJsonData(parsed);
+            }
+        } catch (err) {
+            // You can show a toast or validation error here
+        }
+    }}
+/>
+
                     </div>
                 </div>
                 {validationErrors.length > 0 && (
