@@ -30,7 +30,7 @@ import { Input } from "../ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover"
 import { Button } from "../ui/button"
 import { Calendar } from "../ui/calendar"
-import { CalendarIcon, Ghost, Plus } from "lucide-react"
+import { CalendarIcon, ChevronDownIcon, Ghost, Plus } from "lucide-react"
 import { format } from "date-fns/format"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table"
 import CustomSelector from "./UseSelector"
@@ -242,8 +242,8 @@ const [selectedDates, setSelectedDates] = useState<{
             ]}
             value={selectedClaimSubType} 
             onChange={setClaimSubType}
-            label="Select claim subtype"
-            placeholder="Choose claim subtype" />
+            label="Select access point"
+            placeholder="Choose access point" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 text-gray-500">
@@ -292,31 +292,36 @@ const [selectedDates, setSelectedDates] = useState<{
               const isCreated = key === "created";
 
               return (
-                <div key={key} className="flex flex-col gap-2">
+                <div key={key} className="flex flex-col gap-3">
                   <Label htmlFor={key}>{label}</Label>
-                  <Popover>
+                  <Popover onOpenChange={setOpen}>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
                         className="justify-start text-left font-normal"
                         disabled={isCreated}
+                        onClick={
+                          ()=> setOpen(true)
+                        }
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {dateValue ? format(dateValue, "PPP") : <span>Pick a date</span>}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
+                    <PopoverContent className="w-auto overflow-hidden p-0 z-50">
                       <Calendar
+                        className="text-blue-500"
                         mode="single"
                         selected={dateValue}
-                        onSelect={(date) =>
+                        onSelect={(date) => {
                           setSelectedDates((prev) => ({
                             ...prev,
-                            [key]: date ? format(date, "yyyy-MM-dd") : undefined,
-                          }))
-                        }
+                            [key]: date ? format(date, "yyyy-MM-dd") : '',
+                          }));
+                          setOpen(false);
+                        }}
                         captionLayout="dropdown"
-                        initialFocus
+                        // initialFocus
                       />
                     </PopoverContent>
                   </Popover>
@@ -390,6 +395,7 @@ const [selectedDates, setSelectedDates] = useState<{
                       <PopoverContent className="w-auto p-0">
                         <Calendar
                           mode="single"
+                          className="text-blue-500"
                           selected={dateValue}
                           onSelect={(date) =>
                             setCurrentIntervention((prev) => ({

@@ -28,7 +28,7 @@ export default function CustomSelector({
   label = "Select option"
 }: SelectorProps) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 text-gray-500">
       <Label>{label}</Label>
       <Select
         value={value || ""}

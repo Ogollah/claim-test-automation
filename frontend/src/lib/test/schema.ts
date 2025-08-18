@@ -47,13 +47,8 @@ export const testCaseSchema = {
           },
           required: ['id', 'name', 'level', 'identifiers']
         },
-        use: {
-          type: 'object',
-          properties: {
-            id: { type: 'string' }
-          },
-          required: ['id']
-        },
+        use: {type: 'string'},
+        claimSubType:{type: 'string'},
         productOrService: {
           type: 'array',
           items: {
