@@ -14,11 +14,11 @@ export const testCaseSamples = [
         ]
       },
       provider: {
-        id: 'FID-22-104475-5',
+        id: 'FID-22-115390-3',
         name: 'THIKA COUNTY REFERRAL HOSPITAL',
         level: 'LEVEL 5',
         identifiers: [
-          { system: 'FID', value: 'FID-22-104475-5' },
+          { system: 'FID', value: 'FID-22-115390-3' },
           { system: 'SladeCode', value: '5885' }
         ]
       },
