@@ -22,9 +22,11 @@ function getAge(birthDate: string): number {
 export default function PatientDetailsPanel({
   patient,
   onSelectPatient,
+  show=true,
 }: {
   patient: FormatPatient | null;
   onSelectPatient: (patient: FormatPatient) => void;
+  show?: boolean
 }) {
   const [patients, setPatients] = useState<FormatPatient[]>([]);
   const [query, setQuery] = useState('');
@@ -63,6 +65,17 @@ export default function PatientDetailsPanel({
     }
   };
 
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      if (query.length >= 3) {
+        handleSearch(query);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounce);
+  }, [query]);
+
+
   const filteredPatients = query
     ? patients.filter((p) =>
         p.name.toLowerCase().includes(query.toLowerCase())
@@ -80,56 +93,60 @@ export default function PatientDetailsPanel({
               variant="outline"
               role="combobox"
               aria-expanded={open}
-              className="w-full justify-between text-pretty md:text-balance"
+              className="w-full justify-between overflow-hidden text-ellipsis whitespace-nowrap px-3"
             >
-              {patient
-                ? `${patient.name} (${patient.gender}, ${getAge(patient.birthDate)} yrs)`
-                : 'Select a patient'}
+              <span className="truncate block">
+                {patient
+                  ? `${patient.name} (${patient.gender}, ${getAge(patient.birthDate)} yrs)`
+                  : 'Select a patient'}
+              </span>
               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
 
           <PopoverContent className="w-[300px] p-0">
             <Command>
-              <CommandInput
-                placeholder="Search patient..."
-                className="h-9"
-                onValueChange={(val) => {
-                  setQuery(val);
-                  if (val.length >= 3) handleSearch(val);
-                }}
-              />
-              <CommandList>
-                {loading && (
-                  <div className="flex items-center justify-center p-2">
-                    <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
-                  </div>
-                )}
+            <CommandInput
+              placeholder="Search patient..."
+              className="h-9"
+              onValueChange={(val) => {
+                setQuery(val);
+              }}
+            />
+            <CommandList>
+              {loading && (
+                <div className="flex items-center justify-center p-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
+                </div>
+              )}
+              
+              {!loading && filteredPatients.length === 0 && (
                 <CommandEmpty>No patients found.</CommandEmpty>
-                <CommandGroup>
-                  {filteredPatients.map((p) => (
-                    <CommandItem
-                      key={p.id}
-                      onSelect={() => {
-                        onSelectPatient(p);
-                        setOpen(false);
-                        setQuery('');
-                      }}
-                    >
-                      {p.name} ({p.gender}, {getAge(p.birthDate)} yrs)
-                      {patient?.id === p.id && (
-                        <Check className="ml-auto h-4 w-4" />
-                      )}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
+              )}
+
+              <CommandGroup>
+                {filteredPatients.map((p) => (
+                  <CommandItem
+                    key={p.id}
+                    onSelect={() => {
+                      onSelectPatient(p);
+                      setOpen(false);
+                    }}
+                  >
+                    {p.name} ({p.gender}, {getAge(p.birthDate)} yrs)
+                    {patient?.id === p.id && (
+                      <Check className="ml-auto h-4 w-4" />
+                    )}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
             </Command>
           </PopoverContent>
         </Popover>
       </div>
 
-      {patient && (
+      {patient && show && (
         <div className="space-y-2">
           <div className="grid grid-cols-2 gap-4">
             <div>
