@@ -25,11 +25,13 @@ import {
 type ProviderDetailsPanelProps = {
   provider: Provider | null;
   onSelectProvider: (provider: Provider) => void;
+  show?: boolean;
 };
 
 export default function ProviderDetailsPanel({
   provider,
-  onSelectProvider
+  onSelectProvider,
+  show = true
 }: ProviderDetailsPanelProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [providers, setProviders] = useState<FormatProvider[]>([]);
@@ -77,6 +79,16 @@ export default function ProviderDetailsPanel({
     return errors;
   };
 
+    useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      if (query.length >= 3) {
+        handleSearch(query);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounce);
+  }, [query]);
+  
   const filteredProviders = query
     ? providers.filter(p =>
         p.name.toLowerCase().includes(query.toLowerCase())
@@ -84,26 +96,8 @@ export default function ProviderDetailsPanel({
     : providers;
 
   return (
-    <div className="border border-gray-200 rounded-lg p-4 bg-white w-full">
-      <div
-        className="flex justify-between items-center cursor-pointer"
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        <h3 className="text-lg font-medium text-gray-500">Provider Details</h3>
-        <svg
-          className={`h-5 w-5 text-gray-500 transform transition-transform ${
-            isExpanded ? 'rotate-180' : ''
-          }`}
-          viewBox="0 0 20 20"
-          fill="currentColor"
-        >
-          <path
-            fillRule="evenodd"
-            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-            clipRule="evenodd"
-          />
-        </svg>
-      </div>
+    <div className="border border-gray-200 rounded-lg p-4 w-full">
+        <h3 className="text-lg font-medium text-gray-500 mb2">Provider Details</h3>
 
       {isExpanded && (
         <div className="mt-4 space-y-4 text-gray-500">
@@ -113,7 +107,7 @@ export default function ProviderDetailsPanel({
                 variant="outline"
                 role="combobox"
                 aria-expanded={open}
-                className="w-full justify-between text-pretty md:text-balance"
+                className="w-full justify-between overflow-hidden text-ellipsis whitespace-nowrap px-3"
               >
                 {provider
                   ? `${provider.name} (${provider.level})`
@@ -129,7 +123,6 @@ export default function ProviderDetailsPanel({
                   value={query}
                   onValueChange={(val) => {
                     setQuery(val);
-                    if (val.length >= 3) handleSearch(val);
                   }}
                 />
                 <CommandList>
@@ -138,7 +131,9 @@ export default function ProviderDetailsPanel({
                       <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
                     </div>
                   )}
-                  <CommandEmpty>No provider found</CommandEmpty>
+                  {!loading && filteredProviders.length === 0 && (
+                    <CommandEmpty>No provider found</CommandEmpty>
+                  )}
                   <CommandGroup>
                     {filteredProviders.map((p) => (
                       <CommandItem
@@ -146,7 +141,6 @@ export default function ProviderDetailsPanel({
                         onSelect={() => {
                           onSelectProvider(p);
                           setOpen(false);
-                          setQuery('');
                         }}
                       >
                         {p.name} ({p.level})
@@ -161,7 +155,7 @@ export default function ProviderDetailsPanel({
             </PopoverContent>
           </Popover>
 
-          {provider && (
+          {provider && show && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>

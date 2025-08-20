@@ -34,6 +34,7 @@ import { CalendarIcon, ChevronDownIcon, Ghost, Plus } from "lucide-react"
 import { format } from "date-fns/format"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table"
 import CustomSelector from "./UseSelector"
+import { toast } from "sonner"
 
 type TestRunnerProps = {
   isRunning?: boolean
@@ -128,7 +129,7 @@ const [selectedDates, setSelectedDates] = useState<{
 
   const addIntervention = () => {
     if (!selectedPackage || !selectedIntervention) {
-      alert("Please select a package and intervention")
+      toast.error("Please select a package and intervention")
       return
     }
 
@@ -196,17 +197,14 @@ const [selectedDates, setSelectedDates] = useState<{
       total: { value: total, currency: "KES" },
     },
   })
-
-  console.log('related', relatedClaimId);
   
-
   const handleRunTests = () => {
     if (
       !selectedPatient ||
       !selectedProvider ||
       interventions.length === 0
     ) {
-      alert(
+      toast.error(
         "Please select all required fields and add at least one intervention"
       )
       return

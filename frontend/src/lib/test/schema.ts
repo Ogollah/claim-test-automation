@@ -66,7 +66,7 @@ export const testCaseSchema = {
               unitPrice: {
                 type: 'object',
                 properties: {
-                  value: { type: 'string' },
+                  value: { type: 'number' },
                   currency: { type: 'string' }
                 },
                 required: ['value', 'currency']

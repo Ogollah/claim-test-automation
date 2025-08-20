@@ -11,6 +11,7 @@ import { testCaseSchema } from '@/lib/test/schema';
 import { testCaseSamples } from '@/lib/test/test';
 import { Loader2Icon } from 'lucide-react';
 import { getInterventionByCode, getTestCaseByCode, postTestCase, updateTestCase } from '@/lib/api';
+import TestcaseForm from './TestCaseForm';
 
 const ajv = new Ajv({ allErrors: true });
 
@@ -122,24 +123,24 @@ export default function TestcaseEditor() {
         <div className="container mx-auto px-4 py-8">
             <h1 className="text-2xl font-bold text-gray-500 mb-6">JSON Testcase Editor</h1>
             <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+                <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                 <div className="mb-4 bg-gray-50">
                     <div className="rounded-md border bg-white">
                         <Editor
-                            height="600px"
+                            height="800px"
                             defaultLanguage="json"
-                            defaultValue={JSON.stringify(jsonData, null, 2)}
+                            value={JSON.stringify(jsonData, null, 2)}
                             onChange={(value) => {
-                                try {
-                                    if (value) {
-                                        const parsed = JSON.parse(value);
-                                        setJsonData(parsed);
-                                    }
-                                } catch (err) {
-                                    toast.error(`${err}`)
-                                }
+                            try {
+                            if (value) {
+                            const parsed = JSON.parse(value);
+                            setJsonData(parsed);
+                            }
+                            } catch (err) {
+                            toast.error(`${err}`)
+                            }
                             }}
                         />
-
                     </div>
                 </div>
                 {validationErrors.length > 0 && (
@@ -152,6 +153,8 @@ export default function TestcaseEditor() {
                         </ul>
                     </div>
                 )}
+                <TestcaseForm jsonData={jsonData} setJsonData={setJsonData} />
+                </div>
                 <div className="flex gap-4">
                     <Button 
                         variant="secondary" 
