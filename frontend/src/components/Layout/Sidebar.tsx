@@ -1,4 +1,5 @@
 import { HomeIcon, DocumentTextIcon, ChartBarIcon, CogIcon } from '@heroicons/react/16/solid';
+import { PlusCircleIcon, PlusIcon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from "next/navigation";
 
@@ -42,7 +43,7 @@ export default function Sidebar() {
                                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                             }`}
                         >
-                            <DocumentTextIcon className="mr-3 h-6 w-6 text-gray-400 group-hover:text-gray-500" />
+                            <PlusCircleIcon className="mr-3 h-6 w-6 text-gray-400 group-hover:text-gray-500" />
                             Add test
                         </Link>
                     </nav>
