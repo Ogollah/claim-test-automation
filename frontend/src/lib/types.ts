@@ -314,6 +314,7 @@ export interface ApiResponse {
 // Updated TestResult interface with better error handling
 export interface TestResult {
   id: string;
+  test: string;
   name: string;
   use?: string; 
   status: 'passed' | 'failed' | 'running';

@@ -52,6 +52,7 @@ export const runTestSuite = async (
     // Create test result
     const result: TestResult = {
       id: response.data.data?.id || `generated-${Date.now()}`,
+      test: testData?.formData.test,
       name: testData?.formData?.title || 'Claim Submission',
       use: testData?.formData?.use,
       status: shouldTestPass(response.data.success,testData?.formData?.test, finalOutcome) ? 'passed' : 'failed',
@@ -132,6 +133,7 @@ const handleTestError = (error: any, testData: any, testCase?: TestCaseItem[]) =
 
   const errorResult: TestResult = {
     id: `error-${Date.now()}`,
+    test: testData?.formData.test,
     name: testData?.formData?.title || 'Claim Submission',
     status: testData?.formData?.test === "negative" ? 'passed' : 'failed',
     use: testData?.formData?.use,

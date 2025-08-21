@@ -29,7 +29,7 @@ export const testCaseSamples = [
           code: 'SHA-01-003',
           display: 'Cardiac/Respiratory Arrest',
           quantity: { value: '1' },
-          unitPrice: { value: '102905', currency: 'KES' },
+          unitPrice: { value: 102905, currency: 'KES' },
           net: { value: 102905, currency: 'KES' },
           servicePeriod: {
             start: '2025-07-08',
