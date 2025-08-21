@@ -28,7 +28,8 @@ export const getClaimOutcome = async (claimId: string): Promise<string> => {
  * @returns Promise<{outcome: string, status: 'passed' | 'failed', message: string}>
  */
 export const refreshTestResult = async (
-  claimId: string
+  claimId: string,
+  test?: string
 ): Promise<{
   outcome: string;
   status: 'passed' | 'failed';
@@ -39,16 +40,19 @@ export const refreshTestResult = async (
     
     return {
       outcome: newOutcome,
-      status: newOutcome === CLAIM_STATUS.APPROVED || newOutcome === CLAIM_STATUS.SENT_FOR_PAYMENT || newOutcome === CLAIM_STATUS.CLINICAL_REVIEW
-        ? 'passed'
-        : 'failed',
-      message: `Refreshed: ${newOutcome}`
+      status:
+        (test === 'negative' && [CLAIM_STATUS.REJECTED, CLAIM_STATUS.DECLINED, CLAIM_STATUS.SENT_BACK].includes(newOutcome)) ||
+        [CLAIM_STATUS.APPROVED, CLAIM_STATUS.SENT_FOR_PAYMENT, CLAIM_STATUS.CLINICAL_REVIEW].includes(newOutcome)
+          ? 'passed'
+          : 'failed',
+      message: `Refreshed: ${newOutcome}`,
     };
-  } catch (error) {
-    console.error('Error refreshing claim status:', error);
-    throw error;
-  }
-};
+
+      } catch (error) {
+        console.error('Error refreshing claim status:', error);
+        throw error;
+      }
+    };
 
 /**
  * Determines if a test should pass based on its type and outcome
@@ -62,11 +66,12 @@ export const shouldTestPass = (
   response: boolean
 ): boolean => {
   const positiveOutcomes = [CLAIM_STATUS.APPROVED, CLAIM_STATUS.SENT_FOR_PAYMENT, CLAIM_STATUS.CLINICAL_REVIEW];
+  const negativeOutCome = [CLAIM_STATUS.DECLINED, CLAIM_STATUS.REJECTED, CLAIM_STATUS.SENT_BACK];
   
   if (response === true && (testType === 'positive' || testType === 'build')) {
     return positiveOutcomes.includes(outcome);
   } else if (testType === 'negative') {
-    return !positiveOutcomes.includes(outcome);
+    return negativeOutCome.includes(outcome);
   }
   return false;
 };

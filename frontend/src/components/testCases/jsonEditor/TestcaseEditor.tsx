@@ -120,9 +120,9 @@ export default function TestcaseEditor() {
     };
 
     return (
-        <div className="container mx-auto px-4 py-8">
-            <h1 className="text-2xl font-bold text-gray-500 mb-6">JSON Testcase Editor</h1>
-            <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+        <div className=" mx-auto py-4">
+            <h1 className="text-2xl font-bold text-gray-500 mb-6">Test setup</h1>
+            <div className="bg-white rounded-sm shadow-md p-6 mb-8">
                 <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                 <div className="mb-4 bg-gray-50">
                     <div className="rounded-md border bg-white">

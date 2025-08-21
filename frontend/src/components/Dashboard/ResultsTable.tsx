@@ -4,10 +4,12 @@ import { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Button } from '../ui/button';
 import { RefreshCcwIcon } from 'lucide-react';
+import { toast } from 'sonner';
+import test from 'node:test';
 
 interface ResultsTableProps {
   results: TestResult[];
-  onRefresh?: (claimId: string) => Promise<void>;
+  onRefresh?: (claimId: string, test?:string) => Promise<void>;
 }
 
 export default function ResultsTable({ results, onRefresh }: ResultsTableProps) {
@@ -36,12 +38,12 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
     }));
   };
 
-  const handleRefresh = async (resultId: string, claimId: string) => {
+  const handleRefresh = async (resultId: string, claimId: string, test?:string) => {
     if (!onRefresh) return;
     
     try {
       setRefreshingIds(prev => ({ ...prev, [resultId]: true }));
-      await onRefresh(claimId);
+      await onRefresh(claimId, test);
     } finally {
       setRefreshingIds(prev => ({ ...prev, [resultId]: false }));
     }
@@ -63,10 +65,10 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
     const textToCopy = JSON.stringify(content, null, 2);
     navigator.clipboard.writeText(textToCopy)
       .then(() => {
-        alert('Payload copied to clipboard!');
+        toast.success('Payload copied to clipboard!');
       })
       .catch(() => {
-        alert('Failed to copy payload');
+        toast.error('Failed to copy payload');
       });
   };
 
@@ -238,7 +240,7 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                               <h4 className="text-sm font-medium text-gray-500 mb-2">Response Summary</h4>
                               {result?.claimId && (
                                 <Button 
-                                  onClick={() => handleRefresh(result.id, result.claimId)}
+                                  onClick={() => handleRefresh(result.id, result.claimId, result.test)}
                                   className={`bg-gray-100 hover:bg-gree-200 ${refreshingIds[result.id] ? 'text-orange-500':'text-green-500'} hover:text-green-600`}
                                   size="sm"
                                   disabled={refreshingIds[result.id]}

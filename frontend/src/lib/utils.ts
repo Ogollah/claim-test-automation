@@ -55,5 +55,9 @@ export const CLAIM_STATUS = {
   SENT_FOR_PAYMENT: "Sent for payment processing",
   CLINICAL_REVIEW: "Medical Review",
   PASSED: "passed",
-  FAILED: "failed"
+  FAILED: "failed",
+  REJECTED: "Rejected",
+  SENT_BACK: "Returned back",
+  DECLINED: "Declined"
+
 };

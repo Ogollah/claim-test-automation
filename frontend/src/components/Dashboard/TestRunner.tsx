@@ -227,12 +227,12 @@ export default function TestRunner({
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 text-gay-500">
+    <div className=" mx-auto  py-4 text-gay-500">
       <h1 className="text-2xl font-bold text-gray-500 mb-6">
-        Claim bundle form
+        Custom test claim form
       </h1>
 
-      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+      <div className="bg-white rounded-sm shadow-md p-6 mb-8">
         <h2 className="text-xl font-semibold text-gray-500 mb-4">
           Test Configuration
         </h2>

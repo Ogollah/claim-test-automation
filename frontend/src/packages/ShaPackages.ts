@@ -130,3 +130,7 @@ export const INTERVENTION_CODES = {
     {code: 'SHA-19-520', name:'Penectomy'}
   ]
 };
+
+export const COMPLEX_PACKAGES = [
+  "SHA-05", "SHA-06", "SHA-08", "SHA-16", "SHA-19"
+];

@@ -171,9 +171,9 @@ useEffect(() => {
     }
   };
 
-  const handleRefreshResult = async (claimId: string) => {
+  const handleRefreshResult = async (claimId: string, test?: string) => {
   try {
-    const { outcome, status, message } = await refreshTestResult(claimId);
+    const { outcome, status, message } = await refreshTestResult(claimId, test);
     
     setResults(prevResults => 
       prevResults.map(result => {
@@ -237,10 +237,10 @@ useEffect(() => {
   
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-500 mb-6">Claims Bundle Automation Test</h1>
+    <div className="mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold text-gray-500 mb-6">Automated test suite</h1>
       
-      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+      <div className="bg-white rounded-sm shadow-md p-6 mb-8">
         <h2 className="text-xl font-semibold text-gray-500 mb-4">Test Configuration</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 text-gray-500">
