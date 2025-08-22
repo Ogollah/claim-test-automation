@@ -1,6 +1,7 @@
 import {
   ClipboardList,
   FlaskConical,
+  Workflow,
   Wrench,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -18,9 +19,14 @@ const navItems = [
     icon: FlaskConical,
   },
   {
-    name: 'Test setup',
+    name: 'Simple test setup',
     href: '/add-test',
     icon: Wrench,
+  },
+  {
+    name: 'Complex test builder',
+    href: '/complex-cases',
+    icon: Workflow,
   },
 ];
 
