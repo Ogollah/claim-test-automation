@@ -180,10 +180,10 @@ export default function ComplexCaseBuilder({
       test: "build",
       patient: selectedPatient,
       provider: selectedProvider,
-      use: selectedUse,
-      claimSubType: selectedClaimSubType,
+      use: "pre-claim",
+      claimSubType: "ip",
       practitioner: selectedPractitioner,
-      relatedClaimId: relatedClaimId,
+      approvedAmount: relatedClaimId,
       productOrService: interventions.map((intervention, index) => ({
         code: intervention.code,
         display: intervention.name,
@@ -233,36 +233,15 @@ export default function ComplexCaseBuilder({
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 text-gay-500">
+    <div className=" mx-auto px-4 py-8 text-gay-500">
       <h1 className="text-2xl font-bold text-gray-500 mb-6">
-        Custom claim test form
+        Custom complex claim form
       </h1>
 
       <div className="bg-white rounded-lg shadow-md p-6 mb-8">
         <h2 className="text-xl font-semibold text-gray-500 mb-4">
           Test Configuration
         </h2>
-
-        <div className="grid grid-cols-2 gap-6 mb-6">
-          <CustomSelector options={[
-            { id: "claim", label: "Claim" },
-            { id: "preauthorization", label: "Preauthorization" },
-            {id: "related", label: "Related claim"}]}
-            value={selectedUse} 
-            onChange={setSelectedUse}
-            label="Select use"
-            placeholder="Choose use type" />
-          <CustomSelector 
-            options={[
-              { id: "ip", label: "Inpatient (IP)" },
-              { id: "op", label: "Outpatient (OP)" }
-            ]}
-            value={selectedClaimSubType} 
-            onChange={setClaimSubType}
-            label="Select access point"
-            placeholder="Choose access point" />
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 text-gray-500">
           {/* Package Selector (ShadCN Style) */}
           <div className="space-y-2">
@@ -291,15 +270,27 @@ export default function ComplexCaseBuilder({
             onSelectIntervention={setSelectedIntervention}
           />
         </div>
-
-        {/* add related input field */}
-        {selectedUse === "related" && (
+                {/* Patient, Provider, Practitioner */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 text-gray-500">
+          <PatientDetailsPanel
+            patient={selectedPatient}
+            onSelectPatient={setSelectedPatient}
+          />
+          <ProviderDetailsPanel
+            provider={selectedProvider}
+            onSelectProvider={setSelectedProvider}
+          />
+          <PractitionerDetailsPanel
+            practitioner={selectedPractitioner}
+            onSelectPractitioner={setSelectedPractitioner}
+          />
+        </div>
           <div className="border-t border-gray-200 pt-4 mb-6 text-gray-500">
             <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mb-4">
               <div>
-                <Label className="py-3">Related claim ID</Label>
+                <Label className="py-3">Approved amount</Label>
                 <Input
-                  type="text"
+                  type="number"
                   className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   value={relatedClaimId}
                   onChange={(e) => setRelatedClaimId(e.target.value)}
@@ -307,7 +298,6 @@ export default function ComplexCaseBuilder({
               </div>
             </div>
           </div>
-        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-gray-500">
             {["billableStart", "billableEnd", "created"].map((key) => {
@@ -503,22 +493,6 @@ export default function ComplexCaseBuilder({
             </div>
           </div>
         )}
-
-        {/* Patient, Provider, Practitioner */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 text-gray-500">
-          <PatientDetailsPanel
-            patient={selectedPatient}
-            onSelectPatient={setSelectedPatient}
-          />
-          <ProviderDetailsPanel
-            provider={selectedProvider}
-            onSelectProvider={setSelectedProvider}
-          />
-          <PractitionerDetailsPanel
-            practitioner={selectedPractitioner}
-            onSelectPractitioner={setSelectedPractitioner}
-          />
-        </div>
         <div className="flex justify-between w-full">
           <div className="text-gray-500">
             <Label className="py-3">Total</Label>
