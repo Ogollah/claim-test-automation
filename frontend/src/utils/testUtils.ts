@@ -66,10 +66,13 @@ export const runTestSuite = async (
         response: response.data.data,
         fhirBundle: response.data.fhirBundle,
         validationErrors: response.data.validation_errors || [],
-        errorMessage: response.data.error ? String(response.data.error) : response.data.message,
+        errorMessage: response.data.error.message ? String(response.data.error) : response.data.message,
         statusCode: response.status
       }
     };
+
+    console.log('result', result);
+    
 
     // Save result to database if test case ID exists
     if (testCaseId != null) {
@@ -143,7 +146,7 @@ const handleTestError = (error: any, testData: any, testCase?: TestCaseItem[]) =
     details: {
       request: testData,
       error: error.message,
-      errorMessage: errorResponse.error,
+      errorMessage: errorResponse.error.message,
       statusCode,
       response: errorResponse,
       validationErrors: errorResponse?.validation_errors || []
@@ -161,6 +164,7 @@ const handleTestError = (error: any, testData: any, testCase?: TestCaseItem[]) =
     };
     createResult(respData).catch(err => console.error('Error saving error result:', err));
   }
-
+  console.log('error result', errorResult);
+  
   return errorResult;
 };

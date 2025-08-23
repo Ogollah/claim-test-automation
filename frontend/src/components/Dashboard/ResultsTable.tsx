@@ -23,6 +23,8 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
     const toggleRow = (id: string) => {
     setExpandedRows(prev => ({ ...prev, [id]: !prev[id] }));
   };
+  console.log('some error result: ', results);
+  
   const [refreshingIds, setRefreshingIds] = useState<Record<string, boolean>>({});
   // const toggleRow = (id: string) => {
   //   setExpandedRows(prev => ({
@@ -277,7 +279,7 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                           </div>
                           {expandedPayloads[result.id]?.error && (
                             <pre className="p-3 bg-white text-red-600 text-xs whitespace-pre-wrap break-words">
-                              {result.details.errorMessage}
+                              {result.details.error}
                             </pre>
                           )}
                         </div>
