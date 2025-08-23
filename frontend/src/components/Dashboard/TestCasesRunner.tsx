@@ -136,7 +136,6 @@ useEffect(() => {
       positive: buildTestPayload(currentTestCases.positive.map(tc => tc.formData.title), 'positive'),
       negative: buildTestPayload(currentTestCases.negative.map(tc => tc.formData.title), 'negative')
     };
-    console.log('Running all tests with config:', testConfig);
     
 
     if (onRunTests) {

@@ -57,6 +57,8 @@ export type InterventionItem = {
   serviceStart: string;
   serviceEnd: string;
   netValue: number;
+  patient?: any,
+  provider?: any,
 };
 
 interface Identifier {
@@ -335,6 +337,12 @@ export interface TestResult {
     }[];
     statusCode?: number;
   };
+}
+export interface ComplexCase {
+  id: string;
+  formData: any;
+  netValue: number;
+  status: string;
 }
 
 // type TestResult = {

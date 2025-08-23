@@ -30,7 +30,7 @@ import { Input } from "../ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover"
 import { Button } from "../ui/button"
 import { Calendar } from "../ui/calendar"
-import { CalendarIcon, ChevronDownIcon, Ghost, Plus } from "lucide-react"
+import { CalendarIcon, Plus } from "lucide-react"
 import { format } from "date-fns/format"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table"
 import CustomSelector from "./UseSelector"
@@ -449,7 +449,7 @@ export default function TestRunner({
             <h3 className="text-lg font-medium text-gray-500 mb-2">
               Selected Interventions
             </h3>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto bg-white rounded-lg shadow-md p-6 mb-8">
               <Table className="min-w-full divide-y divide-gray-200">
                 <TableHeader className="bg-gray-50">
                   <TableRow>
