@@ -192,6 +192,7 @@ const handleTestError = (error: any, testData: any, testCase?: TestCaseItem[], d
     errorMessage = error.message;
   }
 
+
   const isNegativeTest = testData?.formData?.test === "negative";
   const testCaseId = testCase?.find(i => i.name === testData?.formData?.title)?.id;
 
@@ -207,7 +208,7 @@ const handleTestError = (error: any, testData: any, testCase?: TestCaseItem[], d
     message: errorMessage,
     details: {
       request: testData,
-      error: errorMessage,
+      error: errorResponse.error.error,
       fhirBundle: errorResponse.error.fhirBundle,
       errorMessage: errorMessage,
       statusCode: statusCode,
