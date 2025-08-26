@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getPatients, searchPatientHie } from '@/lib/api';
-import { FormatPatient } from '@/lib/types';
+import { FormatPatient, Patient } from '@/lib/types';
 import { Command, CommandInput, CommandList, CommandEmpty, CommandItem, CommandGroup } from '@/components/ui/command';
 import { Check, ChevronsUpDown, Loader2 } from 'lucide-react';
 import {
@@ -9,6 +9,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from '@/components/ui/button';
+import { saveHIEPatient } from '@/utils/patientUtils';
+import { HIE_URL } from '@/lib/utils';
 
 function getAge(birthDate: string): number {
   const birth = new Date(birthDate);
@@ -46,6 +48,26 @@ export default function PatientDetailsPanel({
 
     fetchLocalPatients();
   }, []);
+
+  // Save HIE patient on demand
+const handleSave = async (patient: FormatPatient) => {
+  const patientPayload: Patient = {
+    cr_id: patient.id,
+    name: patient.name,
+    gender: patient.gender,
+    birthdate: patient.birthDate,
+    national_id: patient.identifiers?.find(id => id.system.endsWith('nationalid'))?.value || patient.id,
+    email: 'mail.mail.com',
+    system_value:  `${HIE_URL.BASE_URL}/${HIE_URL.PATHS.IDENTIFIER}}`
+  };
+
+  try {
+    await saveHIEPatient(patientPayload);
+    console.log('HIE patient saved successfully');
+  } catch (error) {
+    console.error('Error saving HIE patient:', error);
+  }
+};
 
   // Search HIE on demand
   const handleSearch = async (q: string) => {
@@ -130,6 +152,7 @@ export default function PatientDetailsPanel({
                     key={p.id}
                     onSelect={() => {
                       onSelectPatient(p);
+                      handleSave(p);
                       setOpen(false);
                     }}
                   >
