@@ -23,7 +23,6 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
     const toggleRow = (id: string) => {
     setExpandedRows(prev => ({ ...prev, [id]: !prev[id] }));
   };
-  console.log('some error result: ', results);
   
   const [refreshingIds, setRefreshingIds] = useState<Record<string, boolean>>({});
   // const toggleRow = (id: string) => {
@@ -222,7 +221,7 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                                   Download
                                 </Button>
                                 <Button
-                                  onClick={() => copyPayload(result.details.response)}
+                                  onClick={() => copyPayload(result.details.errorMessage)}
                                   className="flex items-center bg-gray-100 text-gray-500 hover:text-gray-500 hover:bg-100 hover:text-gray-900 text-sm"
                                 >
                                   <ClipboardIcon className="h-4 w-4 mr-1" />
@@ -232,7 +231,7 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                             </div>
                             {expandedPayloads[result.id]?.response && (
                               <pre className="p-3 bg-white text-xs overflow-hiden">
-                                {JSON.stringify(result.details.response, null, 2)}
+                                {JSON.stringify(result.details.fhirBundle, null, 2)}
                               </pre>
                             )}
                           </div>
@@ -254,7 +253,9 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                             </div>
                             <div className={`${result.status === 'passed' ? 'bg-white p-3 text-green-500' : 'bg-red-50 text-red-500'} p-3 rounded text-xs`}>
                               <div className="mb-1 p-2"><span className="font-medium">Message:</span> {result?.message}</div>
+                              {result?.claimId && (
                               <div className="mb-1 p-2"><span className="font-medium">Claim ID:</span> {result?.claimId}</div>
+                              )}
                               <div className='p-2'><span className="font-medium">Outcome:</span> {result.outcome} {result.status}</div>
                             </div>
                           </div>

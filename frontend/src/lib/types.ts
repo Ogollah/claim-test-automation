@@ -316,11 +316,12 @@ export interface ApiResponse {
 // Updated TestResult interface with better error handling
 export interface TestResult {
   id: string;
+  req?: any;
   test: string;
   name: string;
   use?: string; 
   status: 'passed' | 'failed' | 'running';
-  duration: number;
+  duration?: number;
   timestamp: string;
   message?: string;
   claimId?: string;
