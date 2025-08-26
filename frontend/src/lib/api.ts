@@ -116,6 +116,15 @@ export const postPatient = async(data: Patient) => {
   }
 }
 
+export const updatePatient = async(id: number, data: Patient) => {
+  try {
+    const resp = await api.put<Patient>(`/api/patients/update/${id}`, data);
+    return resp;
+  } catch (error) {
+    console.error("Error updating patient: ", error);
+  }
+};
+
 export const getPatientByCrID = async(crID: string) => {
   try {
     const resp = await api.get<Patient>(`/api/patients/${crID}`);

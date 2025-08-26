@@ -5,6 +5,7 @@ import { negativeSha01006, postiveSha01006 } from "@/components/testCases/config
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import axios from 'axios';
+import { IDENTIFIER } from "ajv/dist/compile/codegen/code"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -41,13 +42,15 @@ export const HIE_URL = {
     PATIENT: 'Patient',
     ORGANIZATION: 'Organization',
     CLAIM: 'Claim',
-    PARCTITIONER: 'Practitioner'
+    PARCTITIONER: 'Practitioner',
+    IDENTIFIER: 'identifier'
   },
   VALUE_STRINGS: {
     SHA: 'SOCIAL HEALTH AUTHORITY',
     COVERAGE: 'sha-coverage',
     CAT_SHA: 'CAT-SHA-001'
-  }
+  },
+
 };
 
 export const CLAIM_STATUS = {

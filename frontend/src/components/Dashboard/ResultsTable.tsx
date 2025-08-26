@@ -3,7 +3,7 @@ import { CheckCircleIcon, XCircleIcon, ChevronDownIcon, ChevronRightIcon, ArrowD
 import { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Button } from '../ui/button';
-import { RefreshCcwIcon } from 'lucide-react';
+import { Check, CheckCircle2Icon, Minus, RefreshCcw, RefreshCcwIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import test from 'node:test';
 
@@ -73,7 +73,12 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
       });
   };
 
-
+  const getStatusClasses = (status: string, outcome?: string) => {
+    if (status === 'passed') return 'bg-green-100 text-green-800';
+    if (status === 'failed' && outcome === 'Pending') return 'bg-yellow-100 text-yellow-800';
+    if (status === 'failed') return 'bg-red-100 text-red-800';
+    return 'bg-gray-100 text-gray-800';
+  };
 
   return (
     <div className="bg-white shadow overflow-hidden sm:rounded-lg">
@@ -111,19 +116,19 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                   {result?.use || 'N/A'}
                 </TableCell>
                 <TableCell className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    result.status === 'passed' 
-                      ? 'bg-green-100 text-green-800'
-                      : result.status === 'failed'
-                      ? 'bg-red-100 text-red-800'
-                      : 'bg-yellow-100 text-yellow-800'
-                  }`}>
+                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClasses(result.status, result.outcome)}`}>
                     {result.status === 'passed' ? (
                       <CheckCircleIcon className="h-4 w-4 mr-1 inline" />
-                    ) : result.status === 'failed' ? (
+                    ) : result.status === 'failed' && result.outcome !== 'Pending' ? (
                       <XCircleIcon className="h-4 w-4 mr-1 inline" />
-                    ) : null}
-                    {result.status.toUpperCase()}
+                    ) : result.outcome === 'Pending' && result.status === 'failed' ? (
+                      <RefreshCcwIcon className="h-4 w-4 mr-1 inline text-orange-400" />
+                    ) : (
+                      <Minus className="h-4 w-4 mr-1 inline" />
+                    )}
+                    {result.outcome !== 'Pending' ? (result.status.toUpperCase()) : (
+                      <span className="text-orange-400">PENDING</span>
+                    )}
                   </span>
                 </TableCell>
                 <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -256,7 +261,7 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                               {result?.claimId && (
                               <div className="mb-1 p-2"><span className="font-medium">Claim ID:</span> {result?.claimId}</div>
                               )}
-                              <div className='p-2'><span className="font-medium">Outcome:</span> {result.outcome} {result.status}</div>
+                              <div className='p-2'><span className="font-medium">Outcome:</span> {result.outcome}</div>
                             </div>
                           </div>
                         </>

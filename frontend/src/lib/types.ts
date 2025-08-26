@@ -75,6 +75,7 @@ export interface FormatPatient {
 }
 
 export interface Patient {
+  id?: number,
   cr_id: string, 
   name: string, 
   gender: string, 
