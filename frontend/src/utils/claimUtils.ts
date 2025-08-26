@@ -8,7 +8,8 @@ import { api, API_BASE_URL, CLAIM_STATUS } from '@/lib/utils';
 export const getClaimOutcome = async (claimId: string): Promise<string> => {
   try {
     const response = await api.get<any>(`${API_BASE_URL}/api/claims/${claimId}`);
-    
+
+    console.log('printlogs', response.data.data);
     const ext = response.data?.data?.extension?.find(
       (i: any) => i.url.endsWith('claim-state-extension')
     );

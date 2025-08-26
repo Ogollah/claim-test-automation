@@ -22,15 +22,31 @@ export const runTestSuite = async (
     const response = await api.post(`${API_BASE_URL}/api/claims/submit`, testData);
     const duration = Date.now() - startTime;
 
-    // Validate response
-    if (response.status !== 200 || !response.data || typeof response.data !== 'object') {
-      throw new Error(response.status !== 200 
-        ? `API call failed with status ${response.status}` 
-        : 'Invalid response format');
+    console.log("API Response:", response.data);
+
+    // Check if the overall request was successful
+    if (!response.data.success) {
+      // Handle API-level failure (like 400 errors)
+      return [handleTestError(response.data, testData, testCase, duration)];
+    }
+
+    // Check if the data layer was successful
+    if (!response.data.data?.success) {
+      // Handle data-level failure
+      return [handleTestError(response.data, testData, testCase, duration)];
+    }
+
+    // Validate response - check for either 200 or 201 status in the data layer
+    if (response.data.data?.status !== 200 && response.data.data?.status !== 201) {
+      throw new Error(`API call failed with status ${response.data.data?.status}`);
+    }
+
+    if (typeof response.data.data !== 'object') {
+      throw new Error('Invalid response format');
     }
 
     // Extract claim ID from response
-    const claimEntry = response.data.fhirBundle?.entry?.find(
+    const claimEntry = response.data.data.data?.entry?.find(
       (entry: any) => entry.resource?.resourceType === 'Claim'
     );
     const claimId = claimEntry?.resource?.id || 'unknown-claim-id';
@@ -39,49 +55,63 @@ export const runTestSuite = async (
     const testCaseId = testCase?.find(i => i.name === testData?.formData?.title)?.id;
 
     // Outcome
-    const initialOutcome = response.data.data?.entry
-      ?.find((e: any) => e.resource?.resourceType === 'ClaimResponse')
-      ?.resource?.extension?.find((i: any) => i.url.endsWith('claim-state-extension'))
-      ?.valueCodeableConcept?.coding?.find((s: any) => s.system.endsWith('claim-state'))
-      ?.display || '';
+    let finalOutcome = '';
+    try {
+      const initialOutcome = response.data.data.data?.entry
+        ?.find((e: any) => e.resource?.resourceType === 'ClaimResponse')
+        ?.resource?.extension?.find((i: any) => i.url.endsWith('claim-state-extension'))
+        ?.valueCodeableConcept?.coding?.find((s: any) => s.system.endsWith('claim-state'))
+        ?.display || '';
 
-    const finalOutcome = initialOutcome !== 'Pending' 
-      ? initialOutcome 
-      : await getClaimOutcome(claimId);
+      finalOutcome = initialOutcome !== 'Pending' 
+        ? initialOutcome 
+        : await getClaimOutcome(claimId);
+    } catch (outcomeError) {
+      console.error('Error getting claim outcome:', outcomeError);
+      finalOutcome = 'Error determining outcome';
+    }
+
+    console.log('finalOutcome:', finalOutcome);
+    console.log('claim id:', claimId);
+
+    // Determine test status
+    const testPassed = shouldTestPass(
+      response.data.data.success,
+      testData?.formData?.test,
+      finalOutcome
+    );
 
     // Create test result
     const result: TestResult = {
-      id: response.data.data?.id || `generated-${Date.now()}`,
-      test: testData?.formData.test,
+      id: response.data.data.data?.id || `generated-${Date.now()}`,
+      req: response.data.data.data,
+      test: testData?.formData?.test,
       name: testData?.formData?.title || 'Claim Submission',
       use: testData?.formData?.use,
-      status: shouldTestPass(response.data.success,testData?.formData?.test, finalOutcome) ? 'passed' : 'failed',
+      status: testPassed ? 'passed' : 'failed',
       duration,
       timestamp: new Date().toISOString(),
-      message: response.data.message,
+      message: response.data.data.message || 'Claim submitted successfully',
       claimId,
       outcome: finalOutcome,
       details: {
         request: testData,
         response: response.data.data,
-        fhirBundle: response.data.fhirBundle,
-        validationErrors: response.data.validation_errors || [],
-        errorMessage: response.data.error.message ? String(response.data.error) : response.data.message,
+        fhirBundle: response.data.data.fhirBundle || response.data.fhirBundle,
+        validationErrors: response.data.data.validation_errors || [],
+        errorMessage: response.data.data.error?.message ? String(response.data.data.error) : response.data.message,
         statusCode: response.status
       }
     };
-
-    console.log('result', result);
-    
 
     // Save result to database if test case ID exists
     if (testCaseId != null) {
       try {
         const respResult: Result = {
           testcase_id: testCaseId,
-          result_status: response.data.success && testData?.formData?.test === 'positive' ? 1 : 0,
+          result_status: testPassed ? 1 : 0,
           message: finalOutcome,
-          detail: response.data.message,
+          detail: response.data.message || 'Claim processed',
           status_code: response.status.toString(),
           claim_id: claimId
         };
@@ -91,7 +121,10 @@ export const runTestSuite = async (
       }
     }
 
-    await ensureResourcesExist(testData.formData);
+    // Ensure resources exist (run in background, don't await)
+    ensureResourcesExist(testData.formData).catch(error => {
+      console.error("Error ensuring resources exist:", error);
+    });
 
     return [result];
   } catch (error: any) {
@@ -104,67 +137,96 @@ export const runTestSuite = async (
  */
 const ensureResourcesExist = async (formData: any) => {
   try {
-    const [practitioner, provider, patient] = await Promise.all([
-      getPractitionerByPuID(formData?.practitioner?.id),
-      getProviderByFID(formData?.provider?.id),
-      getPatientByCrID(formData?.patient?.id)
+    if (!formData) return;
+
+    const [practitioner, provider, patient] = await Promise.allSettled([
+      formData?.practitioner?.id ? getPractitionerByPuID(formData.practitioner.id) : Promise.resolve(null),
+      formData?.provider?.id ? getProviderByFID(formData.provider.id) : Promise.resolve(null),
+      formData?.patient?.id ? getPatientByCrID(formData.patient.id) : Promise.resolve(null)
     ]);
 
-    await Promise.all([
-      !practitioner && postPractitioner(practitionerPayload(formData.practitioner)),
-      !provider && postProvider(providerPayload(formData.provider)),
-      !patient && postPatient(patientPayload(formData.patient))
-    ]);
+    const creationPromises = [];
+
+    if (formData?.practitioner && practitioner.status === 'rejected') {
+      creationPromises.push(postPractitioner(practitionerPayload(formData.practitioner)));
+    }
+
+    if (formData?.provider && provider.status === 'rejected') {
+      creationPromises.push(postProvider(providerPayload(formData.provider)));
+    }
+
+    if (formData?.patient && patient.status === 'rejected') {
+      creationPromises.push(postPatient(patientPayload(formData.patient)));
+    }
+
+    if (creationPromises.length > 0) {
+      await Promise.allSettled(creationPromises);
+    }
   } catch (error) {
     console.error("Error ensuring resources exist:", error);
+    throw error;
   }
 };
 
 /**
  * Handles test execution errors and returns error result
  */
-const handleTestError = (error: any, testData: any, testCase?: TestCaseItem[]) => {
-  const errorResponse = error?.response?.data;
-  const statusCode = error?.response?.status;
+const handleTestError = (error: any, testData: any, testCase?: TestCaseItem[], duration?: number): TestResult => {
+  const errorResponse = error?.response?.data || error;
+  const statusCode = error?.response?.status || error?.status || 500;
   
   let errorMessage = 'Unknown error occurred';
   if (errorResponse) {
-    errorMessage = typeof errorResponse === 'string' 
-      ? errorResponse
-      : errorResponse.message || errorResponse.error || 'Request failed';
+    if (typeof errorResponse === 'string') {
+      errorMessage = errorResponse;
+    } else if (errorResponse.error?.message) {
+      errorMessage = errorResponse.error.message;
+    } else if (errorResponse.message) {
+      errorMessage = errorResponse.message;
+    } else if (errorResponse.error) {
+      errorMessage = errorResponse.error;
+    } else {
+      errorMessage = JSON.stringify(errorResponse);
+    }
+  } else if (error.message) {
+    errorMessage = error.message;
   }
+
+  const isNegativeTest = testData?.formData?.test === "negative";
+  const testCaseId = testCase?.find(i => i.name === testData?.formData?.title)?.id;
 
   const errorResult: TestResult = {
     id: `error-${Date.now()}`,
-    test: testData?.formData.test,
+    req: error,
+    test: testData?.formData?.test,
     name: testData?.formData?.title || 'Claim Submission',
-    status: testData?.formData?.test === "negative" ? 'passed' : 'failed',
+    status: isNegativeTest ? 'passed' : 'failed',
     use: testData?.formData?.use,
-    duration: 0,
+    duration: duration || 0,
     timestamp: new Date().toISOString(),
     message: errorMessage,
     details: {
       request: testData,
-      error: error.message,
-      errorMessage: errorResponse.error.message,
-      statusCode,
+      error: errorMessage,
+      fhirBundle: errorResponse.error.fhirBundle,
+      errorMessage: errorMessage,
+      statusCode: statusCode,
       response: errorResponse,
-      validationErrors: errorResponse?.validation_errors || []
+      validationErrors: errorResponse.validation_errors || []
     }
   };
 
-  const testCaseId = testCase?.find(i => i.name === testData?.formData?.title)?.id;
   if (testCaseId != null) {
     const respData: Result = {
       testcase_id: testCaseId,
-      result_status: testData?.formData?.test === 'negative' ? 1 : 0,
+      result_status: isNegativeTest ? 1 : 0,
       message: errorMessage,
-      detail: error.message,
-      status_code: statusCode?.toString() || '500'
+      detail: error.message || errorMessage,
+      status_code: statusCode.toString(),
+      claim_id: 'error-no-claim-id'
     };
     createResult(respData).catch(err => console.error('Error saving error result:', err));
   }
-  console.log('error result', errorResult);
   
   return errorResult;
 };
