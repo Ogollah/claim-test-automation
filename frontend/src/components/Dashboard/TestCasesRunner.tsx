@@ -1,14 +1,11 @@
-// TestCasesRunner.tsx
-import { use, useEffect, useState } from 'react';
-import { StopIcon, TrashIcon } from '@heroicons/react/16/solid';
-import UseSelector from '@/components/Dashboard/UseSelector';
+import { useEffect, useState } from 'react';
+import { StopIcon } from '@heroicons/react/16/solid';
 import InterventionSelector from '@/components/Dashboard/InterventionSelector';
-import { FormatPatient, InterventionItem, Package, TestCase, TestCaseItem, TestResult } from '@/lib/types';
+import { FormatPatient, Package, TestCase, TestCaseItem, TestResult } from '@/lib/types';
 import { getInterventionByPackageId, getPackages, getTestCaseByCode } from '@/lib/api';
 import TestcaseDetails from '@/components/testCases/TestcaseDetails';
 import ResultsTable from '@/components/Dashboard/ResultsTable';
 import { DEFAULT_PACKAGE } from '@/packages/ShaPackages';
-import { testCasesPackages } from '@/lib/utils';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -35,6 +32,9 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
     positive: TestCase[];
     negative: TestCase[];
   }>({ positive: [], negative: [] });
+  const [editingTestCase, setEditingTestCase] = useState<string | null>(null);
+  const [showPatientPanel, setShowPatientPanel] = useState(false);
+
   useEffect(() => {
     const fetchPackages = async () => {
       try {
@@ -52,7 +52,7 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
       const fetchInterventions = async () => {
         try {
           const intevents = await getInterventionByPackageId(
-            selectedPackage
+            Number(selectedPackage)
           )
           setAvailableInterventions(intevents || [])
           setSelectedIntervention("")
@@ -65,6 +65,12 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
       setAvailableInterventions([])
     }
   }, [selectedPackage]);
+
+  useEffect(() => {
+    const packageObj = packages.find(p => p.id === Number(selectedPackage));
+    const packageCode = packageObj?.code;
+    setShowPatientPanel(!!(packageCode && ['SHA-03', 'SHA-08', 'SHA-07', 'SHA-13'].includes(packageCode)));
+  }, [selectedPackage, packages]);
 
   useEffect(() => {
     const fetchTestCases = async () => {
@@ -100,6 +106,49 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
     }
   }, [testCases]);
 
+  const updateTestCasePatient = (testCaseTitle: string, patient: FormatPatient) => {
+    // Find and update the specific test case
+    const allTestCases = [...currentTestCases.positive, ...currentTestCases.negative];
+    const updatedTestCases = allTestCases.map(testCase => {
+      if (testCase.formData.title === testCaseTitle) {
+        return {
+          ...testCase,
+          formData: {
+            ...testCase.formData,
+            patient: patient
+          }
+        };
+      }
+      return testCase;
+    });
+
+    const updatedPositive = updatedTestCases.filter(tc =>
+      currentTestCases.positive.some(positiveTc => positiveTc.formData.title === tc.formData.title)
+    );
+
+    const updatedNegative = updatedTestCases.filter(tc =>
+      currentTestCases.negative.some(negativeTc => negativeTc.formData.title === tc.formData.title)
+    );
+
+    setCurrentTestCases({
+      positive: updatedPositive,
+      negative: updatedNegative
+    });
+
+    setEditingTestCase(null);
+    toast.success(`Patient updated for test case: ${testCaseTitle}`);
+  };
+
+  const handleEditPatient = (testCaseTitle: string) => {
+    setEditingTestCase(testCaseTitle);
+  };
+
+  const handleSelectPatient = (patient: FormatPatient) => {
+    if (editingTestCase) {
+      updateTestCasePatient(editingTestCase, patient);
+    }
+  };
+
   const buildTestPayload = (tests: string[], type: 'positive' | 'negative') => {
     const allTestCases = [
       ...currentTestCases.positive,
@@ -126,7 +175,6 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
   };
 
   const handleRunAllTests = async () => {
-
     const allSelectedTests = [...currentTestCases.positive, ...currentTestCases.negative];
     if (allSelectedTests.length === 0) {
       toast.error('Please select at least one test case to run');
@@ -137,7 +185,6 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
       positive: buildTestPayload(currentTestCases.positive.map(tc => tc.formData.title), 'positive'),
       negative: buildTestPayload(currentTestCases.negative.map(tc => tc.formData.title), 'negative')
     };
-
 
     if (onRunTests) {
       setRunningSection('all');
@@ -199,7 +246,6 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
   };
 
   const runTests = async (selectedItems: string[], type: 'positive' | 'negative') => {
-
     if (selectedItems.length === 0) {
       toast.error(`Please select at least one ${type} test case to run`);
       return;
@@ -235,7 +281,14 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
     }
   };
 
-  console.log('selected package:', selectedPackage);
+  // Get current patient for the editing test case
+  const getCurrentPatient = () => {
+    if (!editingTestCase) return null;
+
+    const allTestCases = [...currentTestCases.positive, ...currentTestCases.negative];
+    const testCase = allTestCases.find(tc => tc.formData.title === editingTestCase);
+    return testCase?.formData.patient || null;
+  };
 
   return (
     <div className="mx-auto px-4 py-8">
@@ -272,11 +325,17 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
             onSelectIntervention={setSelectedIntervention}
           />
         </div>
-        {selectedPackage === "2" && (
+
+        {showPatientPanel && editingTestCase && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <PatientDetailsPanel patient={null} onSelectPatient={function (patient: FormatPatient): void {
-              throw new Error('Function not implemented.');
-            }} />
+            <div className=" p-4 rounded-md">
+              <h5 className=" text-gray-500 mb-2">Editing Patient for: <span className="font-small text-gray-800">{editingTestCase}</span></h5>
+              <PatientDetailsPanel
+                patient={getCurrentPatient()}
+                onSelectPatient={handleSelectPatient}
+                show={false}
+              />
+            </div>
           </div>
         )}
 
@@ -286,12 +345,16 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
             testCases={currentTestCases.positive}
             onRunTests={handleRunPositiveTests}
             isRunning={isRunning && runningSection === 'positive'}
+            onEditPatient={handleEditPatient}
+            showPatientPanel={showPatientPanel}
           />
           <TestcaseDetails
             title='Negative'
             testCases={currentTestCases.negative}
             onRunTests={handleRunNegativeTests}
             isRunning={isRunning && runningSection === 'negative'}
+            onEditPatient={handleEditPatient}
+            showPatientPanel={showPatientPanel}
           />
         </div>
 
