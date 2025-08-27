@@ -15,18 +15,28 @@ import {
 } from "@/components/ui/form";
 import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { PlayIcon } from 'lucide-react';
+import { PlayIcon, UserIcon } from 'lucide-react';
 import { Label } from '../ui/label';
+import { FormatPatient, TestCase } from '@/lib/types';
 
 interface TestcaseDetailsProps {
   title: string;
-  testCases?: any[];
+  testCases?: TestCase[];
   onRunTests?: (selectedItems: string[]) => void;
   isRunning?: boolean;
+  onEditPatient?: (testCaseTitle: string) => void;
+  showPatientPanel?: boolean;
 }
 
-export default function TestcaseDetails({ title, testCases, onRunTests, isRunning }: TestcaseDetailsProps) {
-  const items = testCases || [];  
+export default function TestcaseDetails({
+  title,
+  testCases,
+  onRunTests,
+  isRunning,
+  onEditPatient,
+  showPatientPanel
+}: TestcaseDetailsProps) {
+  const items = testCases || [];
   const FormSchema = z.object({
     items: z.array(z.string()).refine((value) => value.length > 0, {
       message: "You have to select at least one item.",
@@ -34,7 +44,7 @@ export default function TestcaseDetails({ title, testCases, onRunTests, isRunnin
   });
 
   const defaultSelectedItems = items.map(item => item.formData.title);
-  
+
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
@@ -49,7 +59,6 @@ export default function TestcaseDetails({ title, testCases, onRunTests, isRunnin
     }
     if (onRunTests) {
       onRunTests(data.items);
-      
     } else {
       toast.info("You selected the following items", {
         description: (
@@ -63,6 +72,12 @@ export default function TestcaseDetails({ title, testCases, onRunTests, isRunnin
     }
   }
 
+  // Helper function to get patient info display
+  const getPatientInfo = (patient: FormatPatient) => {
+    if (!patient) return 'No patient selected';
+    return `${patient.name} (${patient.gender}, ${patient.birthDate})`;
+  };
+
   return (
     <div className="border border-gray-200 rounded-lg p-4">
       <h2 className="text-lg font-semibold mb-4">{title}</h2>
@@ -74,32 +89,52 @@ export default function TestcaseDetails({ title, testCases, onRunTests, isRunnin
             render={({ field }) => (
               <FormItem>
                 <Label>Select Test Cases</Label>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-4">
                   {items.map((item) => (
                     <FormItem
                       key={item.formData.title}
-                      className="flex flex-row items-start space-x-3 space-y-0"
+                      className="flex flex-col items-start space-y-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50"
                     >
-                      <FormControl>
-                        <Label className="hover:bg-accent/50 flex items-start gap-3 rounded-lg border p-3 has-[[aria-checked=true]]:border-blue-600 has-[[aria-checked=true]]:bg-blue-50 dark:has-[[aria-checked=true]]:border-blue-900 dark:has-[[aria-checked=true]]:bg-blue-950">
-                        <Checkbox
-                        className="data-[state=checked]:border-blue-600 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white dark:data-[state=checked]:border-blue-700 dark:data-[state=checked]:bg-blue-700"
-                          checked={field.value?.includes(item.formData.title)}
-                          onCheckedChange={(checked) => {
-                            return checked
-                              ? field.onChange([...field.value, item.formData.title])
-                              : field.onChange(
-                                  field.value?.filter((id) => id !== item.formData.title)
-                                );
-                          }}
-                        />
-                          <div className="grid gap-1.5 font-normal">
-                            <p className="text-muted-foreground text-sm leading-none font-normal">
-                            {item.formData.title}
-                          </p>
+                      <div className="flex items-start w-full justify-between">
+                        <div className="flex items-start space-x-3 flex-1">
+                          <FormControl>
+                            <Checkbox
+                              className="data-[state=checked]:border-blue-600 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white dark:data-[state=checked]:border-blue-700 dark:data-[state=checked]:bg-blue-700 mt-1"
+                              checked={field.value?.includes(item.formData.title)}
+                              onCheckedChange={(checked) => {
+                                return checked
+                                  ? field.onChange([...field.value, item.formData.title])
+                                  : field.onChange(
+                                    field.value?.filter((id) => id !== item.formData.title)
+                                  );
+                              }}
+                            />
+                          </FormControl>
+                          <div className="grid gap-1.5 flex-1">
+                            <p className="text-sm font-medium leading-none">
+                              {item.formData.title}
+                            </p>
+                            {showPatientPanel && item.formData.patient && (
+                              <div className="text-xs text-muted-foreground mt-1">
+                                <span className="font-medium">Patient: </span>
+                                {getPatientInfo(item.formData.patient)}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        </Label>
-                      </FormControl>
+                        {showPatientPanel && onEditPatient && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onEditPatient(item.formData.title)}
+                            className="ml-2 shrink-0"
+                            title="Edit patient for this test case"
+                          >
+                            <UserIcon className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </FormItem>
                   ))}
                 </div>
@@ -107,11 +142,14 @@ export default function TestcaseDetails({ title, testCases, onRunTests, isRunnin
               </FormItem>
             )}
           />
-          <Button type="submit" disabled={isRunning} className={`inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${
-              isRunning
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
-            }`}>
+          <Button
+            type="submit"
+            disabled={isRunning}
+            className={`inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${isRunning
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+              }`}
+          >
             <PlayIcon className="-ml-1 mr-2 h-5 w-5" />
             {isRunning ? 'Running...' : 'Run selected tests'}
           </Button>

@@ -24,7 +24,7 @@ function getAge(birthDate: string): number {
 export default function PatientDetailsPanel({
   patient,
   onSelectPatient,
-  show=true,
+  show = true,
 }: {
   patient: FormatPatient | null;
   onSelectPatient: (patient: FormatPatient) => void;
@@ -50,24 +50,23 @@ export default function PatientDetailsPanel({
   }, []);
 
   // Save HIE patient on demand
-const handleSave = async (patient: FormatPatient) => {
-  const patientPayload: Patient = {
-    cr_id: patient.id,
-    name: patient.name,
-    gender: patient.gender,
-    birthdate: patient.birthDate,
-    national_id: patient.identifiers?.find(id => id.system.endsWith('nationalid'))?.value || patient.id,
-    email: 'mail.mail.com',
-    system_value:  `${HIE_URL.BASE_URL}/${HIE_URL.PATHS.IDENTIFIER}}`
+  const handleSave = async (patient: FormatPatient) => {
+    const patientPayload: Patient = {
+      cr_id: patient.id,
+      name: patient.name,
+      gender: patient.gender,
+      birthdate: patient.birthDate,
+      national_id: patient.identifiers?.find(id => id.system.endsWith('nationalid'))?.value || patient.id,
+      email: 'mail.mail.com',
+      system_value: `${HIE_URL.BASE_URL}/${HIE_URL.PATHS.IDENTIFIER}}`
+    };
+    try {
+      await saveHIEPatient(patientPayload);
+      console.log('HIE patient saved successfully');
+    } catch (error) {
+      console.error('Error saving HIE patient:', error);
+    }
   };
-
-  try {
-    await saveHIEPatient(patientPayload);
-    console.log('HIE patient saved successfully');
-  } catch (error) {
-    console.error('Error saving HIE patient:', error);
-  }
-};
 
   // Search HIE on demand
   const handleSearch = async (q: string) => {
@@ -100,8 +99,8 @@ const handleSave = async (patient: FormatPatient) => {
 
   const filteredPatients = query
     ? patients.filter((p) =>
-        p.name.toLowerCase().includes(query.toLowerCase())
-      )
+      p.name.toLowerCase().includes(query.toLowerCase())
+    )
     : patients;
 
   return (
@@ -128,42 +127,42 @@ const handleSave = async (patient: FormatPatient) => {
 
           <PopoverContent className="w-[300px] p-0">
             <Command>
-            <CommandInput
-              placeholder="Search patient..."
-              className="h-9"
-              onValueChange={(val) => {
-                setQuery(val);
-              }}
-            />
-            <CommandList>
-              {loading && (
-                <div className="flex items-center justify-center p-2">
-                  <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
-                </div>
-              )}
-              
-              {!loading && filteredPatients.length === 0 && (
-                <CommandEmpty>No patients found.</CommandEmpty>
-              )}
+              <CommandInput
+                placeholder="Search patient..."
+                className="h-9"
+                onValueChange={(val) => {
+                  setQuery(val);
+                }}
+              />
+              <CommandList>
+                {loading && (
+                  <div className="flex items-center justify-center p-2">
+                    <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
+                  </div>
+                )}
 
-              <CommandGroup>
-                {filteredPatients.map((p) => (
-                  <CommandItem
-                    key={p.id}
-                    onSelect={() => {
-                      onSelectPatient(p);
-                      handleSave(p);
-                      setOpen(false);
-                    }}
-                  >
-                    {p.name} ({p.gender}, {getAge(p.birthDate)} yrs)
-                    {patient?.id === p.id && (
-                      <Check className="ml-auto h-4 w-4" />
-                    )}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </CommandList>
+                {!loading && filteredPatients.length === 0 && (
+                  <CommandEmpty>No patients found.</CommandEmpty>
+                )}
+
+                <CommandGroup>
+                  {filteredPatients.map((p) => (
+                    <CommandItem
+                      key={p.id}
+                      onSelect={() => {
+                        onSelectPatient(p);
+                        handleSave(p);
+                        setOpen(false);
+                      }}
+                    >
+                      {p.name} ({p.gender}, {getAge(p.birthDate)} yrs)
+                      {patient?.id === p.id && (
+                        <Check className="ml-auto h-4 w-4" />
+                      )}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
             </Command>
           </PopoverContent>
         </Popover>
