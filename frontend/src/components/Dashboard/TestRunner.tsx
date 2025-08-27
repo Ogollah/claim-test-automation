@@ -30,9 +30,11 @@ import { Input } from "../ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover"
 import { Button } from "../ui/button"
 import { Calendar } from "../ui/calendar"
-import { CalendarIcon, Ghost, Plus } from "lucide-react"
+import { CalendarIcon, Plus } from "lucide-react"
 import { format } from "date-fns/format"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table"
+import CustomSelector from "./UseSelector"
+import { toast } from "sonner"
 
 type TestRunnerProps = {
   isRunning?: boolean
@@ -43,39 +45,41 @@ export default function TestRunner({
   isRunning = false,
   onRunTests,
 }: TestRunnerProps) {
-  const [selectedPackage, setSelectedPackage] = useState<string>("")
-  const [selectedPatient, setSelectedPatient] = useState<any>(null)
-  const [selectedUse, setSelectedUse] = useState<any>(null)
-  const [selectedProvider, setSelectedProvider] = useState<any>(null)
-  const [selectedPractitioner, setSelectedPractitioner] =
-    useState<any>(null)
-  const [selectedIntervention, setSelectedIntervention] =
-    useState<string>("")
-const [selectedDates, setSelectedDates] = useState<{
-  billableStart: Date | undefined
-  billableEnd: Date | undefined
-  created: Date
-}>({
-  billableStart: undefined,
-  billableEnd: undefined,
-  created: new Date(),
-})
+  const [selectedPackage, setSelectedPackage] = useState<string>("");
+  const [selectedPatient, setSelectedPatient] = useState<any>(null);
+  const [selectedUse, setSelectedUse] = useState<string>("claim");
+  const [selectedProvider, setSelectedProvider] = useState<any>(null);
+  const [selectedPractitioner, setSelectedPractitioner] = useState<any>(null);
+  const [selectedIntervention, setSelectedIntervention] = useState<string>("");
+  const today = new Date();
+  const twoDays = new Date();
+  twoDays.setDate(today.getDate() - 2);
+  
+  const [selectedDates, setSelectedDates] = useState<{
+    billableStart: Date | undefined
+    billableEnd: Date | undefined
+    created: Date
+  }>({
+    billableStart: twoDays,
+    billableEnd: today,
+    created: today,
+  });
 
   const [packages, setPackages] = useState<Package[]>([])
-  const [interventions, setInterventions] = useState<
-    InterventionItem[]
-  >([])
-  const [availableInterventions, setAvailableInterventions] =
-    useState<Intervention[]>([])
-  const [total, setTotal] = useState<number>(0)
+  const [interventions, setInterventions] = useState<InterventionItem[]>([])
+  const [availableInterventions, setAvailableInterventions] = useState<Intervention[]>([])
+  const [total, setTotal] = useState<number>(0);
 
   const [currentIntervention, setCurrentIntervention] = useState({
-    serviceQuantity: "",
-    unitPrice: "",
-    serviceStart: "",
-    serviceEnd: "",
-  })
-  const [open, setOpen] = useState(false)
+    serviceQuantity: "1",
+    unitPrice: "10000",
+    serviceStart: format(twoDays, "yyyy-MM-dd"),
+    serviceEnd: format(today, "yyyy-MM-dd"),
+  });
+
+  const [open, setOpen] = useState(false);
+  const [selectedClaimSubType, setClaimSubType] = useState<any>("ip");
+  const [relatedClaimId, setRelatedClaimId] = useState("");
 
   const currentNetValue =
     currentIntervention.serviceQuantity &&
@@ -89,6 +93,9 @@ const [selectedDates, setSelectedDates] = useState<{
       try {
         const pck = await getPackages()
         setPackages(pck)
+        if (pck.length > 0) {
+          setSelectedPackage(pck[0].id)
+        }
       } catch (error) {
         console.error("--> Error fetching packages:", error)
       }
@@ -100,11 +107,11 @@ const [selectedDates, setSelectedDates] = useState<{
     if (selectedPackage) {
       const fetchInterventions = async () => {
         try {
-          const intevents = await getInterventionByPackageId(
-            selectedPackage
-          )
+          const intevents = await getInterventionByPackageId(selectedPackage)
           setAvailableInterventions(intevents || [])
-          setSelectedIntervention("")
+          if (intevents && intevents.length > 0) {
+            setSelectedIntervention(intevents[0].code)
+          }
         } catch (error) {
           console.error("--> Error fetching interventions:", error)
         }
@@ -125,7 +132,7 @@ const [selectedDates, setSelectedDates] = useState<{
 
   const addIntervention = () => {
     if (!selectedPackage || !selectedIntervention) {
-      alert("Please select a package and intervention")
+      toast.error("Please select a package and intervention")
       return
     }
 
@@ -148,10 +155,10 @@ const [selectedDates, setSelectedDates] = useState<{
 
     setInterventions([...interventions, newIntervention])
     setCurrentIntervention({
-      serviceQuantity: "",
-      unitPrice: "",
-      serviceStart: "",
-      serviceEnd: "",
+      serviceQuantity: "1",
+      unitPrice: "10000",
+      serviceStart: format(twoDays, "yyyy-MM-dd"),
+      serviceEnd: format(today, "yyyy-MM-dd"),
     })
   }
 
@@ -168,7 +175,9 @@ const [selectedDates, setSelectedDates] = useState<{
       patient: selectedPatient,
       provider: selectedProvider,
       use: selectedUse,
+      claimSubType: selectedClaimSubType,
       practitioner: selectedPractitioner,
+      relatedClaimId: relatedClaimId,
       productOrService: interventions.map((intervention, index) => ({
         code: intervention.code,
         display: intervention.name,
@@ -187,18 +196,22 @@ const [selectedDates, setSelectedDates] = useState<{
         },
         sequence: index + 1,
       })),
-      billablePeriod: selectedDates,
+      billablePeriod: {
+        billableStart: selectedDates.billableStart ? format(selectedDates.billableStart, "yyyy-MM-dd") : "",
+        billableEnd: selectedDates.billableEnd ? format(selectedDates.billableEnd, "yyyy-MM-dd") : "",
+        created: format(selectedDates.created, "yyyy-MM-dd"),
+      },
       total: { value: total, currency: "KES" },
     },
   })
-
+  
   const handleRunTests = () => {
     if (
       !selectedPatient ||
       !selectedProvider ||
       interventions.length === 0
     ) {
-      alert(
+      toast.error(
         "Please select all required fields and add at least one intervention"
       )
       return
@@ -208,19 +221,40 @@ const [selectedDates, setSelectedDates] = useState<{
     onRunTests?.(testConfig)
   }
 
+  const handleTotalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = parseFloat(e.target.value) || total;
+    setTotal(newValue);
+  };
+
   return (
-    <div className="container mx-auto px-4 py-8 text-gay-500">
+    <div className=" mx-auto  py-4 text-gay-500">
       <h1 className="text-2xl font-bold text-gray-500 mb-6">
-        Claims Test Automation
+        Custom test claim form
       </h1>
 
-      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+      <div className="bg-white rounded-sm shadow-md p-6 mb-8">
         <h2 className="text-xl font-semibold text-gray-500 mb-4">
           Test Configuration
         </h2>
 
-        <div className="grid grid-cols-1 gap-6 mb-6">
-          <UseSelector use={selectedUse} onSelectUse={setSelectedUse} />
+        <div className="grid grid-cols-2 gap-6 mb-6">
+          <CustomSelector options={[
+            { id: "claim", label: "Claim" },
+            { id: "preauthorization", label: "Preauthorization" },
+            {id: "related", label: "Related claim"}]}
+            value={selectedUse} 
+            onChange={setSelectedUse}
+            label="Select use"
+            placeholder="Choose use type" />
+          <CustomSelector 
+            options={[
+              { id: "ip", label: "Inpatient (IP)" },
+              { id: "op", label: "Outpatient (OP)" }
+            ]}
+            value={selectedClaimSubType} 
+            onChange={setClaimSubType}
+            label="Select access point"
+            placeholder="Choose access point" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 text-gray-500">
@@ -252,7 +286,23 @@ const [selectedDates, setSelectedDates] = useState<{
           />
         </div>
 
-        {/* Dates help fix this part*/}
+        {/* add related input field */}
+        {selectedUse === "related" && (
+          <div className="border-t border-gray-200 pt-4 mb-6 text-gray-500">
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mb-4">
+              <div>
+                <Label className="py-3">Related claim ID</Label>
+                <Input
+                  type="text"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  value={relatedClaimId}
+                  onChange={(e) => setRelatedClaimId(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-gray-500">
             {["billableStart", "billableEnd", "created"].map((key) => {
               const label =
@@ -262,14 +312,11 @@ const [selectedDates, setSelectedDates] = useState<{
                   ? "Billable End Date"
                   : "Created Date";
 
-              const dateValue = selectedDates[key as keyof typeof selectedDates]
-                ? new Date(selectedDates[key as keyof typeof selectedDates] as string)
-                : undefined;
-
+              const dateValue = selectedDates[key as keyof typeof selectedDates];
               const isCreated = key === "created";
 
               return (
-                <div key={key} className="flex flex-col gap-2">
+                <div key={key} className="flex flex-col gap-3">
                   <Label htmlFor={key}>{label}</Label>
                   <Popover>
                     <PopoverTrigger asChild>
@@ -282,27 +329,25 @@ const [selectedDates, setSelectedDates] = useState<{
                         {dateValue ? format(dateValue, "PPP") : <span>Pick a date</span>}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
+                    <PopoverContent className="w-auto overflow-hidden p-0 z-50">
                       <Calendar
+                        className="text-blue-500"
                         mode="single"
                         selected={dateValue}
-                        onSelect={(date) =>
+                        onSelect={(date) => {
                           setSelectedDates((prev) => ({
                             ...prev,
-                            [key]: date ? format(date, "yyyy-MM-dd") : undefined,
-                          }))
-                        }
+                            [key]: date || undefined,
+                          }));
+                        }}
                         captionLayout="dropdown"
-                        initialFocus
                       />
                     </PopoverContent>
                   </Popover>
                 </div>
               );
             })}
-
         </div>
-
 
         {/* Add Intervention */}
         <div className="border-t border-gray-200 pt-4 mb-6 text-gray-500">
@@ -326,7 +371,7 @@ const [selectedDates, setSelectedDates] = useState<{
               },
             ].map(({ label, value, key, disabled }) => (
               <div key={key}>
-                <Label>{label}</Label>
+                <Label className="py-3">{label}</Label>
                 <Input
                   type="number"
                   className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
@@ -367,6 +412,7 @@ const [selectedDates, setSelectedDates] = useState<{
                       <PopoverContent className="w-auto p-0">
                         <Calendar
                           mode="single"
+                          className="text-blue-500"
                           selected={dateValue}
                           onSelect={(date) =>
                             setCurrentIntervention((prev) => ({
@@ -403,7 +449,7 @@ const [selectedDates, setSelectedDates] = useState<{
             <h3 className="text-lg font-medium text-gray-500 mb-2">
               Selected Interventions
             </h3>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto bg-white rounded-lg shadow-md p-6 mb-8">
               <Table className="min-w-full divide-y divide-gray-200">
                 <TableHeader className="bg-gray-50">
                   <TableRow>
@@ -467,16 +513,15 @@ const [selectedDates, setSelectedDates] = useState<{
             onSelectPractitioner={setSelectedPractitioner}
           />
         </div>
-
-        {/* Footer */}
         <div className="flex justify-between w-full">
           <div className="text-gray-500">
-            <Label>Total</Label>
+            <Label className="py-3">Total</Label>
             <Input
               type="number"
               className="block w-full px-3 py-2 bg-green-100 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               value={total.toFixed(2)}
-              disabled
+              onChange={handleTotalChange}
+              step={0.01}
             />
           </div>
           <Button

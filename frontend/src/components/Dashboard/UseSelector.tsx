@@ -1,4 +1,3 @@
-import { useState } from "react"
 import { Label } from "../ui/label"
 import {
   Select,
@@ -8,40 +7,40 @@ import {
   SelectItem,
 } from "../ui/select"
 
-type UseOption = {
+type SelectorOption = {
   id: string
+  label?: string
 }
 
-export default function UseSelector({
-  use,
-  onSelectUse,
-}: {
-  use: UseOption | null
-  onSelectUse: (use: UseOption) => void
-}) {
-  const [uses] = useState<UseOption[]>([
-    { id: "claim" },
-    { id: "preauthorization" },
-  ])
+type SelectorProps = {
+  options: SelectorOption[]
+  value: string | null
+  onChange: (value: string) => void
+  placeholder?: string
+  label?: string
+}
 
+export default function CustomSelector({
+  options,
+  value,
+  onChange,
+  placeholder = "Select an option",
+  label = "Select option"
+}: SelectorProps) {
   return (
-    <div className="space-y-2">
-      <Label htmlFor="use">Select use</Label>
-
+    <div className="space-y-2 text-gray-500">
+      <Label>{label}</Label>
       <Select
-        value={use?.id || ""}
-        onValueChange={(value) => {
-          const selected = uses.find((u) => u.id === value)
-          if (selected) onSelectUse(selected)
-        }}
+        value={value || ""}
+        onValueChange={onChange}
       >
-        <SelectTrigger id="use" className="w-full">
-          <SelectValue placeholder="Select use" />
+        <SelectTrigger className="w-full">
+          <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
-          {uses.map((u) => (
-            <SelectItem key={u.id} value={u.id}>
-              {u.id}
+          {options.map((option) => (
+            <SelectItem key={option.id} value={option.id}>
+              {option.label || option.id}
             </SelectItem>
           ))}
         </SelectContent>

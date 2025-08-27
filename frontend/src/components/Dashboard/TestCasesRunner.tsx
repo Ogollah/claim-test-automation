@@ -1,19 +1,19 @@
-// TestCasesRunner.tsx
-import { use, useEffect, useState } from 'react';
-import { StopIcon, TrashIcon } from '@heroicons/react/16/solid';
-import UseSelector from '@/components/Dashboard/UseSelector';
+import { useEffect, useState } from 'react';
+import { StopIcon } from '@heroicons/react/16/solid';
 import InterventionSelector from '@/components/Dashboard/InterventionSelector';
-import { InterventionItem, Package, TestCase, TestCaseItem } from '@/lib/types';
-import { getInterventionByPackageId, getPackages, getTestCaseByCode, runTestSuite, TestResult } from '@/lib/api';
+import { FormatPatient, Package, TestCase, TestCaseItem, TestResult } from '@/lib/types';
+import { getInterventionByPackageId, getPackages, getTestCaseByCode } from '@/lib/api';
 import TestcaseDetails from '@/components/testCases/TestcaseDetails';
 import ResultsTable from '@/components/Dashboard/ResultsTable';
 import { DEFAULT_PACKAGE } from '@/packages/ShaPackages';
-import { testCasesPackages } from '@/lib/utils';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { PlayIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { refreshTestResult } from '@/utils/claimUtils';
+import { runTestSuite } from '@/utils/testUtils';
+import PatientDetailsPanel from './PatientDetailsPanel';
 
 type TestRunnerProps = {
   isRunning?: boolean;
@@ -32,6 +32,9 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
     positive: TestCase[];
     negative: TestCase[];
   }>({ positive: [], negative: [] });
+  const [editingTestCase, setEditingTestCase] = useState<string | null>(null);
+  const [showPatientPanel, setShowPatientPanel] = useState(false);
+
   useEffect(() => {
     const fetchPackages = async () => {
       try {
@@ -49,7 +52,7 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
       const fetchInterventions = async () => {
         try {
           const intevents = await getInterventionByPackageId(
-            selectedPackage
+            Number(selectedPackage)
           )
           setAvailableInterventions(intevents || [])
           setSelectedIntervention("")
@@ -63,56 +66,105 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
     }
   }, [selectedPackage]);
 
-useEffect(() => {
-  const fetchTestCases = async () => {
-    try {
-      const testCase = await getTestCaseByCode(selectedIntervention);
-      setTestCases(testCase?.data || []);
-    } catch (error) {
-      console.error("--> Error fetching test cases: ", error);
+  useEffect(() => {
+    const packageObj = packages.find(p => p.id === Number(selectedPackage));
+    const packageCode = packageObj?.code;
+    setShowPatientPanel(!!(packageCode && ['SHA-03', 'SHA-08', 'SHA-07', 'SHA-13'].includes(packageCode)));
+  }, [selectedPackage, packages]);
+
+  useEffect(() => {
+    const fetchTestCases = async () => {
+      try {
+        const testCase = await getTestCaseByCode(selectedIntervention);
+        setTestCases(testCase?.data || []);
+
+      } catch (error) {
+        console.error("--> Error fetching test cases: ", error);
+      }
+    };
+    if (selectedIntervention) {
+      fetchTestCases();
     }
-  };
-  if (selectedIntervention) {
-    fetchTestCases();
-  }
-}, [selectedIntervention]);
+  }, [selectedIntervention]);
 
-useEffect(() => {
-  if (testCases && testCases.length) {
-    const interventionPositive = testCases.find(
-      item => item.description === 'positive'
-    )?.test_config;
+  useEffect(() => {
+    if (testCases && testCases.length) {
+      const positiveCases = testCases
+        .filter(item => item.description === 'positive')
+        .map(item => item.test_config);
 
-    const interventionNegative = testCases.find(
-      item => item.description === 'negative'
-    )?.test_config;
+      const negativeCases = testCases
+        .filter(item => item.description === 'negative')
+        .map(item => item.test_config);
+
+      setCurrentTestCases({
+        positive: positiveCases,
+        negative: negativeCases
+      });
+    } else {
+      setCurrentTestCases({ positive: [], negative: [] });
+    }
+  }, [testCases]);
+
+  const updateTestCasePatient = (testCaseTitle: string, patient: FormatPatient) => {
+    // Find and update the specific test case
+    const allTestCases = [...currentTestCases.positive, ...currentTestCases.negative];
+    const updatedTestCases = allTestCases.map(testCase => {
+      if (testCase.formData.title === testCaseTitle) {
+        return {
+          ...testCase,
+          formData: {
+            ...testCase.formData,
+            patient: patient
+          }
+        };
+      }
+      return testCase;
+    });
+
+    const updatedPositive = updatedTestCases.filter(tc =>
+      currentTestCases.positive.some(positiveTc => positiveTc.formData.title === tc.formData.title)
+    );
+
+    const updatedNegative = updatedTestCases.filter(tc =>
+      currentTestCases.negative.some(negativeTc => negativeTc.formData.title === tc.formData.title)
+    );
 
     setCurrentTestCases({
-      positive: interventionPositive ? [interventionPositive] : [],
-      negative: interventionNegative ? [interventionNegative] : []
+      positive: updatedPositive,
+      negative: updatedNegative
     });
-  } else {
-    setCurrentTestCases({ positive: [], negative: [] });
-  }
-}, [testCases]);
 
+    setEditingTestCase(null);
+    toast.success(`Patient updated for test case: ${testCaseTitle}`);
+  };
+
+  const handleEditPatient = (testCaseTitle: string) => {
+    setEditingTestCase(testCaseTitle);
+  };
+
+  const handleSelectPatient = (patient: FormatPatient) => {
+    if (editingTestCase) {
+      updateTestCasePatient(editingTestCase, patient);
+    }
+  };
 
   const buildTestPayload = (tests: string[], type: 'positive' | 'negative') => {
-  const allTestCases = [
-    ...currentTestCases.positive,
-    ...currentTestCases.negative
-  ];
-  return tests.map(testTitle => {
-    const testCase = allTestCases.find(tc => tc.formData.title === testTitle);
-    if (!testCase) {
-      throw new Error(`Test case with title "${testTitle}" not found`);
-    }
-    return {
-      ...testCase,
-      type
-    };
-  });
-};
+    const allTestCases = [
+      ...currentTestCases.positive,
+      ...currentTestCases.negative
+    ];
+    return tests.map(testTitle => {
+      const testCase = allTestCases.find(tc => tc.formData.title === testTitle);
+      if (!testCase) {
+        throw new Error(`Test case with title "${testTitle}" not found`);
+      }
+      return {
+        ...testCase,
+        type
+      };
+    });
+  };
 
   const handleRunPositiveTests = (selectedItems: string[]) => {
     runTests(selectedItems, 'positive');
@@ -123,7 +175,6 @@ useEffect(() => {
   };
 
   const handleRunAllTests = async () => {
-
     const allSelectedTests = [...currentTestCases.positive, ...currentTestCases.negative];
     if (allSelectedTests.length === 0) {
       toast.error('Please select at least one test case to run');
@@ -134,8 +185,6 @@ useEffect(() => {
       positive: buildTestPayload(currentTestCases.positive.map(tc => tc.formData.title), 'positive'),
       negative: buildTestPayload(currentTestCases.negative.map(tc => tc.formData.title), 'negative')
     };
-    console.log('Running all tests with config:', testConfig);
-    
 
     if (onRunTests) {
       setRunningSection('all');
@@ -152,9 +201,9 @@ useEffect(() => {
         console.log(`Running test ${index + 1}/${allTests.length}: ${testCase.formData.title}`);
         console.log('Test case details:', testCase);
 
-      const response = await getTestCaseByCode(testCase.formData.productOrService[0].code);
-      const testCaseData = response?.data || [];
-        
+        const response = await getTestCaseByCode(testCase.formData.productOrService[0].code);
+        const testCaseData = response?.data || [];
+
         const testResult = await runTestSuite(testCase, testCaseData);
         setResults(prev => [...prev, ...testResult]);
 
@@ -169,9 +218,35 @@ useEffect(() => {
     }
   };
 
+  const handleRefreshResult = async (claimId: string, test?: string) => {
+    try {
+      const { outcome, status, message } = await refreshTestResult(claimId, test);
+
+      setResults(prevResults =>
+        prevResults.map(result => {
+          if (result.claimId === claimId) {
+            return {
+              ...result,
+              outcome,
+              status,
+              message,
+              timestamp: new Date().toISOString()
+            };
+          }
+          return result;
+        })
+      );
+
+      toast.success('Result refreshed successfully');
+    } catch (error) {
+      console.error('Error refreshing result:', error);
+      toast.error('Failed to refresh result');
+      throw error;
+    }
+  };
+
   const runTests = async (selectedItems: string[], type: 'positive' | 'negative') => {
-    
-    if (selectedItems.length === 0 ) {
+    if (selectedItems.length === 0) {
       toast.error(`Please select at least one ${type} test case to run`);
       return;
     }
@@ -189,8 +264,8 @@ useEffect(() => {
         console.log(`Running test ${index + 1}/${allTests.length}: ${testCase.formData.title}`);
         console.log('Test case details:', testCase);
 
-      const response = await getTestCaseByCode(testCase.formData.productOrService[0].code);
-      const testCaseData = response?.data || [];
+        const response = await getTestCaseByCode(testCase.formData.productOrService[0].code);
+        const testCaseData = response?.data || [];
 
         const testResult = await runTestSuite(testCase, testCaseData);
         setResults((prev) => [...prev, ...testResult]);
@@ -206,11 +281,20 @@ useEffect(() => {
     }
   };
 
+  // Get current patient for the editing test case
+  const getCurrentPatient = () => {
+    if (!editingTestCase) return null;
+
+    const allTestCases = [...currentTestCases.positive, ...currentTestCases.negative];
+    const testCase = allTestCases.find(tc => tc.formData.title === editingTestCase);
+    return testCase?.formData.patient || null;
+  };
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-500 mb-6">Claims Bundle Automation Test</h1>
-      
-      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+    <div className="mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold text-gray-500 mb-6">Automated test suite</h1>
+
+      <div className="bg-white rounded-sm shadow-md p-6 mb-8">
         <h2 className="text-xl font-semibold text-gray-500 mb-4">Test Configuration</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 text-gray-500">
@@ -242,18 +326,35 @@ useEffect(() => {
           />
         </div>
 
+        {showPatientPanel && editingTestCase && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className=" p-4 rounded-md">
+              <h5 className=" text-gray-500 mb-2">Editing Patient for: <span className="font-small text-gray-800">{editingTestCase}</span></h5>
+              <PatientDetailsPanel
+                patient={getCurrentPatient()}
+                onSelectPatient={handleSelectPatient}
+                show={false}
+              />
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <TestcaseDetails 
-            title={'Positive'} 
+          <TestcaseDetails
+            title={'Positive'}
             testCases={currentTestCases.positive}
             onRunTests={handleRunPositiveTests}
             isRunning={isRunning && runningSection === 'positive'}
+            onEditPatient={handleEditPatient}
+            showPatientPanel={showPatientPanel}
           />
-          <TestcaseDetails 
-            title='Negative' 
+          <TestcaseDetails
+            title='Negative'
             testCases={currentTestCases.negative}
             onRunTests={handleRunNegativeTests}
             isRunning={isRunning && runningSection === 'negative'}
+            onEditPatient={handleEditPatient}
+            showPatientPanel={showPatientPanel}
           />
         </div>
 
@@ -262,11 +363,10 @@ useEffect(() => {
             type="button"
             onClick={handleRunAllTests}
             disabled={isRunning}
-            className={`inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${
-              isRunning
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
-            }`}
+            className={`inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${isRunning
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+              }`}
           >
             {isRunning && runningSection === 'all' ? (
               <>
@@ -282,7 +382,7 @@ useEffect(() => {
           </Button>
         </div>
       </div>
-      <ResultsTable results={results} />
+      <ResultsTable results={results} onRefresh={handleRefreshResult} />
     </div>
   );
 }

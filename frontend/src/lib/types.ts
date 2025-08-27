@@ -57,6 +57,8 @@ export type InterventionItem = {
   serviceStart: string;
   serviceEnd: string;
   netValue: number;
+  patient?: any,
+  provider?: any,
 };
 
 interface Identifier {
@@ -73,6 +75,7 @@ export interface FormatPatient {
 }
 
 export interface Patient {
+  id?: number,
   cr_id: string, 
   name: string, 
   gender: string, 
@@ -314,10 +317,12 @@ export interface ApiResponse {
 // Updated TestResult interface with better error handling
 export interface TestResult {
   id: string;
+  req?: any;
+  test: string;
   name: string;
-  use?: { id: string }; 
+  use?: string; 
   status: 'passed' | 'failed' | 'running';
-  duration: number;
+  duration?: number;
   timestamp: string;
   message?: string;
   claimId?: string;
@@ -334,6 +339,12 @@ export interface TestResult {
     }[];
     statusCode?: number;
   };
+}
+export interface ComplexCase {
+  id: string;
+  formData: any;
+  netValue: number;
+  status: string;
 }
 
 // type TestResult = {

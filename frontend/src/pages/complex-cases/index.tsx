@@ -1,14 +1,14 @@
-import { useState } from 'react'
-import Layout from '@/components/Layout/Layout'
-import TestRunner from '../components/Dashboard/TestRunner'
-import ResultsTable from '../components/Dashboard/ResultsTable'
-import { TestResult } from "@/lib/types";
-import { runTestSuite } from "@/utils/testUtils";
+import Layout from "@/components/Layout/Layout";
+import ComplexCaseBuilder from "@/components/Dashboard/ComplexCaseBuilder";
+import ResultsTable from "@/components/Dashboard/ResultsTable";
 import { toast } from "sonner";
+import { runTestSuite } from "@/utils/testUtils";
+import { TestResult } from "@/lib/types";
+import { useState } from "react";
 import { refreshTestResult } from "@/utils/claimUtils";
 
-export default function Home() {
-  const [isRunning, setIsRunning] = useState(false);
+export default function ComplexCases() {
+    const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState<TestResult[]>([]);
 
   const handleRunTests = async (payload: any) => {
@@ -49,12 +49,11 @@ export default function Home() {
       throw error;
     }
   };
-
   return (
     <Layout>
-      <TestRunner 
+      <ComplexCaseBuilder
         isRunning={isRunning}
-        onRunTests={handleRunTests}
+        onRunTests={handleRunTests} 
       />
       <ResultsTable results={results} onRefresh={handleRefreshResult} />
     </Layout>

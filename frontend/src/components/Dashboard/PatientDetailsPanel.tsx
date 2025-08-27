@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getPatients, searchPatientHie } from '@/lib/api';
-import { FormatPatient } from '@/lib/types';
+import { FormatPatient, Patient } from '@/lib/types';
 import { Command, CommandInput, CommandList, CommandEmpty, CommandItem, CommandGroup } from '@/components/ui/command';
 import { Check, ChevronsUpDown, Loader2 } from 'lucide-react';
 import {
@@ -9,6 +9,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from '@/components/ui/button';
+import { saveHIEPatient } from '@/utils/patientUtils';
+import { HIE_URL } from '@/lib/utils';
 
 function getAge(birthDate: string): number {
   const birth = new Date(birthDate);
@@ -22,9 +24,11 @@ function getAge(birthDate: string): number {
 export default function PatientDetailsPanel({
   patient,
   onSelectPatient,
+  show = true,
 }: {
   patient: FormatPatient | null;
   onSelectPatient: (patient: FormatPatient) => void;
+  show?: boolean
 }) {
   const [patients, setPatients] = useState<FormatPatient[]>([]);
   const [query, setQuery] = useState('');
@@ -45,6 +49,25 @@ export default function PatientDetailsPanel({
     fetchLocalPatients();
   }, []);
 
+  // Save HIE patient on demand
+  const handleSave = async (patient: FormatPatient) => {
+    const patientPayload: Patient = {
+      cr_id: patient.id,
+      name: patient.name,
+      gender: patient.gender,
+      birthdate: patient.birthDate,
+      national_id: patient.identifiers?.find(id => id.system.endsWith('nationalid'))?.value || patient.id,
+      email: 'mail.mail.com',
+      system_value: `${HIE_URL.BASE_URL}/${HIE_URL.PATHS.IDENTIFIER}}`
+    };
+    try {
+      await saveHIEPatient(patientPayload);
+      console.log('HIE patient saved successfully');
+    } catch (error) {
+      console.error('Error saving HIE patient:', error);
+    }
+  };
+
   // Search HIE on demand
   const handleSearch = async (q: string) => {
     if (!q || q.length < 3) return;
@@ -63,10 +86,21 @@ export default function PatientDetailsPanel({
     }
   };
 
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      if (query.length >= 3) {
+        handleSearch(query);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounce);
+  }, [query]);
+
+
   const filteredPatients = query
     ? patients.filter((p) =>
-        p.name.toLowerCase().includes(query.toLowerCase())
-      )
+      p.name.toLowerCase().includes(query.toLowerCase())
+    )
     : patients;
 
   return (
@@ -80,11 +114,13 @@ export default function PatientDetailsPanel({
               variant="outline"
               role="combobox"
               aria-expanded={open}
-              className="w-full justify-between text-pretty md:text-balance"
+              className="w-full justify-between overflow-hidden text-ellipsis whitespace-nowrap px-3"
             >
-              {patient
-                ? `${patient.name} (${patient.gender}, ${getAge(patient.birthDate)} yrs)`
-                : 'Select a patient'}
+              <span className="truncate block">
+                {patient
+                  ? `${patient.name} (${patient.gender}, ${getAge(patient.birthDate)} yrs)`
+                  : 'Select a patient'}
+              </span>
               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
@@ -96,7 +132,6 @@ export default function PatientDetailsPanel({
                 className="h-9"
                 onValueChange={(val) => {
                   setQuery(val);
-                  if (val.length >= 3) handleSearch(val);
                 }}
               />
               <CommandList>
@@ -105,15 +140,19 @@ export default function PatientDetailsPanel({
                     <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
                   </div>
                 )}
-                <CommandEmpty>No patients found.</CommandEmpty>
+
+                {!loading && filteredPatients.length === 0 && (
+                  <CommandEmpty>No patients found.</CommandEmpty>
+                )}
+
                 <CommandGroup>
                   {filteredPatients.map((p) => (
                     <CommandItem
                       key={p.id}
                       onSelect={() => {
                         onSelectPatient(p);
+                        handleSave(p);
                         setOpen(false);
-                        setQuery('');
                       }}
                     >
                       {p.name} ({p.gender}, {getAge(p.birthDate)} yrs)
@@ -129,7 +168,7 @@ export default function PatientDetailsPanel({
         </Popover>
       </div>
 
-      {patient && (
+      {patient && show && (
         <div className="space-y-2">
           <div className="grid grid-cols-2 gap-4">
             <div>
