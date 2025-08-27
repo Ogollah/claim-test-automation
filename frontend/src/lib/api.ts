@@ -46,7 +46,7 @@ export const searchProviderHie = async (param: string, search: string): Promise<
   }
 };
 
-export const searchProvider = async(param: string, search: string) => {
+export const searchProvider = async (param: string, search: string) => {
   try {
     const resp = await api.get<Provider>(`/api/providers?${param}=${search}`);
     return resp;
@@ -55,7 +55,7 @@ export const searchProvider = async(param: string, search: string) => {
   }
 }
 
-export const postProvider = async(data: ProviderItem) => {
+export const postProvider = async (data: ProviderItem) => {
   try {
     const resp = await api.post<ProviderItem>("/api/providers", data)
     return resp;
@@ -64,13 +64,13 @@ export const postProvider = async(data: ProviderItem) => {
   }
 }
 
-export const getProviderByFID = async(fID: string) => {
+export const getProviderByFID = async (fID: string) => {
   try {
     const resp = await api.get<ProviderItem>(`/api/providers/${fID}`);
     return resp;
   } catch (error) {
-    console.error('--> Error getting provider',error);
-    
+    console.error('--> Error getting provider', error);
+
   }
 }
 
@@ -84,7 +84,7 @@ export const getPatients = async () => {
   }
 }
 
-export const searchPatient = async(param: string, search: string) => {
+export const searchPatient = async (param: string, search: string) => {
   try {
     const resp = await api.get<Patient>(`/api/patients?${param}=${search}`);
     return resp;
@@ -107,7 +107,7 @@ export const searchPatientHie = async (param: string, search: string): Promise<F
   }
 };
 
-export const postPatient = async(data: Patient) => {
+export const postPatient = async (data: Patient) => {
   try {
     const resp = await api.post<Patient>("/api/patients", data);
     return resp;
@@ -116,7 +116,7 @@ export const postPatient = async(data: Patient) => {
   }
 }
 
-export const updatePatient = async(id: number, data: Patient) => {
+export const updatePatient = async (id: number, data: Patient) => {
   try {
     const resp = await api.put<Patient>(`/api/patients/update/${id}`, data);
     return resp;
@@ -125,7 +125,7 @@ export const updatePatient = async(id: number, data: Patient) => {
   }
 };
 
-export const getPatientByCrID = async(crID: string) => {
+export const getPatientByCrID = async (crID: string) => {
   try {
     const resp = await api.get<Patient>(`/api/patients/${crID}`);
     return resp;
@@ -147,11 +147,11 @@ export const getPractitioner = async (): Promise<Practitioner[]> => {
       nationalID: item.national_id,
       email: item.email,
       sladeCode: item.slade_code,
-      regNumber:item.reg_number,
+      regNumber: item.reg_number,
       status: item.status === 1
     }));
   } catch (error) {
-    console.error("Error fetching HIE practitioner: ",error);
+    console.error("Error fetching HIE practitioner: ", error);
     return [];
   }
 }
@@ -159,7 +159,7 @@ export const getPractitioner = async (): Promise<Practitioner[]> => {
 export const searchPractitionerHie = async (param: string, search: string): Promise<Practitioner[]> => {
   try {
     const resp = await api.get<PractitionerBundle>(
-      `${HIE_URL.BASE_URL}/${HIE_URL.PATHS.PARCTITIONER}?${param}=${search}`
+      `${HIE_URL.BASE_URL}/${HIE_URL.PATHS.PRACTITIONER}?${param}=${search}`
     );
 
     const resources = resp.data.entry?.map((e) => e.resource) ?? [];
@@ -170,7 +170,7 @@ export const searchPractitionerHie = async (param: string, search: string): Prom
   }
 };
 
-export const searchPractitioner = async(param: string, search: string) => {
+export const searchPractitioner = async (param: string, search: string) => {
   try {
     const resp = await api.get<PractitionerItem>(`/api/practitioners?${param}=${search}`);
     return resp;
@@ -179,7 +179,7 @@ export const searchPractitioner = async(param: string, search: string) => {
   }
 }
 
-export const postPractitioner = async(data: PractitionerItem) => {
+export const postPractitioner = async (data: PractitionerItem) => {
   try {
     const resp = await api.post<PractitionerItem>("/api/practitioners", data);
     return resp;
@@ -188,7 +188,7 @@ export const postPractitioner = async(data: PractitionerItem) => {
   }
 }
 
-export const getPractitionerByPuID = async(puID: string) => {
+export const getPractitionerByPuID = async (puID: string) => {
   try {
     const resp = await api.get<PractitionerItem>(`/api/practitioners/${puID}`);
     return resp;
@@ -208,7 +208,7 @@ export const getIntervention = async () => {
   }
 }
 
-export const searchIntervention = async(search: string) => {
+export const searchIntervention = async (search: string) => {
   try {
     const resp = await api.get<Intervention>(`/api/interventions/${search}`);
     return resp;
@@ -217,7 +217,7 @@ export const searchIntervention = async(search: string) => {
   }
 }
 
-export const postIntervention = async(data: Intervention) => {
+export const postIntervention = async (data: Intervention) => {
   try {
     const resp = await api.post<Intervention>("/api/interventions", data);
     return resp;
@@ -226,17 +226,17 @@ export const postIntervention = async(data: Intervention) => {
   }
 }
 
-export const getInterventionByPackageId = async(package_id: number) => {
+export const getInterventionByPackageId = async (package_id: number) => {
   try {
     const resp = await api.get<Intervention>(`/api/interventions/${package_id}`);
     return resp.data;
   } catch (error) {
     console.error('--> Error fetching interventions by package id: ', error);
-    
+
   }
 }
 
-export const getInterventionByCode = async(code: string) => {
+export const getInterventionByCode = async (code: string) => {
   try {
     const resp = await api.get(`/api/interventions/code/${code}`);
     return resp;
@@ -256,7 +256,7 @@ export const getPackages = async () => {
   }
 }
 
-export const searchPackage = async(search: string) => {
+export const searchPackage = async (search: string) => {
   try {
     const resp = await api.get<Package>(`/api/packages/${search}`);
     return resp;
@@ -265,7 +265,7 @@ export const searchPackage = async(search: string) => {
   }
 }
 
-export const postPackage = async(data: Package) => {
+export const postPackage = async (data: Package) => {
   try {
     const resp = await api.post<Package>("/api/packages", data);
     return resp;
@@ -276,8 +276,8 @@ export const postPackage = async(data: Package) => {
 
 // Test case
 
-export interface Error{
-  error: {message: string}
+export interface Error {
+  error: { message: string }
 }
 export const getTestcases = async () => {
   try {
@@ -288,7 +288,7 @@ export const getTestcases = async () => {
   }
 }
 
-export const searchTestCase = async(search: string) => {
+export const searchTestCase = async (search: string) => {
   try {
     const resp = await api.get<TestCaseItem>(`/api/test-cases/${search}`);
     return resp;
@@ -297,8 +297,8 @@ export const searchTestCase = async(search: string) => {
   }
 }
 
-export const postTestCase = async(data: TestCaseItem) => {
-  
+export const postTestCase = async (data: TestCaseItem) => {
+
   try {
     const resp = await api.post<TestCaseItem>("/api/test-cases", data);
     return resp;
@@ -307,19 +307,19 @@ export const postTestCase = async(data: TestCaseItem) => {
   }
 }
 
-export const getTestCaseByCode = async(code: string) => {
+export const getTestCaseByCode = async (code: string) => {
   try {
     const resp = await api.get<TestCaseItem[]>(`/api/test-cases/${code}`);
     return resp;
   } catch (error) {
     console.error(error);
-    
+
   }
 }
 
-export const updateTestCase = async(id: any, data: any) => {
+export const updateTestCase = async (id: any, data: any) => {
   try {
-    const resp = await api.put<TestCaseItem>(`/api/test-cases/update/${id}`, {result_status: data});
+    const resp = await api.put<TestCaseItem>(`/api/test-cases/update/${id}`, { result_status: data });
     return resp;
   } catch (error) {
     console.error(error);
@@ -328,52 +328,52 @@ export const updateTestCase = async(id: any, data: any) => {
 
 // Results
 
-export const getResults = async ()=> {
-  try{
+export const getResults = async () => {
+  try {
     const resp = await api.get<Result[]>("/api/results");
     return resp;
   } catch (error) {
     console.error(error);
-    
-  }
-} 
 
-export const getResultById = async(id: number) => {
+  }
+}
+
+export const getResultById = async (id: number) => {
   try {
     const resp = await api.get<Result>(`/api/results/${id}`);
     return resp;
   } catch (error) {
     console.error(error);
-    
+
   }
 }
 
-export const createResult = async(data: Result) => {
+export const createResult = async (data: Result) => {
   try {
     const resp = await api.post<Result>("/api/results", data);
     return resp;
   } catch (error) {
     console.error(error);
-    
+
   }
 }
 
-export const updateResult = async(id: number, status: number) => {
+export const updateResult = async (id: number, status: number) => {
   try {
-    const resp = await api.put<Result>(`/api/results/${id}`, {result_status: status});
+    const resp = await api.put<Result>(`/api/results/${id}`, { result_status: status });
     return resp;
   } catch (error) {
     console.error(error);
-    
+
   }
 }
 
-export const deleteResult = async(id: number) => {
+export const deleteResult = async (id: number) => {
   try {
     const resp = await api.delete<Result>(`/api/results/${id}`);
     return resp;
   } catch (error) {
     console.error(error);
-    
+
   }
 }

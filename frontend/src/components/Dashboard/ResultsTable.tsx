@@ -5,32 +5,25 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Button } from '../ui/button';
 import { Check, CheckCircle2Icon, Minus, RefreshCcw, RefreshCcwIcon } from 'lucide-react';
 import { toast } from 'sonner';
-import test from 'node:test';
 
 interface ResultsTableProps {
   results: TestResult[];
-  onRefresh?: (claimId: string, test?:string) => Promise<void>;
+  onRefresh?: (claimId: string, test?: string) => Promise<void>;
 }
 
 export default function ResultsTable({ results, onRefresh }: ResultsTableProps) {
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
-  const [expandedPayloads, setExpandedPayloads] = useState<Record<string, { 
-    request: boolean; 
+  const [expandedPayloads, setExpandedPayloads] = useState<Record<string, {
+    request: boolean;
     response: boolean;
     error?: boolean;
   }>>({});
 
-    const toggleRow = (id: string) => {
+  const toggleRow = (id: string) => {
     setExpandedRows(prev => ({ ...prev, [id]: !prev[id] }));
   };
-  
+
   const [refreshingIds, setRefreshingIds] = useState<Record<string, boolean>>({});
-  // const toggleRow = (id: string) => {
-  //   setExpandedRows(prev => ({
-  //     ...prev,
-  //     [id]: !prev[id],
-  //   }));
-  // };
 
   const togglePayload = (id: string, type: 'request' | 'response' | 'error') => {
     setExpandedPayloads(prev => ({
@@ -39,9 +32,9 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
     }));
   };
 
-  const handleRefresh = async (resultId: string, claimId: string, test?:string) => {
+  const handleRefresh = async (resultId: string, claimId: string, test?: string) => {
     if (!onRefresh) return;
-    
+
     try {
       setRefreshingIds(prev => ({ ...prev, [resultId]: true }));
       await onRefresh(claimId, test);
@@ -116,20 +109,32 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                   {result?.use || 'N/A'}
                 </TableCell>
                 <TableCell className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClasses(result.status, result.outcome)}`}>
-                    {result.status === 'passed' ? (
-                      <CheckCircleIcon className="h-4 w-4 mr-1 inline" />
-                    ) : result.status === 'failed' && result.outcome !== 'Pending' ? (
-                      <XCircleIcon className="h-4 w-4 mr-1 inline" />
-                    ) : result.outcome === 'Pending' && result.status === 'failed' ? (
-                      <RefreshCcwIcon className="h-4 w-4 mr-1 inline text-orange-400" />
-                    ) : (
-                      <Minus className="h-4 w-4 mr-1 inline" />
-                    )}
-                    {result.outcome !== 'Pending' ? (result.status.toUpperCase()) : (
-                      <span className="text-orange-400">PENDING</span>
-                    )}
-                  </span>
+                  <div className="flex items-center justify-start">
+                    <span className={`px-2 inline-flex items-center text-xs leading-5 font-semibold rounded-full ${getStatusClasses(result.status, result.outcome)}`}>
+                      {result.status === 'passed' ? (
+                        <CheckCircleIcon className="h-4 w-4 mr-1" />
+                      ) : result.status === 'failed' && result.outcome !== 'Pending' ? (
+                        <XCircleIcon className="h-4 w-4 mr-1" />
+                      ) : result.outcome === 'Pending' && result.status === 'failed' ? (
+                        <Button
+                          variant="link"
+                          onClick={() => handleRefresh(result.id, result.claimId, result.test)}
+                          size="sm"
+                          disabled={refreshingIds[result.id]}
+                          className="h-4 w-4 p-0 mr-1"
+                        >
+                          <RefreshCcwIcon className={`h-4 w-4 ${refreshingIds[result.id] ? 'text-orange-500 animate-spin' : 'text-orange-400'}`} />
+                        </Button>
+                      ) : (
+                        <Minus className="h-4 w-4 mr-1" />
+                      )}
+                      {result.outcome !== 'Pending' ? (
+                        result.status.toUpperCase()
+                      ) : (
+                        <span className="text-orange-400">{refreshingIds[result.id] ? 'Refreshing...' : 'PENDING'}</span>
+                      )}
+                    </span>
+                  </div>
                 </TableCell>
                 <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {result.duration}ms
@@ -163,7 +168,7 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                       <div className="border rounded-lg overflow-hidden">
                         <div className="flex justify-between items-center bg-gray-100 p-3">
                           <div className="flex items-center">
-                            <Button 
+                            <Button
                               onClick={() => togglePayload(result.id, 'request')}
                               className="flex items-center bg-gray-100 text-gray-700 hover:text-gray-500 hover:bg-100"
                             >
@@ -201,11 +206,10 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
 
                       {result.details.response && (
                         <>
-
                           <div className="border rounded-lg overflow-autto ">
                             <div className="flex justify-between items-center bg-gray-100 p-3">
                               <div className="flex items-center">
-                                <Button 
+                                <Button
                                   onClick={() => togglePayload(result.id, 'response')}
                                   className="flex items-center bg-gray-100 text-gray-700 hover:text-gray-500 hover:bg-100"
                                 >
@@ -245,9 +249,9 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                             <div className='flex  item-center justify-between p-3'>
                               <h4 className="text-sm font-medium text-gray-500 mb-2">Response Summary</h4>
                               {result?.claimId && (
-                                <Button 
+                                <Button
                                   onClick={() => handleRefresh(result.id, result.claimId, result.test)}
-                                  className={`bg-gray-100 hover:bg-gree-200 ${refreshingIds[result.id] ? 'text-orange-500':'text-green-500'} hover:text-green-600`}
+                                  className={`bg-gray-100 hover:bg-gree-200 ${refreshingIds[result.id] ? 'text-orange-500' : 'text-green-500'} hover:text-green-600`}
                                   size="sm"
                                   disabled={refreshingIds[result.id]}
                                 >
@@ -259,7 +263,7 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                             <div className={`${result.status === 'passed' ? 'bg-white p-3 text-green-500' : 'bg-red-50 text-red-500'} p-3 rounded text-xs`}>
                               <div className="mb-1 p-2"><span className="font-medium">Message:</span> {result?.message}</div>
                               {result?.claimId && (
-                              <div className="mb-1 p-2"><span className="font-medium">Claim ID:</span> {result?.claimId}</div>
+                                <div className="mb-1 p-2"><span className="font-medium">Claim ID:</span> {result?.claimId}</div>
                               )}
                               <div className='p-2'><span className="font-medium">Outcome:</span> {result.outcome}</div>
                             </div>
@@ -270,7 +274,7 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                       {result.details.error && (
                         <div className="border border-red-100 rounded-lg overflow-hidden">
                           <div className="flex justify-between items-center bg-red-50 p-3">
-                            <Button 
+                            <Button
                               onClick={() => togglePayload(result.id, 'error')}
                               variant="ghost"
                               className="text-red-700 hover:bg-red-100"
@@ -295,7 +299,7 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                         <div className="bg-red-50 p-3 rounded-lg">
                           <h4 className="text-sm font-medium text-red-700">Validation Errors</h4>
                           <ul className="mt-1 space-y-1">
-                            {result.details.validationErrors.map((error:any, index:any) => (
+                            {result.details.validationErrors.map((error: any, index: any) => (
                               <li key={index} className="text-sm text-red-600">
                                 <span className="font-medium">{error.path}:</span> {error.error}
                               </li>

@@ -1,11 +1,10 @@
-import { negativeSha01003, postiveSha01003} from "@/components/testCases/config/sha_01_003"
+import { negativeSha01003, postiveSha01003 } from "@/components/testCases/config/sha_01_003"
 import { negativeSha01004, postiveSha01004 } from "@/components/testCases/config/sha_01_004"
 import { negativeSha01005, postiveSha01005 } from "@/components/testCases/config/sha_01_005"
 import { negativeSha01006, postiveSha01006 } from "@/components/testCases/config/sha_01_006"
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import axios from 'axios';
-import { IDENTIFIER } from "ajv/dist/compile/codegen/code"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -38,12 +37,16 @@ export const api = axios.create({
 
 export const HIE_URL = {
   BASE_URL: 'https://qa-mis.apeiro-digital.com/fhir',
+  AUTH_URL: 'https://qa-auth.apeiro-digital.com/auth/realms/camunda-platform/protocol/openid-connect/token',
+  QUERY_PATIENT_URL: 'https://qa-payers.apeiro-digital.com/api/v1/insurance-claim/all/page-claim',
   PATHS: {
     PATIENT: 'Patient',
     ORGANIZATION: 'Organization',
     CLAIM: 'Claim',
-    PARCTITIONER: 'Practitioner',
-    IDENTIFIER: 'identifier'
+    PRACTITIONER: 'Practitioner',
+    IDENTIFIER: 'identifier',
+    GRANT_TYPE: 'authorization_code',
+    CLIENT_ID: 'eclaimportal'
   },
   VALUE_STRINGS: {
     SHA: 'SOCIAL HEALTH AUTHORITY',

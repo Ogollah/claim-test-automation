@@ -3,8 +3,8 @@ import { use, useEffect, useState } from 'react';
 import { StopIcon, TrashIcon } from '@heroicons/react/16/solid';
 import UseSelector from '@/components/Dashboard/UseSelector';
 import InterventionSelector from '@/components/Dashboard/InterventionSelector';
-import { InterventionItem, Package, TestCase, TestCaseItem, TestResult } from '@/lib/types';
-import { getInterventionByPackageId, getPackages, getTestCaseByCode} from '@/lib/api';
+import { FormatPatient, InterventionItem, Package, TestCase, TestCaseItem, TestResult } from '@/lib/types';
+import { getInterventionByPackageId, getPackages, getTestCaseByCode } from '@/lib/api';
 import TestcaseDetails from '@/components/testCases/TestcaseDetails';
 import ResultsTable from '@/components/Dashboard/ResultsTable';
 import { DEFAULT_PACKAGE } from '@/packages/ShaPackages';
@@ -16,6 +16,7 @@ import { PlayIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { refreshTestResult } from '@/utils/claimUtils';
 import { runTestSuite } from '@/utils/testUtils';
+import PatientDetailsPanel from './PatientDetailsPanel';
 
 type TestRunnerProps = {
   isRunning?: boolean;
@@ -65,56 +66,56 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
     }
   }, [selectedPackage]);
 
-useEffect(() => {
-  const fetchTestCases = async () => {
-    try {
-      const testCase = await getTestCaseByCode(selectedIntervention);
-      setTestCases(testCase?.data || []);
-      
-    } catch (error) {
-      console.error("--> Error fetching test cases: ", error);
+  useEffect(() => {
+    const fetchTestCases = async () => {
+      try {
+        const testCase = await getTestCaseByCode(selectedIntervention);
+        setTestCases(testCase?.data || []);
+
+      } catch (error) {
+        console.error("--> Error fetching test cases: ", error);
+      }
+    };
+    if (selectedIntervention) {
+      fetchTestCases();
     }
-  };
-  if (selectedIntervention) {
-    fetchTestCases();
-  }
-}, [selectedIntervention]);
+  }, [selectedIntervention]);
 
-useEffect(() => {
-  if (testCases && testCases.length) {
-    const positiveCases = testCases
-      .filter(item => item.description === 'positive')
-      .map(item => item.test_config);
+  useEffect(() => {
+    if (testCases && testCases.length) {
+      const positiveCases = testCases
+        .filter(item => item.description === 'positive')
+        .map(item => item.test_config);
 
-    const negativeCases = testCases
-      .filter(item => item.description === 'negative')
-      .map(item => item.test_config);
+      const negativeCases = testCases
+        .filter(item => item.description === 'negative')
+        .map(item => item.test_config);
 
-    setCurrentTestCases({
-      positive: positiveCases,
-      negative: negativeCases
-    });
-  } else {
-    setCurrentTestCases({ positive: [], negative: [] });
-  }
-}, [testCases]);
+      setCurrentTestCases({
+        positive: positiveCases,
+        negative: negativeCases
+      });
+    } else {
+      setCurrentTestCases({ positive: [], negative: [] });
+    }
+  }, [testCases]);
 
   const buildTestPayload = (tests: string[], type: 'positive' | 'negative') => {
-  const allTestCases = [
-    ...currentTestCases.positive,
-    ...currentTestCases.negative
-  ];
-  return tests.map(testTitle => {
-    const testCase = allTestCases.find(tc => tc.formData.title === testTitle);
-    if (!testCase) {
-      throw new Error(`Test case with title "${testTitle}" not found`);
-    }
-    return {
-      ...testCase,
-      type
-    };
-  });
-};
+    const allTestCases = [
+      ...currentTestCases.positive,
+      ...currentTestCases.negative
+    ];
+    return tests.map(testTitle => {
+      const testCase = allTestCases.find(tc => tc.formData.title === testTitle);
+      if (!testCase) {
+        throw new Error(`Test case with title "${testTitle}" not found`);
+      }
+      return {
+        ...testCase,
+        type
+      };
+    });
+  };
 
   const handleRunPositiveTests = (selectedItems: string[]) => {
     runTests(selectedItems, 'positive');
@@ -136,7 +137,7 @@ useEffect(() => {
       positive: buildTestPayload(currentTestCases.positive.map(tc => tc.formData.title), 'positive'),
       negative: buildTestPayload(currentTestCases.negative.map(tc => tc.formData.title), 'negative')
     };
-    
+
 
     if (onRunTests) {
       setRunningSection('all');
@@ -153,9 +154,9 @@ useEffect(() => {
         console.log(`Running test ${index + 1}/${allTests.length}: ${testCase.formData.title}`);
         console.log('Test case details:', testCase);
 
-      const response = await getTestCaseByCode(testCase.formData.productOrService[0].code);
-      const testCaseData = response?.data || [];
-        
+        const response = await getTestCaseByCode(testCase.formData.productOrService[0].code);
+        const testCaseData = response?.data || [];
+
         const testResult = await runTestSuite(testCase, testCaseData);
         setResults(prev => [...prev, ...testResult]);
 
@@ -171,35 +172,35 @@ useEffect(() => {
   };
 
   const handleRefreshResult = async (claimId: string, test?: string) => {
-  try {
-    const { outcome, status, message } = await refreshTestResult(claimId, test);
-    
-    setResults(prevResults => 
-      prevResults.map(result => {
-        if (result.claimId === claimId) {
-          return {
-            ...result,
-            outcome,
-            status,
-            message,
-            timestamp: new Date().toISOString()
-          };
-        }
-        return result;
-      })
-    );
-    
-    toast.success('Result refreshed successfully');
-  } catch (error) {
-    console.error('Error refreshing result:', error);
-    toast.error('Failed to refresh result');
-    throw error;
-  }
-};
+    try {
+      const { outcome, status, message } = await refreshTestResult(claimId, test);
+
+      setResults(prevResults =>
+        prevResults.map(result => {
+          if (result.claimId === claimId) {
+            return {
+              ...result,
+              outcome,
+              status,
+              message,
+              timestamp: new Date().toISOString()
+            };
+          }
+          return result;
+        })
+      );
+
+      toast.success('Result refreshed successfully');
+    } catch (error) {
+      console.error('Error refreshing result:', error);
+      toast.error('Failed to refresh result');
+      throw error;
+    }
+  };
 
   const runTests = async (selectedItems: string[], type: 'positive' | 'negative') => {
-    
-    if (selectedItems.length === 0 ) {
+
+    if (selectedItems.length === 0) {
       toast.error(`Please select at least one ${type} test case to run`);
       return;
     }
@@ -217,8 +218,8 @@ useEffect(() => {
         console.log(`Running test ${index + 1}/${allTests.length}: ${testCase.formData.title}`);
         console.log('Test case details:', testCase);
 
-      const response = await getTestCaseByCode(testCase.formData.productOrService[0].code);
-      const testCaseData = response?.data || [];
+        const response = await getTestCaseByCode(testCase.formData.productOrService[0].code);
+        const testCaseData = response?.data || [];
 
         const testResult = await runTestSuite(testCase, testCaseData);
         setResults((prev) => [...prev, ...testResult]);
@@ -233,12 +234,13 @@ useEffect(() => {
       setRunningSection(null);
     }
   };
-  
+
+  console.log('selected package:', selectedPackage);
 
   return (
     <div className="mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold text-gray-500 mb-6">Automated test suite</h1>
-      
+
       <div className="bg-white rounded-sm shadow-md p-6 mb-8">
         <h2 className="text-xl font-semibold text-gray-500 mb-4">Test Configuration</h2>
 
@@ -270,16 +272,23 @@ useEffect(() => {
             onSelectIntervention={setSelectedIntervention}
           />
         </div>
+        {selectedPackage === "2" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <PatientDetailsPanel patient={null} onSelectPatient={function (patient: FormatPatient): void {
+              throw new Error('Function not implemented.');
+            }} />
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <TestcaseDetails 
-            title={'Positive'} 
+          <TestcaseDetails
+            title={'Positive'}
             testCases={currentTestCases.positive}
             onRunTests={handleRunPositiveTests}
             isRunning={isRunning && runningSection === 'positive'}
           />
-          <TestcaseDetails 
-            title='Negative' 
+          <TestcaseDetails
+            title='Negative'
             testCases={currentTestCases.negative}
             onRunTests={handleRunNegativeTests}
             isRunning={isRunning && runningSection === 'negative'}
@@ -291,11 +300,10 @@ useEffect(() => {
             type="button"
             onClick={handleRunAllTests}
             disabled={isRunning}
-            className={`inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${
-              isRunning
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
-            }`}
+            className={`inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${isRunning
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+              }`}
           >
             {isRunning && runningSection === 'all' ? (
               <>
