@@ -52,13 +52,14 @@ export type InterventionItem = {
   packageId: string;
   code: string;
   name: string;
-  serviceQuantity: string;
+  serviceQuantity?: string;
   unitPrice: string;
   serviceStart: string;
   serviceEnd: string;
   netValue: number;
   patient?: any,
   provider?: any,
+  days?: string
 };
 
 interface Identifier {

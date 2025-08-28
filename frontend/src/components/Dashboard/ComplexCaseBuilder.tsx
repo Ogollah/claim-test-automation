@@ -84,7 +84,7 @@ export default function ComplexCaseBuilder({
   onRunTests,
 }: ComplexCaseBuilderProps) {
   const [selectedPackage, setSelectedPackage] = useState<string>("");
-  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [selectedPatient, setSelectedPatient] = useState<any | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null);
   const [selectedPractitioner, setSelectedPractitioner] = useState<Practitioner | null>(null);
   const [selectedIntervention, setSelectedIntervention] = useState<string>("");
