@@ -39,7 +39,7 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
     const fetchPackages = async () => {
       try {
         const pck = await getPackages()
-        setPackages(pck)
+        setPackages(pck || [])
       } catch (error) {
         console.error("--> Error fetching packages:", error)
       }
