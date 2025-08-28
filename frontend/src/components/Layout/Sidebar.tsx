@@ -5,6 +5,8 @@ import {
   Wrench,
   ChevronLeft,
   ChevronRight,
+  Beaker,
+  CircuitBoard,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -30,6 +32,11 @@ const navItems = [
     name: 'Complex test builder',
     href: '/complex-cases',
     icon: Workflow,
+  },
+  {
+    name: 'Complex test suite',
+    href: '/complex-tests',
+    icon: CircuitBoard,
   },
 ];
 
@@ -67,17 +74,15 @@ export default function Sidebar() {
                 <Link
                   key={href}
                   href={href}
-                  className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-all ${
-                    isActive
-                      ? 'bg-gray-100 text-gray-900'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                  } ${isCollapsed ? 'justify-center' : ''}`}
+                  className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-all ${isActive
+                    ? 'bg-gray-100 text-gray-900'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    } ${isCollapsed ? 'justify-center' : ''}`}
                   title={isCollapsed ? name : undefined}
                 >
                   <Icon
-                    className={`${isCollapsed ? 'h-6 w-6' : 'h-5 w-5 mr-3'} transition-all ${
-                      isActive ? 'text-gray-700' : 'text-gray-400 group-hover:text-gray-500'
-                    }`}
+                    className={`${isCollapsed ? 'h-6 w-6' : 'h-5 w-5 mr-3'} transition-all ${isActive ? 'text-gray-700' : 'text-gray-400 group-hover:text-gray-500'
+                      }`}
                   />
                   {!isCollapsed && name}
                   {isCollapsed && (

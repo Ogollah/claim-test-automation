@@ -63,8 +63,8 @@ export const runTestSuite = async (
         ?.valueCodeableConcept?.coding?.find((s: any) => s.system.endsWith('claim-state'))
         ?.display || '';
 
-      finalOutcome = initialOutcome !== 'Pending' 
-        ? initialOutcome 
+      finalOutcome = initialOutcome !== 'Pending'
+        ? initialOutcome
         : await getClaimOutcome(claimId);
     } catch (outcomeError) {
       console.error('Error getting claim outcome:', outcomeError);
@@ -174,7 +174,7 @@ const ensureResourcesExist = async (formData: any) => {
 const handleTestError = (error: any, testData: any, testCase?: TestCaseItem[], duration?: number): TestResult => {
   const errorResponse = error?.response?.data || error;
   const statusCode = error?.response?.status || error?.status || 500;
-  
+
   let errorMessage = 'Unknown error occurred';
   if (errorResponse) {
     if (typeof errorResponse === 'string') {
@@ -208,7 +208,9 @@ const handleTestError = (error: any, testData: any, testCase?: TestCaseItem[], d
     message: errorMessage,
     details: {
       request: testData,
-      error: errorResponse.error.error,
+      error: typeof errorResponse?.error?.error === 'object'
+        ? errorResponse?.error?.error?.message
+        : errorResponse?.error?.error,
       fhirBundle: errorResponse.error.fhirBundle,
       errorMessage: errorMessage,
       statusCode: statusCode,
@@ -228,6 +230,6 @@ const handleTestError = (error: any, testData: any, testCase?: TestCaseItem[], d
     };
     createResult(respData).catch(err => console.error('Error saving error result:', err));
   }
-  
+
   return errorResult;
 };

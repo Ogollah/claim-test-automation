@@ -245,6 +245,16 @@ export const getInterventionByCode = async (code: string) => {
   }
 }
 
+export const getInterventionByComplexity = async (complexity: number) => {
+  try {
+    const resp = await api.get(`/api/interventions/complex/${complexity}`);
+    return resp;
+  } catch (error) {
+    console.error('--> Error getting intervention', error);
+  }
+}
+
+
 
 // Package
 export const getPackages = async () => {

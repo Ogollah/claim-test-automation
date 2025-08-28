@@ -223,14 +223,14 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                               </div>
                               <div className="flex space-x-2">
                                 <Button
-                                  onClick={() => downloadPayload(result.details.request, `${result.id}-response.json`)}
+                                  onClick={() => downloadPayload(result.details.fhirBundle, `${result.id}-response.json`)}
                                   className="flex items-center bg-gray-50 text-blue-600 hover:bg-gray-200 hover:text-blue-800 text-sm"
                                 >
                                   <ArrowDownTrayIcon className="h-4 w-4 mr-1" />
                                   Download
                                 </Button>
                                 <Button
-                                  onClick={() => copyPayload(result.details.errorMessage)}
+                                  onClick={() => copyPayload(result.details.fhirBundle)}
                                   className="flex items-center bg-gray-100 text-gray-500 hover:text-gray-500 hover:bg-100 hover:text-gray-900 text-sm"
                                 >
                                   <ClipboardIcon className="h-4 w-4 mr-1" />
