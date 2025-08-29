@@ -118,7 +118,7 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                       ) : result.outcome === 'Pending' && result.status === 'failed' ? (
                         <Button
                           variant="link"
-                          onClick={() => handleRefresh(result.id, result.claimId, result.test)}
+                          onClick={() => handleRefresh(result.id, result.claimId ?? '', result.test)}
                           size="sm"
                           disabled={refreshingIds[result.id]}
                           className="h-4 w-4 p-0 mr-1"
@@ -250,7 +250,7 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                               <h4 className="text-sm font-medium text-gray-500 mb-2">Response Summary</h4>
                               {result?.claimId && (
                                 <Button
-                                  onClick={() => handleRefresh(result.id, result.claimId, result.test)}
+                                  onClick={() => handleRefresh(result.id, result.claimId ?? '', result.test)}
                                   className={`bg-gray-100 hover:bg-gree-200 ${refreshingIds[result.id] ? 'text-orange-500' : 'text-green-500'} hover:text-green-600`}
                                   size="sm"
                                   disabled={refreshingIds[result.id]}

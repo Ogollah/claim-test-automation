@@ -40,7 +40,7 @@ export default function PatientDetailsPanel({
     const fetchLocalPatients = async () => {
       try {
         const localPatients = await getPatients();
-        setPatients(localPatients);
+        setPatients(localPatients ?? []);
       } catch (error) {
         console.error('Failed to fetch local patients:', error);
       }

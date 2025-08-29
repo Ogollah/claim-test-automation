@@ -284,6 +284,16 @@ export const postPackage = async (data: Package) => {
   }
 }
 
+export const getPackagesByIsPreauth = async (is_preauth: number) => {
+
+  try {
+    const resp = await api.get<Package[]>(`/api/packages/preauth/is_preauth=${is_preauth}`);
+    return resp.data;
+  } catch (error) {
+    console.error('--> Error fetching packages by is_preauth: ', error);
+  }
+}
+
 // Test case
 
 export interface Error {

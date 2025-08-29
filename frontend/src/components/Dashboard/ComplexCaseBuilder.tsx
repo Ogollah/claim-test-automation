@@ -19,11 +19,15 @@ import PractitionerDetailsPanel from "./PractitionerDetailsPanel"
 import {
   getInterventionByPackageId,
   getPackages,
+  getPackagesByIsPreauth,
 } from "@/lib/api"
 import {
   ComplexCase,
   Intervention,
   Package,
+  Patient,
+  Provider,
+  Practitioner,
 } from "@/lib/types"
 import { Input } from "../ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover"
@@ -33,7 +37,7 @@ import { CalendarIcon, Plus } from "lucide-react"
 import { format } from "date-fns/format"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table"
 import { toast } from "sonner"
-import { cn } from "@/lib/utils"
+import { cn, PER_DIEM_CODES } from "@/lib/utils"
 import { v4 as uuidv4 } from 'uuid'
 
 type ComplexCaseBuilderProps = {
@@ -48,7 +52,7 @@ interface DateFields {
 }
 
 interface CurrentIntervention {
-  serviceQuantity: string
+  days: string
   unitPrice: string
   serviceStart: string
   serviceEnd: string
@@ -61,7 +65,7 @@ const DATE_FIELD_LABELS: Record<keyof DateFields, string> = {
 };
 
 const INTERVENTION_FIELDS = [
-  { label: "Service quantity", key: "serviceQuantity", disabled: false },
+  { label: "Days", key: "days", disabled: true },
   { label: "Unit price", key: "unitPrice", disabled: false },
   { label: "Net value", key: "netValue", disabled: true }
 ];
@@ -80,16 +84,22 @@ export default function ComplexCaseBuilder({
   onRunTests,
 }: ComplexCaseBuilderProps) {
   const [selectedPackage, setSelectedPackage] = useState<string>("");
-  const [selectedPatient, setSelectedPatient] = useState<any>(null);
-  const [selectedProvider, setSelectedProvider] = useState<any>(null);
-  const [selectedPractitioner, setSelectedPractitioner] = useState<any>(null);
+  const [selectedPatient, setSelectedPatient] = useState<any | null>(null);
+  const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null);
+  const [selectedPractitioner, setSelectedPractitioner] = useState<Practitioner | null>(null);
   const [selectedIntervention, setSelectedIntervention] = useState<string>("");
   const [approvedAmount, setApprovedAmount] = useState<number>(500);
   const [currentTestIndex, setCurrentTestIndex] = useState<number>(0);
-  
-  const today = new Date();
-  const twoDays = new Date(today);
-  twoDays.setDate(today.getDate() - 2);
+  const [packageIds, setPackageIds] = useState<string[]>([]);
+  const [showApproved, setShowApproved] = useState(false);
+  console.log({ packageIds, showApproved, selectedPackage });
+
+  const today = useMemo(() => new Date(), []);
+  const twoDays = useMemo(() => {
+    const date = new Date(today);
+    date.setDate(today.getDate() - 2);
+    return date;
+  }, [today]);
 
   const [selectedDates, setSelectedDates] = useState<DateFields>({
     billableStart: twoDays,
@@ -102,36 +112,87 @@ export default function ComplexCaseBuilder({
   const [availableInterventions, setAvailableInterventions] = useState<Intervention[]>([]);
 
   const [currentIntervention, setCurrentIntervention] = useState<CurrentIntervention>({
-    serviceQuantity: "1",
+    days: "1",
     unitPrice: "10000",
     serviceStart: format(twoDays, "yyyy-MM-dd"),
     serviceEnd: format(today, "yyyy-MM-dd"),
   });
 
-  const currentNetValue = useMemo(() => 
-    Number(currentIntervention.serviceQuantity) * Number(currentIntervention.unitPrice) || 0,
-    [currentIntervention.serviceQuantity, currentIntervention.unitPrice]
+  const currentNetValue = useMemo(() =>
+    Number(currentIntervention.days) * Number(currentIntervention.unitPrice) || 0,
+    [currentIntervention.days, currentIntervention.unitPrice]
   );
 
-  const [total, setTotal] = useState<number>(currentNetValue);
+  const total = useMemo(() => currentNetValue, [currentNetValue]);
 
-  const canAddIntervention = useMemo(() => 
-    selectedPackage && selectedIntervention && selectedPatient && selectedProvider && total && approvedAmount,
-    [selectedPackage, selectedIntervention, selectedPatient, selectedProvider, total, approvedAmount]
+  const canAddIntervention = useMemo(() =>
+    selectedPackage && selectedIntervention && selectedPatient && selectedProvider && total > 0,
+    [selectedPackage, selectedIntervention, selectedPatient, selectedProvider, total]
   );
 
-  const canRunTests = useMemo(() => 
+  const canRunTests = useMemo(() =>
     !isRunning && selectedPatient && selectedProvider && complexCases.length > 0,
     [isRunning, selectedPatient, selectedProvider, complexCases.length]
   );
 
   useEffect(() => {
+    const fetchPackageIds = async () => {
+      try {
+        const pck = await getPackagesByIsPreauth(1);
+        const packageIds = Array.isArray(pck)
+          ? pck.map(pkg => pkg.id?.toString() ?? "").filter(Boolean)
+          : [];
+        setPackageIds(packageIds);
+      } catch (error) {
+        console.error("Error fetching packages:", error);
+        toast.error("Failed to load packages");
+      }
+    };
+    fetchPackageIds();
+  }, []);
+
+  useEffect(() => {
+    setShowApproved(!!(selectedPackage && packageIds.includes(selectedPackage)));
+  }, [packageIds, selectedPackage]);
+
+  const isPerdiem = useMemo(() =>
+    PER_DIEM_CODES.has(selectedIntervention),
+    [selectedIntervention]
+  );
+
+  useEffect(() => {
+    if (isPerdiem && currentIntervention.serviceStart && currentIntervention.serviceEnd) {
+      try {
+        const start = new Date(currentIntervention.serviceStart);
+        const end = new Date(currentIntervention.serviceEnd);
+
+        if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+          const diffInMs = end.getTime() - start.getTime();
+          const diffInDays = Math.max(1, Math.ceil(diffInMs / (1000 * 60 * 60 * 24)));
+
+          setCurrentIntervention(prev => ({
+            ...prev,
+            days: String(diffInDays),
+          }));
+        }
+      } catch (error) {
+        console.error("Error calculating date difference:", error);
+      }
+    } else {
+      setCurrentIntervention(prev => ({
+        ...prev,
+        days: "1",
+      }));
+    }
+  }, [isPerdiem, currentIntervention.serviceStart, currentIntervention.serviceEnd]);
+
+  useEffect(() => {
     const fetchPackages = async () => {
       try {
         const pck = await getPackages();
-        setPackages(pck);
-        if (pck.length > 0) {
-          setSelectedPackage(pck[0].id);
+        setPackages(pck ?? []);
+        if (pck && pck.length > 0) {
+          setSelectedPackage(String(pck[0].id ?? ""));
         }
       } catch (error) {
         console.error("Error fetching packages:", error);
@@ -149,10 +210,15 @@ export default function ComplexCaseBuilder({
 
     const fetchInterventions = async () => {
       try {
-        const interventions = await getInterventionByPackageId(selectedPackage);
-        setAvailableInterventions(interventions || []);
-        if (interventions?.length > 0) {
-          setSelectedIntervention(interventions[0].code);
+        const interventions = await getInterventionByPackageId(Number(selectedPackage));
+        const interventionsArray = Array.isArray(interventions)
+          ? interventions
+          : interventions
+            ? [interventions]
+            : [];
+        setAvailableInterventions(interventionsArray);
+        if (interventionsArray.length > 0) {
+          setSelectedIntervention(interventionsArray[0].code);
         }
       } catch (error) {
         console.error("Error fetching interventions:", error);
@@ -164,7 +230,7 @@ export default function ComplexCaseBuilder({
 
   const addIntervention = useCallback(() => {
     if (!canAddIntervention) {
-      toast.error("Please select a package and intervention");
+      toast.error("Please select a package, intervention, patient, and provider");
       return;
     }
 
@@ -179,18 +245,18 @@ export default function ComplexCaseBuilder({
       formData: {
         title: `Test for ${selectedIntervention}`,
         test: "complex",
-        patient: selectedPatient,
-        provider: selectedProvider,
-        use: "preauth-claim",
+        patient: selectedPatient!,
+        provider: selectedProvider!,
+        use: showApproved ? "preauth-claim" : "claim",
         claimSubType: "ip",
-        practitioner: selectedPractitioner,
+        practitioner: selectedPractitioner || undefined,
         approvedAmount: approvedAmount,
         productOrService: [{
           code: selectedIntervention,
           display: interventionName,
-          quantity: { value: currentIntervention.serviceQuantity },
+          quantity: { value: '1' },
           unitPrice: {
-            value: currentIntervention.unitPrice,
+            value: isPerdiem ? Number(currentIntervention.unitPrice) * Number(currentIntervention.days) : Number(currentIntervention.unitPrice),
             currency: "KES",
           },
           net: {
@@ -215,40 +281,49 @@ export default function ComplexCaseBuilder({
     };
 
     setComplexCases(prev => [...prev, newIntervention]);
-    setCurrentIntervention({
-      serviceQuantity: "1",
+
+    // Reset current intervention but keep service dates for continuity
+    setCurrentIntervention(prev => ({
+      days: prev.days,
       unitPrice: "10000",
-      serviceStart: format(twoDays, "yyyy-MM-dd"),
-      serviceEnd: format(today, "yyyy-MM-dd"),
-    });
-  }, [canAddIntervention, availableInterventions, selectedIntervention, selectedPatient, selectedProvider, selectedPractitioner, currentIntervention, currentNetValue, selectedDates, total]);
+      serviceStart: prev.serviceStart,
+      serviceEnd: prev.serviceEnd,
+    }));
+  }, [
+    canAddIntervention, availableInterventions, selectedIntervention,
+    selectedPatient, selectedProvider, selectedPractitioner, showApproved,
+    approvedAmount, isPerdiem, currentIntervention, currentNetValue,
+    selectedDates, total
+  ]);
 
   const removeIntervention = useCallback((id: string) => {
     setComplexCases(prev => prev.filter(item => item.id !== id));
   }, []);
 
   const updateCaseStatus = useCallback((id: string, status: string) => {
-    setComplexCases(prev => 
-      prev.map(item => 
+    setComplexCases(prev =>
+      prev.map(item =>
         item.id === id ? { ...item, status } : item
       )
     );
   }, []);
 
   const handleRunTests = useCallback(async () => {
-    if (!canRunTests) {
+    if (!canRunTests || !onRunTests) {
       toast.error("Please select all required fields and add at least one intervention");
       return;
     }
-    setComplexCases(prev => 
+
+    setComplexCases(prev =>
       prev.map(item => ({ ...item, status: "pending" }))
     );
-    
+
     setCurrentTestIndex(0);
+
     for (let i = 0; i < complexCases.length; i++) {
       setCurrentTestIndex(i);
       updateCaseStatus(complexCases[i].id, "running");
-      
+
       try {
         const testPayload = {
           formData: {
@@ -256,32 +331,28 @@ export default function ComplexCaseBuilder({
             submissionDate: new Date().toISOString(),
           }
         };
-        
-        console.log(`Running test ${i+1}/${complexCases.length}`, testPayload);
-        
-        if (onRunTests) {
-          await onRunTests(testPayload);
-        }
-        
+
+        console.log(`Running test ${i + 1}/${complexCases.length}`, testPayload);
+        await onRunTests(testPayload);
         updateCaseStatus(complexCases[i].id, "completed");
-        
+
         await new Promise(resolve => setTimeout(resolve, 500));
       } catch (error) {
-        console.error(`Error running test ${i+1}:`, error);
+        console.error(`Error running test ${i + 1}:`, error);
         updateCaseStatus(complexCases[i].id, "failed");
       }
     }
-    
+
     setCurrentTestIndex(-1);
     toast.success("All tests completed");
   }, [canRunTests, complexCases, onRunTests, updateCaseStatus]);
 
   const handleRunSingleTest = useCallback(async (caseId: string) => {
     const testCase = complexCases.find(c => c.id === caseId);
-    if (!testCase) return;
-    
+    if (!testCase || !onRunTests) return;
+
     updateCaseStatus(caseId, "running");
-    
+
     try {
       const testPayload = {
         formData: {
@@ -289,13 +360,9 @@ export default function ComplexCaseBuilder({
           submissionDate: new Date().toISOString(),
         }
       };
-      
+
       console.log("Running single test", testPayload);
-      
-      if (onRunTests) {
-        await onRunTests(testPayload);
-      }
-      
+      await onRunTests(testPayload);
       updateCaseStatus(caseId, "completed");
       toast.success("Test completed successfully");
     } catch (error) {
@@ -305,12 +372,9 @@ export default function ComplexCaseBuilder({
     }
   }, [complexCases, onRunTests, updateCaseStatus]);
 
-  const handleTotalChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setTotal(parseFloat(e.target.value) || 0);
-  }, []);
-
   const handleApprovedAmountChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setApprovedAmount(parseFloat(e.target.value) || 0);
+    const value = parseFloat(e.target.value);
+    setApprovedAmount(isNaN(value) ? 0 : value);
   }, []);
 
   const renderDateField = (key: keyof DateFields, isCreated = false) => (
@@ -356,10 +420,14 @@ export default function ComplexCaseBuilder({
         )}
         value={key === "netValue" ? currentNetValue : currentIntervention[key as keyof CurrentIntervention]}
         disabled={disabled}
-        onChange={(e) => !disabled && setCurrentIntervention(prev => ({
-          ...prev,
-          [key]: e.target.value,
-        }))}
+        onChange={(e) => {
+          if (!disabled) {
+            setCurrentIntervention(prev => ({
+              ...prev,
+              [key]: e.target.value,
+            }));
+          }
+        }}
       />
     </div>
   );
@@ -383,7 +451,7 @@ export default function ComplexCaseBuilder({
 
       <div className="bg-white rounded-lg shadow-md p-6 mb-8">
         <h2 className="text-xl font-semibold mb-4">Test Configuration</h2>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           {/* Package Selector */}
           <div className="space-y-2">
@@ -394,7 +462,7 @@ export default function ComplexCaseBuilder({
               </SelectTrigger>
               <SelectContent>
                 {packages.map((pkg) => (
-                  <SelectItem key={pkg.id} value={pkg.id}>
+                  <SelectItem key={pkg.id} value={String(pkg.id)}>
                     {pkg.name} ({pkg.code})
                   </SelectItem>
                 ))}
@@ -426,7 +494,7 @@ export default function ComplexCaseBuilder({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          {Object.keys(selectedDates).map((key) => 
+          {Object.keys(selectedDates).map((key) =>
             renderDateField(key as keyof DateFields, key === "created")
           )}
         </div>
@@ -435,11 +503,11 @@ export default function ComplexCaseBuilder({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             {INTERVENTION_FIELDS.map(renderInterventionField)}
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             {["serviceStart", "serviceEnd"].map((key) => {
               const label = key === "serviceStart" ? "Service Start Date" : "Service End Date";
-              const dateValue = currentIntervention[key as keyof CurrentIntervention] 
+              const dateValue = currentIntervention[key as keyof CurrentIntervention]
                 ? new Date(currentIntervention[key as keyof CurrentIntervention])
                 : undefined;
 
@@ -480,20 +548,22 @@ export default function ComplexCaseBuilder({
                   type="number"
                   className="block w-full px-3 py-2 bg-green-100 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   value={total.toFixed(2)}
-                  onChange={handleTotalChange}
+                  readOnly
                   step={0.01}
                 />
               </div>
-              <div>
-                <Label className="py-3">Approved amount</Label>
-                <Input
-                  type="number"
-                  className="block w-full bg-green-300 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  value={approvedAmount.toFixed(2)}
-                  onChange={handleApprovedAmountChange}
-                  step={0.01}
-                />
-              </div>
+              {showApproved && (
+                <div>
+                  <Label className="py-3">Approved amount</Label>
+                  <Input
+                    type="number"
+                    className="block w-full bg-green-300 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    value={approvedAmount.toFixed(2)}
+                    onChange={handleApprovedAmountChange}
+                    step={0.01}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -504,20 +574,20 @@ export default function ComplexCaseBuilder({
             disabled={!canAddIntervention}
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            <Plus className="h-5 w-5 mr-2"/>
+            <Plus className="h-5 w-5 mr-2" />
             Add
           </Button>
         </div>
 
         {complexCases.length > 0 && (
-          <div className="mb-6 py-4 border-t pt-4 ">
-            <h3 className="text-lg font-bold mb-2 text-green-500">Added cases</h3>
-            <div className="overflow-x-auto bg-white rounded-lg shadow-md p-6">
-              <Table className="min-w-full divide-y divide-gray-200">
+          <div className="mb-6 py-4 border-t pt-4">
+            <h3 className="text-lg font-bold mb-2 text-green-500">Added cases ({complexCases.length})</h3>
+            <div className="overflow-x-auto bg-white rounded-lg shadow-md">
+              <Table className="min-w-full">
                 <TableHeader className="bg-gray-50">
                   <TableRow>
                     {TABLE_HEADERS.map((header) => (
-                      <TableHead 
+                      <TableHead
                         key={header}
                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                       >
@@ -529,10 +599,10 @@ export default function ComplexCaseBuilder({
                 <TableBody className="bg-white divide-y divide-gray-200">
                   {complexCases.map((intervention, index) => (
                     <TableRow key={intervention.id} className={currentTestIndex === index ? "bg-blue-50" : ""}>
-                      <TableCell className="px-6 py-4 text-sm">{intervention.formData.productOrService[0].code}</TableCell>
+                      <TableCell className="px-6 py-4 text-sm">{intervention.formData.productOrService[0]?.code}</TableCell>
                       <TableCell className="px-6 py-4 text-sm">{intervention.formData.title}</TableCell>
-                      <TableCell className="px-6 py-4 text-sm">{intervention.formData.total.value}</TableCell>
-                      <TableCell className="px-6 py-4 text-sm">{intervention.formData.approvedAmount}</TableCell>
+                      <TableCell className="px-6 py-4 text-sm">{intervention.formData.total.value.toFixed(2)}</TableCell>
+                      <TableCell className="px-6 py-4 text-sm">{intervention.formData.approvedAmount?.toFixed(2)}</TableCell>
                       <TableCell className="px-6 py-4 text-sm">
                         {getStatusBadge(intervention.status)}
                       </TableCell>
@@ -563,13 +633,13 @@ export default function ComplexCaseBuilder({
           </div>
         )}
 
-        <div className="flex justify-between w-full">
+        <div className="flex justify-between w-full pt-4">
           <Button
             onClick={handleRunTests}
             disabled={!canRunTests}
             className={cn(
               "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white",
-              canRunTests 
+              canRunTests
                 ? "bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 : "bg-gray-400 cursor-not-allowed"
             )}
