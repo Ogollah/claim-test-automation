@@ -54,7 +54,7 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
           const intevents = await getInterventionByPackageId(
             Number(selectedPackage)
           )
-          setAvailableInterventions(intevents || [])
+          setAvailableInterventions(Array.isArray(intevents) ? intevents : (intevents ? [intevents] : []))
           setSelectedIntervention("")
         } catch (error) {
           console.error("--> Error fetching interventions:", error)
@@ -310,7 +310,7 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
               </SelectTrigger>
               <SelectContent className=''>
                 {packages.map((pkg) => (
-                  <SelectItem key={pkg.id} value={pkg.id}>
+                  <SelectItem key={pkg.id} value={String(pkg.id)}>
                     {pkg.name} ({pkg.code})
                   </SelectItem>
                 ))}
