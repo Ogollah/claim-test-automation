@@ -337,6 +337,15 @@ export const getTestCaseByCode = async (code: string) => {
   }
 }
 
+export const deleteTestCase = async (id: number) => {
+  try {
+    const resp = await api.delete(`/api/test-cases/delete/${id}`);
+    return resp;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 export const updateTestCase = async (id: any, data: any) => {
   try {
     const resp = await api.put<TestCaseItem>(`/api/test-cases/update/${id}`, { result_status: data });

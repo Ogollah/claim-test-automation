@@ -1,27 +1,54 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import dynamic from 'next/dynamic';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import Ajv from 'ajv';
 import Editor from '@monaco-editor/react';
 import { testCaseSchema } from '@/lib/test/schema';
 import { testCaseSamples } from '@/lib/test/test';
-import { Loader2Icon } from 'lucide-react';
+import { CodeIcon, Loader2Icon, TableIcon, XIcon } from 'lucide-react';
 import { getInterventionByCode, getTestCaseByCode, postTestCase, updateTestCase } from '@/lib/api';
 import TestcaseForm from './TestCaseForm';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import TestCases from './TestCases';
 
 const ajv = new Ajv({ allErrors: true });
 
 export default function TestcaseEditor() {
-    const [jsonData, setJsonData] = useState(testCaseSamples[0]);
+    const [jsonData, setJsonData] = useState(null);
+    const [selectedTestCase, setSelectedTestCase] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
     const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
+    // Handle test case selection from TestCases component
+    const handleTestCaseSelect = (testCase: any) => {
+        if (testCase && testCase.test_config) {
+            setJsonData(testCase.test_config);
+            setSelectedTestCase(testCase);
+            toast.success(`Loaded test case: ${testCase.name} ${testCase.id}`);
+        } else if (testCase === null) {
+            setJsonData(null);
+            setSelectedTestCase(null);
+            toast.info('Test case deselected');
+        }
+    };
+
+    // Clear JSON data
+    const handleClearJson = () => {
+        setJsonData(null);
+        setSelectedTestCase(null);
+        toast.info('JSON editor cleared');
+    };
+
     const validateJson = (data: any) => {
+        if (!data) {
+            toast.error('No JSON data to validate');
+            return false;
+        }
+
         const validate = ajv.compile(testCaseSchema);
         const valid = validate(data);
 
@@ -38,6 +65,11 @@ export default function TestcaseEditor() {
     };
 
     const handleSave = async (dataToSave = jsonData) => {
+        if (!dataToSave) {
+            toast.error('No test case data to save');
+            return false;
+        }
+
         if (!validateJson(dataToSave)) {
             toast.error('Validation failed. Fix errors before saving.');
             return false;
@@ -56,11 +88,9 @@ export default function TestcaseEditor() {
 
             const interventionId = interventionResp.data[0].id;
 
-            const existingTestsResp = await getTestCaseByCode(code);
-            const existingTest = existingTestsResp?.data?.find(test => test.name === title);
-
-            if (existingTest?.id) {
-                const updateResp = await updateTestCase(existingTest.id, {
+            // Check if updating an existing test case or creating a new one
+            if (selectedTestCase?.id) {
+                const updateResp = await updateTestCase(selectedTestCase.id, {
                     test_config: dataToSave,
                 });
 
@@ -73,6 +103,7 @@ export default function TestcaseEditor() {
                     return false;
                 }
             } else {
+                // Create new test case
                 const createResp = await postTestCase({
                     intervention_id: interventionId,
                     name: title,
@@ -124,42 +155,97 @@ export default function TestcaseEditor() {
             <h1 className="text-2xl font-bold text-gray-500 mb-6">Test setup</h1>
             <div className="bg-white rounded-sm shadow-md p-6 mb-8">
                 <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                <div className="mb-4 bg-gray-50">
-                    <div className="rounded-md border bg-white">
-                        <Editor
-                            height="800px"
-                            defaultLanguage="json"
-                            value={JSON.stringify(jsonData, null, 2)}
-                            onChange={(value) => {
-                            try {
-                            if (value) {
-                            const parsed = JSON.parse(value);
-                            setJsonData(parsed);
-                            }
-                            } catch (err) {
-                            toast.error(`${err}`)
-                            }
-                            }}
-                        />
+                    <div className="py-2 bg-gray-50 text-gray-500">
+                        <Tabs defaultValue='tests' className=' px-2'>
+                            <TabsList className="mb-0 text-gray-500">
+                                <TabsTrigger className='text-gray-500' value="tests">
+                                    <TableIcon className="h-4 w-4" />
+                                    <span className="text-gray-500">Tests</span>
+                                </TabsTrigger>
+                                <TabsTrigger className='text-gray-500' value="json">
+                                    <CodeIcon className="h-4 w-4" />
+                                    <span className="text-gray-500">Json</span>
+                                </TabsTrigger>
+                            </TabsList>
+                            <TabsContent value='json' className='text-gray-500'>
+                                <Card>
+                                    <CardHeader className='text-gray-500'>
+                                        <CardTitle>
+                                            <div className='flex justify-between items-center'>
+                                                <div className='flex items-center'>
+                                                    <CodeIcon className="h-4 w-4 mr-2" />
+                                                    <span>Test Case JSON Editor</span>
+                                                </div>
+                                                <Button
+                                                    variant="outline"
+                                                    onClick={handleClearJson}
+                                                    className='flex items-center gap-1'
+                                                >
+                                                    <XIcon className="h-4 w-4" />
+                                                    <span className='text-gray-500'>Clear</span>
+                                                </Button>
+                                            </div>
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="mb-4 bg-gray-50">
+                                            <div className="rounded-md border bg-white">
+                                                <Editor
+                                                    height="800px"
+                                                    defaultLanguage="json"
+                                                    value={jsonData ? JSON.stringify(jsonData, null, 2) : '{}'}
+                                                    onChange={(value) => {
+                                                        try {
+                                                            if (value) {
+                                                                const parsed = JSON.parse(value);
+                                                                setJsonData(parsed);
+                                                            }
+                                                        } catch (err) {
+                                                            toast.error(`${err}`)
+                                                        }
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                        {validationErrors.length > 0 && (
+                                            <div className="mb-4 p-3 border border-red-400 rounded-md bg-red-50 text-sm text-red-700">
+                                                <strong>Validation Errors:</strong>
+                                                <ul className="mt-1 list-disc list-inside">
+                                                    {validationErrors.map((err, i) => (
+                                                        <li key={i}>{err}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
+                            <TabsContent value='tests'>
+                                <Card>
+                                    <CardHeader className='text-gray-500'>
+                                        <CardTitle>Test Cases</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="mb-4 bg-gray-50">
+                                            <div className="rounded-md border bg-white">
+                                                <TestCases
+                                                    onTestCaseSelect={handleTestCaseSelect}
+                                                />
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
+                        </Tabs>
                     </div>
+
+                    <TestcaseForm jsonData={jsonData} setJsonData={setJsonData} />
                 </div>
-                {validationErrors.length > 0 && (
-                    <div className="mb-4 p-3 border border-red-400 rounded-md bg-red-50 text-sm text-red-700">
-                        <strong>Validation Errors:</strong>
-                        <ul className="mt-1 list-disc list-inside">
-                            {validationErrors.map((err, i) => (
-                                <li key={i}>{err}</li>
-                            ))}
-                        </ul>
-                    </div>
-                )}
-                <TestcaseForm jsonData={jsonData} setJsonData={setJsonData} />
-                </div>
-                <div className="flex gap-4">
-                    <Button 
-                        variant="secondary" 
-                        onClick={() => handleSave()} 
-                        disabled={isSubmitting || isBulkSubmitting}
+                <div className="flex gap-4 py-3">
+                    <Button
+                        variant="secondary"
+                        onClick={() => handleSave()}
+                        disabled={isSubmitting || isBulkSubmitting || !jsonData}
                         className='bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 text-white'
                     >
                         {isSubmitting ? (
@@ -168,13 +254,13 @@ export default function TestcaseEditor() {
                                 Saving...
                             </span>
                         ) : (
-                            'Save Current Testcase'
+                            selectedTestCase ? 'Update Test Case' : 'Create New Test Case'
                         )}
                     </Button>
-                    <Button 
-                        variant="secondary" 
-                        onClick={handleSaveAll} 
-                        disabled={isBulkSubmitting || isSubmitting}
+                    <Button
+                        variant="secondary"
+                        onClick={handleSaveAll}
+                        disabled={true}
                         className='bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 text-white'
                     >
                         {isBulkSubmitting ? (
@@ -183,7 +269,7 @@ export default function TestcaseEditor() {
                                 Saving All...
                             </span>
                         ) : (
-                            'Save All Sample Testcases'
+                            'Save Bulk'
                         )}
                     </Button>
                 </div>
