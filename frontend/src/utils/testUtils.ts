@@ -1,5 +1,5 @@
 import { getClaimOutcome, shouldTestPass } from '@/utils/claimUtils';
-import { TestResult, TestCaseItem, Result } from '@/lib/types';
+import { TestResult, TestCaseItem, Result, TestCase } from '@/lib/types';
 import { api, API_BASE_URL } from '@/lib/utils';
 import { createResult, getPatientByCrID, getPractitionerByPuID, getProviderByFID, postPatient, postPractitioner, postProvider } from '@/lib/api';
 import { practitionerPayload } from '@/lib/practitioner';
@@ -13,7 +13,7 @@ import { patientPayload } from '@/lib/patient';
  * @returns Promise<TestResult[]> Array of test results
  */
 export const runTestSuite = async (
-  testData: any,
+  testData: TestCase,
   testCase?: TestCaseItem[]
 ): Promise<TestResult[]> => {
   try {
@@ -135,7 +135,7 @@ export const runTestSuite = async (
 /**
  * Ensures required practitioner, provider, and patient resources exist
  */
-const ensureResourcesExist = async (formData: any) => {
+const ensureResourcesExist = async (formData: TestCase['formData']) => {
   try {
     if (!formData) return;
 
@@ -171,7 +171,7 @@ const ensureResourcesExist = async (formData: any) => {
 /**
  * Handles test execution errors and returns error result
  */
-const handleTestError = (error: any, testData: any, testCase?: TestCaseItem[], duration?: number): TestResult => {
+const handleTestError = (error: any, testData: TestCase, testCase?: TestCaseItem[], duration?: number): TestResult => {
   const errorResponse = error?.response?.data || error;
   const statusCode = error?.response?.status || error?.status || 500;
 

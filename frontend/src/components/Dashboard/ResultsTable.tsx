@@ -3,7 +3,7 @@ import { CheckCircleIcon, XCircleIcon, ChevronDownIcon, ChevronRightIcon, ArrowD
 import { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Button } from '../ui/button';
-import { Check, CheckCircle2Icon, Minus, RefreshCcw, RefreshCcwIcon } from 'lucide-react';
+import { Minus, RefreshCcwIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ResultsTableProps {

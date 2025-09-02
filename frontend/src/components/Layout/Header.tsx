@@ -9,7 +9,6 @@ import {
   User2Icon,
 } from 'lucide-react';
 import { Button } from '../ui/button';
-import Image from 'next/image';
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -22,7 +21,7 @@ export default function Header() {
           <div className="flex items-center space-x-2">
             <LayoutDashboard className="h-6 w-6 text-blue-600" />
             <Link href="/" className="text-xl font-bold text-gray-700 hover:text-blue-600 transition">
-              Claim & Benefit Test System (CBTS) 
+              Claim & Benefit Test System (CBTS)
             </Link>
           </div>
 
@@ -40,7 +39,7 @@ export default function Header() {
 
             {/* User Avatar */}
             <div className="flex items-center space-x-1 cursor-pointer hover:opacity-90">
-              <User2Icon className='h-6 w-6 text-gray-500'/>
+              <User2Icon className='h-6 w-6 text-gray-500' />
               {/* <Image
                 src="/avatar.png" // Make sure this exists in your `public/` folder
                 alt="User Avatar"

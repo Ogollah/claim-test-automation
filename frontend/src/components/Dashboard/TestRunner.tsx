@@ -24,7 +24,6 @@ import {
   Intervention,
   InterventionItem,
   Package,
-  Patient,
   Provider,
   Practitioner,
 } from "@/lib/types";
@@ -597,8 +596,4 @@ export default function TestRunner({
       </div>
     </div>
   );
-}
-
-function setTotal(newValue: number) {
-  throw new Error("Function not implemented.");
 }
