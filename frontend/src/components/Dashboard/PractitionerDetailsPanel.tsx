@@ -6,6 +6,7 @@ import { Button } from '../ui/button';
 import { Check, ChevronsUpDown, Loader2 } from 'lucide-react';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command';
 import { getPractitioner, searchPractitionerHie } from '@/lib/api';
+import { saveHIEPractitioner } from '@/lib/practitioner';
 
 type PractitionerDetailsPanelProps = {
   practitioner: Practitioner | null;
@@ -30,6 +31,15 @@ export default function PractitionerDetailsPanel({ practitioner, onSelectPractit
 
     fetchLocalPatients();
   }, []);
+
+  const handleSave = async (practitioner: Practitioner) => {
+    try {
+      await saveHIEPractitioner(practitioner);
+      console.log('HIE practitioner saved successfully');
+    } catch (error) {
+      console.error('Error saving HIE practitioner:', error);
+    }
+  };
 
 
   const validatePractitioner = (practitioner: Practitioner) => {
@@ -120,6 +130,7 @@ export default function PractitionerDetailsPanel({ practitioner, onSelectPractit
                       key={p.id}
                       onSelect={() => {
                         onSelectPractitioner(p);
+                        handleSave(p);
                         setOpen(false);
                         setQuery('')
                       }}

@@ -206,7 +206,14 @@ export const getPractitionerByPuID = async (puID: string) => {
   }
 }
 
-
+export const updatePractitioner = async (id: string, data: PractitionerItem) => {
+  try {
+    const resp = await api.put<PractitionerItem>(`/api/practitioners/update/${id}`, data);
+    return resp;
+  } catch (error) {
+    console.error("Error updating practitioner: ", error);
+  }
+};
 
 export const getIntervention = async () => {
   try {
