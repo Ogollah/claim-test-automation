@@ -21,6 +21,7 @@ import {
   CommandItem,
   CommandList
 } from '../ui/command';
+import { saveHIEProvider } from '@/lib/providers';
 
 type ProviderDetailsPanelProps = {
   provider: Provider | null;
@@ -51,6 +52,15 @@ export default function ProviderDetailsPanel({
     fetchLocalProviders();
   }, []);
 
+  const handleSaveProvider = async (provider: Provider) => {
+    try {
+      await saveHIEProvider(provider);
+      console.log('HIE provider saved successfully');
+    } catch (error) {
+      console.error('Failed to save provider:', error);
+    }
+  };
+
   const handleSearch = async (q: string) => {
     if (!q || q.length < 3) return;
     setLoading(true);
@@ -79,7 +89,7 @@ export default function ProviderDetailsPanel({
     return errors;
   };
 
-    useEffect(() => {
+  useEffect(() => {
     const delayDebounce = setTimeout(() => {
       if (query.length >= 3) {
         handleSearch(query);
@@ -88,16 +98,16 @@ export default function ProviderDetailsPanel({
 
     return () => clearTimeout(delayDebounce);
   }, [query]);
-  
+
   const filteredProviders = query
     ? providers.filter(p =>
-        p.name.toLowerCase().includes(query.toLowerCase())
-      )
+      p.name.toLowerCase().includes(query.toLowerCase())
+    )
     : providers;
 
   return (
     <div className="border border-gray-200 rounded-lg p-4 w-full">
-        <h3 className="text-lg font-medium text-gray-500 mb2">Provider Details</h3>
+      <h3 className="text-lg font-medium text-gray-500 mb2">Provider Details</h3>
 
       {isExpanded && (
         <div className="mt-4 space-y-4 text-gray-500">
@@ -140,6 +150,7 @@ export default function ProviderDetailsPanel({
                         key={p.id}
                         onSelect={() => {
                           onSelectProvider(p);
+                          handleSaveProvider(p);
                           setOpen(false);
                         }}
                       >

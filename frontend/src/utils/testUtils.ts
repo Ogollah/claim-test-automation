@@ -1,5 +1,5 @@
 import { getClaimOutcome, shouldTestPass } from '@/utils/claimUtils';
-import { TestResult, TestCaseItem, Result } from '@/lib/types';
+import { TestResult, TestCaseItem, Result, TestCase } from '@/lib/types';
 import { api, API_BASE_URL } from '@/lib/utils';
 import { createResult, getPatientByCrID, getPractitionerByPuID, getProviderByFID, postPatient, postPractitioner, postProvider } from '@/lib/api';
 import { practitionerPayload } from '@/lib/practitioner';
@@ -13,7 +13,7 @@ import { patientPayload } from '@/lib/patient';
  * @returns Promise<TestResult[]> Array of test results
  */
 export const runTestSuite = async (
-  testData: any,
+  testData: TestCase,
   testCase?: TestCaseItem[]
 ): Promise<TestResult[]> => {
   try {
@@ -121,10 +121,10 @@ export const runTestSuite = async (
       }
     }
 
-    // Ensure resources exist (run in background, don't await)
-    ensureResourcesExist(testData.formData).catch(error => {
-      console.error("Error ensuring resources exist:", error);
-    });
+    // // Ensure resources exist (run in background, don't await)
+    // ensureResourcesExist(testData.formData).catch(error => {
+    //   console.error("Error ensuring resources exist:", error);
+    // });
 
     return [result];
   } catch (error: any) {
@@ -135,7 +135,7 @@ export const runTestSuite = async (
 /**
  * Ensures required practitioner, provider, and patient resources exist
  */
-const ensureResourcesExist = async (formData: any) => {
+const ensureResourcesExist = async (formData: TestCase['formData']) => {
   try {
     if (!formData) return;
 
@@ -147,15 +147,15 @@ const ensureResourcesExist = async (formData: any) => {
 
     const creationPromises = [];
 
-    if (formData?.practitioner && practitioner.status === 'rejected') {
+    if (formData?.practitioner) {
       creationPromises.push(postPractitioner(practitionerPayload(formData.practitioner)));
     }
 
-    if (formData?.provider && provider.status === 'rejected') {
+    if (formData?.provider) {
       creationPromises.push(postProvider(providerPayload(formData.provider)));
     }
 
-    if (formData?.patient && patient.status === 'rejected') {
+    if (formData?.patient) {
       creationPromises.push(postPatient(patientPayload(formData.patient)));
     }
 
@@ -171,7 +171,7 @@ const ensureResourcesExist = async (formData: any) => {
 /**
  * Handles test execution errors and returns error result
  */
-const handleTestError = (error: any, testData: any, testCase?: TestCaseItem[], duration?: number): TestResult => {
+const handleTestError = (error: any, testData: TestCase, testCase?: TestCaseItem[], duration?: number): TestResult => {
   const errorResponse = error?.response?.data || error;
   const statusCode = error?.response?.status || error?.status || 500;
 

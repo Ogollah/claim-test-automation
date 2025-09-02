@@ -6,25 +6,26 @@ import { toast } from 'sonner';
 import Ajv from 'ajv';
 import Editor from '@monaco-editor/react';
 import { testCaseSchema } from '@/lib/test/schema';
-import { testCaseSamples } from '@/lib/test/test';
 import { CodeIcon, Loader2Icon, TableIcon, XIcon } from 'lucide-react';
-import { getInterventionByCode, getTestCaseByCode, postTestCase, updateTestCase } from '@/lib/api';
+import { getInterventionByCode, postTestCase, updateTestCase } from '@/lib/api';
 import TestcaseForm from './TestCaseForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import TestCases from './TestCases';
+import { TestCase, TestCaseItem, } from '@/lib/types';
 
 const ajv = new Ajv({ allErrors: true });
 
-export default function TestcaseEditor() {
-    const [jsonData, setJsonData] = useState(null);
-    const [selectedTestCase, setSelectedTestCase] = useState(null);
+interface TestCaseEditorProps { }
+
+export default function TestcaseEditor({ }: TestCaseEditorProps) {
+    const [jsonData, setJsonData] = useState<TestCase | null>(null);
+    const [selectedTestCase, setSelectedTestCase] = useState<TestCaseItem | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
     const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
     // Handle test case selection from TestCases component
-    const handleTestCaseSelect = (testCase: any) => {
+    const handleTestCaseSelect = (testCase: TestCaseItem | null) => {
         if (testCase && testCase.test_config) {
             setJsonData(testCase.test_config);
             setSelectedTestCase(testCase);
@@ -43,7 +44,7 @@ export default function TestcaseEditor() {
         toast.info('JSON editor cleared');
     };
 
-    const validateJson = (data: any) => {
+    const validateJson = (data: unknown): boolean => {
         if (!data) {
             toast.error('No JSON data to validate');
             return false;
@@ -64,7 +65,7 @@ export default function TestcaseEditor() {
         return true;
     };
 
-    const handleSave = async (dataToSave = jsonData) => {
+    const handleSave = async (dataToSave: TestCase = jsonData as TestCase): Promise<boolean> => {
         if (!dataToSave) {
             toast.error('No test case data to save');
             return false;
@@ -79,7 +80,13 @@ export default function TestcaseEditor() {
         const title = dataToSave.formData?.title || 'Unnamed Testcase';
         const description = dataToSave.formData?.test || '';
 
+        if (!code) {
+            toast.error('Test case must have a product/service code');
+            return false;
+        }
+
         try {
+            setIsSubmitting(true);
             const interventionResp = await getInterventionByCode(code);
             if (interventionResp?.status !== 200 || !interventionResp.data?.length) {
                 toast.error(`Intervention not found for code: ${code}`);
@@ -91,6 +98,10 @@ export default function TestcaseEditor() {
             // Check if updating an existing test case or creating a new one
             if (selectedTestCase?.id) {
                 const updateResp = await updateTestCase(selectedTestCase.id, {
+                    intervention_id: interventionId,
+                    name: title,
+                    description,
+                    code,
                     test_config: dataToSave,
                 });
 
@@ -125,29 +136,9 @@ export default function TestcaseEditor() {
             console.error('Error saving test case:', error);
             toast.error(`An unexpected error occurred while saving "${title}".`);
             return false;
+        } finally {
+            setIsSubmitting(false);
         }
-    };
-
-    const handleSaveAll = async () => {
-        setIsBulkSubmitting(true);
-        let successCount = 0;
-        let errorCount = 0;
-
-        for (const testCase of testCaseSamples) {
-            const result = await handleSave(testCase);
-            if (result) {
-                successCount++;
-            } else {
-                errorCount++;
-            }
-            await new Promise(resolve => setTimeout(resolve, 200));
-        }
-
-        toast.info(
-            `Bulk save completed. ${successCount} succeeded, ${errorCount} failed.`,
-            { duration: 5000 }
-        );
-        setIsBulkSubmitting(false);
     };
 
     return (
@@ -245,7 +236,7 @@ export default function TestcaseEditor() {
                     <Button
                         variant="secondary"
                         onClick={() => handleSave()}
-                        disabled={isSubmitting || isBulkSubmitting || !jsonData}
+                        disabled={isSubmitting || !jsonData}
                         className='bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 text-white'
                     >
                         {isSubmitting ? (
@@ -255,21 +246,6 @@ export default function TestcaseEditor() {
                             </span>
                         ) : (
                             selectedTestCase ? 'Update Test Case' : 'Create New Test Case'
-                        )}
-                    </Button>
-                    <Button
-                        variant="secondary"
-                        onClick={handleSaveAll}
-                        disabled={true}
-                        className='bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 text-white'
-                    >
-                        {isBulkSubmitting ? (
-                            <span className="flex items-center gap-2">
-                                <Loader2Icon className="h-4 w-4 animate-spin" />
-                                Saving All...
-                            </span>
-                        ) : (
-                            'Save Bulk'
                         )}
                     </Button>
                 </div>

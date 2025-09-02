@@ -3,9 +3,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import PatientDetailsPanel from "./PatientDetailsPanel";
 import ResultsTable from "./ResultsTable";
 import { refreshTestResult } from "@/utils/claimUtils";
-import { getInterventionByComplexity, getInterventionByPackageId, getPackages, getTestCaseByCode } from "@/lib/api";
+import { getInterventionByComplexity, getTestCaseByCode } from "@/lib/api";
 import { runTestSuite } from "@/utils/testUtils";
-import { FormatPatient, Package, TestCase, TestCaseItem, TestResult } from "@/lib/types";
+import { FormatPatient, TestCase, TestCaseItem, TestResult, Intervention } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { Label } from "../ui/label";
 import TestcaseDetails from "../testCases/TestcaseDetails";
@@ -15,27 +15,36 @@ import { PlayIcon } from "lucide-react";
 
 interface ComplexTestRunnerProps {
     isRunning: boolean;
-    onRunTests?: (testConfig: any) => void;
+    onRunTests?: (testConfig: TestConfig) => void;
+}
+
+interface TestConfig {
+    positive: TestCase[];
+    negative: TestCase[];
+}
+
+interface CurrentTestCases {
+    positive: TestCase[];
+    negative: TestCase[];
 }
 
 export default function ComplexTestRunner({ isRunning = false, onRunTests }: ComplexTestRunnerProps) {
-    const [selectedIntervention, setSelectedIntervention] = useState('');
+    const [selectedIntervention, setSelectedIntervention] = useState<string>('');
     const [runningSection, setRunningSection] = useState<string | null>(null);
-    const [availableInterventions, setAvailableInterventions] = useState<any[]>([]);
+    const [availableInterventions, setAvailableInterventions] = useState<Intervention[]>([]);
     const [results, setResults] = useState<TestResult[]>([]);
     const [testCases, setTestCases] = useState<TestCaseItem[]>([]);
-    const [currentTestCases, setCurrentTestCases] = useState<{
-        positive: TestCase[];
-        negative: TestCase[];
-    }>({ positive: [], negative: [] });
+    const [currentTestCases, setCurrentTestCases] = useState<CurrentTestCases>({
+        positive: [],
+        negative: []
+    });
     const [editingTestCase, setEditingTestCase] = useState<string | null>(null);
 
     useEffect(() => {
-
         const fetchInterventions = async () => {
             try {
                 const response = await getInterventionByComplexity(1);
-                const interventions = response?.data || [];
+                const interventions: Intervention[] = response?.data || [];
                 setAvailableInterventions(interventions);
                 if (interventions.length > 0) {
                     setSelectedIntervention(interventions[0].code);
@@ -53,7 +62,6 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
             try {
                 const testCase = await getTestCaseByCode(selectedIntervention);
                 setTestCases(testCase?.data || []);
-
             } catch (error) {
                 console.error("--> Error fetching test cases: ", error);
             }
@@ -83,7 +91,6 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
     }, [testCases]);
 
     const updateTestCasePatient = (testCaseTitle: string, patient: FormatPatient) => {
-        // Find and update the specific test case
         const allTestCases = [...currentTestCases.positive, ...currentTestCases.negative];
         const updatedTestCases = allTestCases.map(testCase => {
             if (testCase.formData.title === testCaseTitle) {
@@ -125,7 +132,7 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
         }
     };
 
-    const buildTestPayload = (tests: string[], type: 'positive' | 'negative') => {
+    const buildTestPayload = (tests: string[], type: 'positive' | 'negative'): TestCase[] => {
         const allTestCases = [
             ...currentTestCases.positive,
             ...currentTestCases.negative
@@ -157,7 +164,7 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
             return;
         }
 
-        const testConfig = {
+        const testConfig: TestConfig = {
             positive: buildTestPayload(currentTestCases.positive.map(tc => tc.formData.title), 'positive'),
             negative: buildTestPayload(currentTestCases.negative.map(tc => tc.formData.title), 'negative')
         };
@@ -178,7 +185,7 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
                 console.log('Test case details:', testCase);
 
                 const response = await getTestCaseByCode(testCase.formData.productOrService[0].code);
-                const testCaseData = response?.data || [];
+                const testCaseData: TestCaseItem[] = response?.data || [];
 
                 const testResult = await runTestSuite(testCase, testCaseData);
                 setResults(prev => [...prev, ...testResult]);
@@ -241,7 +248,7 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
                 console.log('Test case details:', testCase);
 
                 const response = await getTestCaseByCode(testCase.formData.productOrService[0].code);
-                const testCaseData = response?.data || [];
+                const testCaseData: TestCaseItem[] = response?.data || [];
 
                 const testResult = await runTestSuite(testCase, testCaseData);
                 setResults((prev) => [...prev, ...testResult]);
@@ -257,13 +264,14 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
         }
     };
 
-    const getCurrentPatient = () => {
+    const getCurrentPatient = (): FormatPatient | null => {
         if (!editingTestCase) return null;
 
         const allTestCases = [...currentTestCases.positive, ...currentTestCases.negative];
         const testCase = allTestCases.find(tc => tc.formData.title === editingTestCase);
         return testCase?.formData.patient || null;
     };
+
     return (
         <div className="max-auto px-4 py-8">
             <h1 className="text-2xl font-bold text-gray-500 mb-6">Complex Test Runner</h1>

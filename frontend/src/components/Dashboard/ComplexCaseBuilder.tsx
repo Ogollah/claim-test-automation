@@ -28,6 +28,7 @@ import {
   Patient,
   Provider,
   Practitioner,
+  TestCase
 } from "@/lib/types"
 import { Input } from "../ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover"
@@ -42,7 +43,7 @@ import { v4 as uuidv4 } from 'uuid'
 
 type ComplexCaseBuilderProps = {
   isRunning?: boolean
-  onRunTests?: (testConfig: any) => void
+  onRunTests?: (testConfig: TestCase) => void
 }
 
 interface DateFields {
@@ -84,7 +85,7 @@ export default function ComplexCaseBuilder({
   onRunTests,
 }: ComplexCaseBuilderProps) {
   const [selectedPackage, setSelectedPackage] = useState<string>("");
-  const [selectedPatient, setSelectedPatient] = useState<any | null>(null);
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null);
   const [selectedPractitioner, setSelectedPractitioner] = useState<Practitioner | null>(null);
   const [selectedIntervention, setSelectedIntervention] = useState<string>("");
@@ -92,7 +93,6 @@ export default function ComplexCaseBuilder({
   const [currentTestIndex, setCurrentTestIndex] = useState<number>(0);
   const [packageIds, setPackageIds] = useState<string[]>([]);
   const [showApproved, setShowApproved] = useState(false);
-  console.log({ packageIds, showApproved, selectedPackage });
 
   const today = useMemo(() => new Date(), []);
   const twoDays = useMemo(() => {
@@ -229,7 +229,7 @@ export default function ComplexCaseBuilder({
   }, [selectedPackage]);
 
   const addIntervention = useCallback(() => {
-    if (!canAddIntervention) {
+    if (!canAddIntervention || !selectedPatient || !selectedProvider) {
       toast.error("Please select a package, intervention, patient, and provider");
       return;
     }
@@ -245,8 +245,8 @@ export default function ComplexCaseBuilder({
       formData: {
         title: `Test for ${selectedIntervention}`,
         test: "complex",
-        patient: selectedPatient!,
-        provider: selectedProvider!,
+        patient: selectedPatient,
+        provider: selectedProvider,
         use: showApproved ? "preauth-claim" : "claim",
         claimSubType: "ip",
         practitioner: selectedPractitioner || undefined,
@@ -325,7 +325,7 @@ export default function ComplexCaseBuilder({
       updateCaseStatus(complexCases[i].id, "running");
 
       try {
-        const testPayload = {
+        const testPayload: TestCase = {
           formData: {
             ...complexCases[i].formData,
             submissionDate: new Date().toISOString(),
@@ -354,7 +354,7 @@ export default function ComplexCaseBuilder({
     updateCaseStatus(caseId, "running");
 
     try {
-      const testPayload = {
+      const testPayload: TestCase = {
         formData: {
           ...testCase.formData,
           submissionDate: new Date().toISOString(),

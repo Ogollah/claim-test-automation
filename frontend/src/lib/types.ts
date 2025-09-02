@@ -27,17 +27,17 @@ export interface Practitioner {
 
 export interface PractitionerItem {
   pu_id: string,
-  name: string, 
-  gender: string, 
-  phone: string, 
-  address: string, 
-  national_id: string, 
+  name: string,
+  gender: string,
+  phone: string,
+  address: string,
+  national_id: string,
   email: string,
   slade_code: string,
-  reg_number:string,
+  reg_number: string,
   status: number
 }
- 
+
 export interface Qualification {
   text: string
 }
@@ -77,9 +77,9 @@ export interface FormatPatient {
 
 export interface Patient {
   id?: number,
-  cr_id: string, 
-  name: string, 
-  gender: string, 
+  cr_id: string,
+  name: string,
+  gender: string,
   birthdate: string,
   national_id: string,
   email: string,
@@ -133,13 +133,6 @@ export interface FhirPractitionerResource {
   identifier: Identifier[];
 }
 
-
-/* Duplicate Provider interface removed to avoid redeclaration error */
-
-interface Use {
-  id: string;
-}
-
 interface ProductOrService {
   code: string;
   display: string;
@@ -177,7 +170,8 @@ interface FormData {
   title: string;
   patient: FormatPatient;
   provider: Provider;
-  use: Use;
+  practitioner: Practitioner;
+  use: string;
   productOrService: ProductOrService[];
   billablePeriod: BillablePeriod;
   total: Total;
@@ -201,10 +195,10 @@ export interface FormatProvider {
 };
 
 export interface ProviderItem {
-  f_id: string; 
-  name: string; 
-  level: string; 
-  slade_code?: string; 
+  f_id: string;
+  name: string;
+  level: string;
+  slade_code?: string;
   status?: number
 }
 
@@ -217,14 +211,14 @@ export interface ProviderBundle {
   }[];
 }
 export interface Coding {
-  system?:string,
+  system?: string,
   code?: string,
   display: string
 }
-export interface ValueCodeableConcept{
+export interface ValueCodeableConcept {
   coding: Coding[]
 }
-export interface Extension{
+export interface Extension {
   valueCodeableConcept: ValueCodeableConcept
 }
 
@@ -246,18 +240,18 @@ export interface Package {
 export interface Intervention {
   id?: number,
   package_id: number,
-  name: string, 
-  code: string, 
+  name: string,
+  code: string,
 }
 
 export interface TestCaseItem {
   id?: number,
   intervention_id: number,
-  name: string, 
+  name: string,
   description: string,
-  test_config:  TestCase,
+  test_config: TestCase,
   code: string,
-  error?: {message:string, code: string}
+  error?: { message: string, code: string }
 }
 
 export interface Result {
@@ -311,17 +305,22 @@ export interface ApiResponse {
     path: string;
     message: string;
   }[];
-  error?: string | object; // Added error field to match backend response
-  status?: number; // Added status field
+  error?: string | object;
+  status?: number;
 }
 
-// Updated TestResult interface with better error handling
+export interface Error {
+  response: ApiResponseData;
+  error: string;
+  fhirBundle: FhirBundle;
+}
+
 export interface TestResult {
   id: string;
-  req?: any;
+  req?: object;
   test: string;
   name: string;
-  use?: string; 
+  use?: string;
   status: 'passed' | 'failed' | 'running';
   duration?: number;
   timestamp: string;
@@ -329,10 +328,10 @@ export interface TestResult {
   claimId?: string;
   outcome?: string;
   details: {
-    request: any;
+    request: TestCase;
     response?: ApiResponseData;
     fhirBundle?: FhirBundle;
-    error?: any;
+    error?: string;
     errorMessage?: string;
     validationErrors?: {
       path: string;
@@ -343,28 +342,8 @@ export interface TestResult {
 }
 export interface ComplexCase {
   id: string;
-  formData: any;
+  formData: TestCase['formData'];
   netValue: number;
   status: string;
 }
 
-// type TestResult = {
-//   id: string;
-//   name: string;
-//   status: 'passed' | 'failed' | 'running';
-//   duration: number;
-//   timestamp: string;
-//   message?: string;
-//   claimId?: string;
-//   details: {
-//     request: any;
-//     response?: any;
-//     error?: string;
-//     errorMessage?: string;
-//     validationErrors?: {
-//       path: string;
-//       message: string;
-      
-//     }[];
-//   };
-// };
