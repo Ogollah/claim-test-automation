@@ -74,6 +74,15 @@ export const getProviderByFID = async (fID: string) => {
   }
 }
 
+export const updateProvider = async (id: number, data: ProviderItem) => {
+  try {
+    const resp = await api.put<ProviderItem>(`/api/providers/update/${id}`, data);
+    return resp;
+  } catch (error) {
+    console.error("Error updating provider: ", error);
+  }
+}
+
 // Patient
 export const getPatients = async () => {
   try {

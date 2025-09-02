@@ -121,10 +121,10 @@ export const runTestSuite = async (
       }
     }
 
-    // Ensure resources exist (run in background, don't await)
-    ensureResourcesExist(testData.formData).catch(error => {
-      console.error("Error ensuring resources exist:", error);
-    });
+    // // Ensure resources exist (run in background, don't await)
+    // ensureResourcesExist(testData.formData).catch(error => {
+    //   console.error("Error ensuring resources exist:", error);
+    // });
 
     return [result];
   } catch (error: any) {
@@ -147,15 +147,15 @@ const ensureResourcesExist = async (formData: TestCase['formData']) => {
 
     const creationPromises = [];
 
-    if (formData?.practitioner && practitioner.status === 'rejected') {
+    if (formData?.practitioner) {
       creationPromises.push(postPractitioner(practitionerPayload(formData.practitioner)));
     }
 
-    if (formData?.provider && provider.status === 'rejected') {
+    if (formData?.provider) {
       creationPromises.push(postProvider(providerPayload(formData.provider)));
     }
 
-    if (formData?.patient && patient.status === 'rejected') {
+    if (formData?.patient) {
       creationPromises.push(postPatient(patientPayload(formData.patient)));
     }
 

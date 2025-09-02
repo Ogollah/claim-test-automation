@@ -98,6 +98,10 @@ export default function TestcaseEditor({ }: TestCaseEditorProps) {
             // Check if updating an existing test case or creating a new one
             if (selectedTestCase?.id) {
                 const updateResp = await updateTestCase(selectedTestCase.id, {
+                    intervention_id: interventionId,
+                    name: title,
+                    description,
+                    code,
                     test_config: dataToSave,
                 });
 

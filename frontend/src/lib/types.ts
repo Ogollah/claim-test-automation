@@ -310,7 +310,7 @@ export interface ApiResponse {
 }
 
 export interface Error {
-  response?: ApiResponseData;
+  response: ApiResponseData;
   error: string;
   fhirBundle: FhirBundle;
 }
