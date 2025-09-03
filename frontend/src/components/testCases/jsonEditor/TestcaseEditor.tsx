@@ -6,13 +6,14 @@ import { toast } from 'sonner';
 import Ajv from 'ajv';
 import Editor from '@monaco-editor/react';
 import { testCaseSchema } from '@/lib/test/schema';
-import { CodeIcon, Loader2Icon, TableIcon, XIcon } from 'lucide-react';
+import { CodeIcon, Loader2Icon, PlusIcon, TableIcon, XIcon } from 'lucide-react';
 import { getInterventionByCode, postTestCase, updateTestCase } from '@/lib/api';
 import TestcaseForm from './TestCaseForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import TestCases from './TestCases';
 import { TestCase, TestCaseItem, } from '@/lib/types';
+import { testCaseSample } from '@/lib/test/test';
 
 const ajv = new Ajv({ allErrors: true });
 
@@ -77,11 +78,16 @@ export default function TestcaseEditor({ }: TestCaseEditorProps) {
         }
 
         const code = dataToSave.formData.productOrService?.[0]?.code;
-        const title = dataToSave.formData?.title || 'Unnamed Testcase';
+        const title = dataToSave.formData?.title;
         const description = dataToSave.formData?.test || '';
 
         if (!code) {
             toast.error('Test case must have a product/service code');
+            return false;
+        }
+
+        if (title === 'Sample test do not save me as I will be deleted (edit)') {
+            toast.warning('This is a sample test case and cannot be saved.');
             return false;
         }
 
@@ -141,6 +147,11 @@ export default function TestcaseEditor({ }: TestCaseEditorProps) {
         }
     };
 
+    const handleAddSampleTestCase = async () => {
+        const sampleTestCase = await testCaseSample;
+        setJsonData(sampleTestCase);
+    };
+
     return (
         <div className=" mx-auto py-4">
             <h1 className="text-2xl font-bold text-gray-500 mb-6">Test setup</h1>
@@ -167,14 +178,26 @@ export default function TestcaseEditor({ }: TestCaseEditorProps) {
                                                     <CodeIcon className="h-4 w-4 mr-2" />
                                                     <span>Test Case JSON Editor</span>
                                                 </div>
-                                                <Button
-                                                    variant="outline"
-                                                    onClick={handleClearJson}
-                                                    className='flex items-center gap-1'
-                                                >
-                                                    <XIcon className="h-4 w-4" />
-                                                    <span className='text-gray-500'>Clear</span>
-                                                </Button>
+                                                <div className='flex items-center gap-2'>
+                                                    {!jsonData && (
+                                                        <Button
+                                                            variant="outline"
+                                                            onClick={handleAddSampleTestCase}
+                                                            className='flex items-center gap-1 bg-blue-500 text-white hover:bg-blue-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+                                                        >
+                                                            <PlusIcon className="h-4 w-4 mr-2" />
+                                                            <span>Add sample test case</span>
+                                                        </Button>
+                                                    )}
+                                                    <Button
+                                                        variant="outline"
+                                                        onClick={handleClearJson}
+                                                        className='flex items-center gap-1'
+                                                    >
+                                                        <XIcon className="h-4 w-4" />
+                                                        <span className='text-gray-500'>Clear</span>
+                                                    </Button>
+                                                </div>
                                             </div>
                                         </CardTitle>
                                     </CardHeader>

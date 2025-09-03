@@ -78,7 +78,7 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
   useEffect(() => {
     const packageObj = packages.find(p => p.id === Number(selectedPackage));
     const packageCode = packageObj?.code;
-    setShowPatientPanel(!!(packageCode && ['SHA-03', 'SHA-08', 'SHA-07', 'SHA-13'].includes(packageCode)));
+    setShowPatientPanel(!!(packageCode && ['SHA-03', 'SHA-08', 'SHA-07', 'SHA-13', 'SHA-19'].includes(packageCode)));
   }, [selectedPackage, packages]);
 
   useEffect(() => {
