@@ -1,18 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import Ajv from 'ajv';
 import Editor from '@monaco-editor/react';
 import { testCaseSchema } from '@/lib/test/schema';
 import { CodeIcon, Loader2Icon, PlusIcon, TableIcon, XIcon } from 'lucide-react';
-import { getInterventionByCode, postTestCase, updateTestCase } from '@/lib/api';
+import { getInterventionByCode, postTestCase, updateTestCase, getPackages, getInterventionByPackageId, getTestCaseByCode, deleteTestCase } from '@/lib/api';
 import TestcaseForm from './TestCaseForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import TestCases from './TestCases';
-import { TestCase, TestCaseItem, } from '@/lib/types';
+import { TestCase, TestCaseItem, Package, Intervention } from '@/lib/types';
 import { testCaseSample } from '@/lib/test/test';
 
 const ajv = new Ajv({ allErrors: true });
@@ -24,8 +24,88 @@ export default function TestcaseEditor({ }: TestCaseEditorProps) {
     const [selectedTestCase, setSelectedTestCase] = useState<TestCaseItem | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [validationErrors, setValidationErrors] = useState<string[]>([]);
+    const [selectedPackage, setSelectedPackage] = useState<string>("");
+    const [selectedIntervention, setSelectedIntervention] = useState<string>("");
+    const [packages, setPackages] = useState<Package[]>([]);
+    const [availableInterventions, setAvailableInterventions] = useState<Intervention[]>([]);
+    const [tests, setTests] = useState<TestCaseItem[]>([]);
 
-    // Handle test case selection from TestCases component
+    // Fetch packages on mount
+    useEffect(() => {
+        const fetchPackages = async () => {
+            try {
+                const pck = await getPackages();
+                setPackages(pck || []);
+                if (pck && pck.length > 0) {
+                    setSelectedPackage(String(pck[0].id));
+                }
+            } catch (error) {
+                console.error("Error fetching packages:", error);
+                toast.error("Failed to load packages");
+            }
+        };
+        fetchPackages();
+    }, []);
+
+    // Fetch interventions when package changes
+    useEffect(() => {
+        if (!selectedPackage) {
+            setAvailableInterventions([]);
+            setSelectedIntervention("");
+            return;
+        }
+
+        const fetchInterventions = async () => {
+            try {
+                const intevents = await getInterventionByPackageId(Number(selectedPackage));
+                setAvailableInterventions(Array.isArray(intevents) ? intevents : []);
+                if (Array.isArray(intevents) && intevents.length > 0) {
+                    setSelectedIntervention(intevents[0].code);
+                } else {
+                    setSelectedIntervention("");
+                    setTests([]);
+                }
+            } catch (error) {
+                console.error("Error fetching interventions:", error);
+                toast.error("Failed to load interventions");
+            }
+        };
+        fetchInterventions();
+    }, [selectedPackage]);
+
+    useEffect(() => {
+        if (!selectedIntervention) {
+            setTests([]);
+            setSelectedTestCase(null);
+            return;
+        }
+
+        const fetchTestCases = async () => {
+            try {
+                const response = await getTestCaseByCode(selectedIntervention);
+                const testCases = Array.isArray(response)
+                    ? response
+                    : (response && Array.isArray(response.data) ? response.data : []);
+                setTests(testCases);
+
+                if (selectedTestCase) {
+                    const stillExists = testCases.some(test => test.id === selectedTestCase.id);
+                    if (!stillExists) {
+                        setSelectedTestCase(null);
+                        setJsonData(null);
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching test cases:", error);
+                toast.error("Failed to load test cases");
+                setTests([]);
+                setSelectedTestCase(null);
+            }
+        };
+        fetchTestCases();
+    }, [selectedIntervention]);
+
+    // Handle test case selection
     const handleTestCaseSelect = (testCase: TestCaseItem | null) => {
         if (testCase && testCase.test_config) {
             setJsonData(testCase.test_config);
@@ -35,6 +115,24 @@ export default function TestcaseEditor({ }: TestCaseEditorProps) {
             setJsonData(null);
             setSelectedTestCase(null);
             toast.info('Test case deselected');
+        }
+    };
+
+    // Handle test case deletion
+    const handleDeleteTestCase = async (testId: number) => {
+        try {
+            await deleteTestCase(testId);
+            setTests(prevTests => prevTests.filter(test => test.id !== testId));
+
+            if (selectedTestCase?.id === testId) {
+                setSelectedTestCase(null);
+                setJsonData(null);
+            }
+
+            toast.success("Test case deleted successfully");
+        } catch (error) {
+            console.error("Error deleting test case:", error);
+            toast.error("Failed to delete test case");
         }
     };
 
@@ -113,6 +211,16 @@ export default function TestcaseEditor({ }: TestCaseEditorProps) {
 
                 if (updateResp?.status === 200) {
                     toast.success(`Test case "${title}" updated successfully.`);
+
+                    // Refresh the test cases list to show updated data
+                    if (selectedIntervention) {
+                        const response = await getTestCaseByCode(selectedIntervention);
+                        const testCases = Array.isArray(response)
+                            ? response
+                            : (response && Array.isArray(response.data) ? response.data : []);
+                        setTests(testCases);
+                    }
+
                     return true;
                 } else {
                     console.error('Failed to update test case:', updateResp);
@@ -131,6 +239,14 @@ export default function TestcaseEditor({ }: TestCaseEditorProps) {
 
                 if (createResp?.status === 201) {
                     toast.success(`Test case "${title}" created successfully.`);
+                    if (selectedIntervention) {
+                        const response = await getTestCaseByCode(selectedIntervention);
+                        const testCases = Array.isArray(response)
+                            ? response
+                            : (response && Array.isArray(response.data) ? response.data : []);
+                        setTests(testCases);
+                    }
+
                     return true;
                 } else {
                     console.error('Failed to create test case:', createResp);
@@ -150,6 +266,7 @@ export default function TestcaseEditor({ }: TestCaseEditorProps) {
     const handleAddSampleTestCase = async () => {
         const sampleTestCase = await testCaseSample;
         setJsonData(sampleTestCase);
+        setSelectedTestCase(null);
     };
 
     return (
@@ -243,7 +360,16 @@ export default function TestcaseEditor({ }: TestCaseEditorProps) {
                                         <div className="mb-4 bg-gray-50">
                                             <div className="rounded-md border bg-white">
                                                 <TestCases
+                                                    packages={packages}
+                                                    availableInterventions={availableInterventions}
+                                                    tests={tests}
+                                                    selectedPackage={selectedPackage}
+                                                    selectedIntervention={selectedIntervention}
+                                                    selectedTestCase={selectedTestCase}
+                                                    onSelectPackage={setSelectedPackage}
+                                                    onSelectIntervention={setSelectedIntervention}
                                                     onTestCaseSelect={handleTestCaseSelect}
+                                                    onDeleteTestCase={handleDeleteTestCase}
                                                 />
                                             </div>
                                         </div>
