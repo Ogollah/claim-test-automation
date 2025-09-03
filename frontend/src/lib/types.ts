@@ -140,7 +140,7 @@ interface ProductOrService {
     value: string;
   };
   unitPrice: {
-    value: string;
+    value: number;
     currency: string;
   };
   net: {
@@ -171,6 +171,7 @@ interface FormData {
   patient: FormatPatient;
   provider: Provider;
   practitioner: Practitioner;
+  approvedAmount: number;
   use: string;
   productOrService: ProductOrService[];
   billablePeriod: BillablePeriod;

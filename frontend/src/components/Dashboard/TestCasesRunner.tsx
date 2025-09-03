@@ -39,7 +39,10 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
     const fetchPackages = async () => {
       try {
         const pck = await getPackages()
-        setPackages(pck || [])
+        setPackages(pck || []);
+        if (pck && pck.length > 0) {
+          setSelectedPackage(String(pck[0].id));
+        }
       } catch (error) {
         console.error("--> Error fetching packages:", error)
       }
@@ -48,6 +51,10 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
   }, []);
 
   useEffect(() => {
+    if (!selectedPackage) {
+      setAvailableInterventions([]);
+      return;
+    }
     if (selectedPackage) {
       const fetchInterventions = async () => {
         try {
@@ -55,7 +62,9 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
             Number(selectedPackage)
           )
           setAvailableInterventions(Array.isArray(intevents) ? intevents : (intevents ? [intevents] : []))
-          setSelectedIntervention("")
+          if (Array.isArray(intevents) && intevents.length > 0) {
+            setSelectedIntervention(intevents[0].code);
+          }
         } catch (error) {
           console.error("--> Error fetching interventions:", error)
         }

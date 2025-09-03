@@ -71,14 +71,22 @@ const INTERVENTION_FIELDS = [
   { label: "Net value", key: "netValue", disabled: true }
 ];
 
-const TABLE_HEADERS = [
-  "Intervention",
-  "Test",
-  "Pre-auth amount",
-  "Claimed amount",
-  "Status",
-  "Actions"
-];
+const getTableHeaders = (showApproved: boolean) => {
+  const baseHeaders = [
+    "Intervention",
+    "Test",
+    "Pre-auth amount",
+    "Status",
+    "Actions"
+  ];
+
+  if (showApproved) {
+    // Insert "Claimed amount" after "Pre-auth amount"
+    baseHeaders.splice(3, 0, "Claimed amount");
+  }
+
+  return baseHeaders;
+};
 
 export default function ComplexCaseBuilder({
   isRunning = false,
@@ -89,7 +97,6 @@ export default function ComplexCaseBuilder({
   const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null);
   const [selectedPractitioner, setSelectedPractitioner] = useState<Practitioner | null>(null);
   const [selectedIntervention, setSelectedIntervention] = useState<string>("");
-  const [approvedAmount, setApprovedAmount] = useState<number>(500);
   const [currentTestIndex, setCurrentTestIndex] = useState<number>(0);
   const [packageIds, setPackageIds] = useState<string[]>([]);
   const [showApproved, setShowApproved] = useState(false);
@@ -123,7 +130,32 @@ export default function ComplexCaseBuilder({
     [currentIntervention.days, currentIntervention.unitPrice]
   );
 
-  const total = useMemo(() => currentNetValue, [currentNetValue]);
+  const [approvedAmount, setApprovedAmount] = useState<number>(currentNetValue);
+  const [total, setTotal] = useState<number>(currentNetValue);
+  const [isTotalManuallyChanged, setIsTotalManuallyChanged] = useState(false);
+  const [isApprovedAmountManuallyChanged, setIsApprovedAmountManuallyChanged] = useState(false);
+
+  useEffect(() => {
+    if (!isApprovedAmountManuallyChanged) {
+      setApprovedAmount(currentNetValue);
+    }
+  }, [currentNetValue, isApprovedAmountManuallyChanged]);
+
+  useEffect(() => {
+    if (!isTotalManuallyChanged) {
+      setTotal(currentNetValue);
+    }
+  }, [currentNetValue, isTotalManuallyChanged]);
+
+  const handleResetTotal = useCallback(() => {
+    setTotal(currentNetValue);
+    setIsTotalManuallyChanged(false);
+  }, [currentNetValue]);
+
+  const handleResetApprovedAmount = useCallback(() => {
+    setApprovedAmount(currentNetValue);
+    setIsApprovedAmountManuallyChanged(false);
+  }, [currentNetValue]);
 
   const canAddIntervention = useMemo(() =>
     selectedPackage && selectedIntervention && selectedPatient && selectedProvider && total > 0,
@@ -190,9 +222,9 @@ export default function ComplexCaseBuilder({
     const fetchPackages = async () => {
       try {
         const pck = await getPackages();
-        setPackages(pck ?? []);
+        setPackages(pck || []);
         if (pck && pck.length > 0) {
-          setSelectedPackage(String(pck[0].id ?? ""));
+          setSelectedPackage(String(pck[0].id));
         }
       } catch (error) {
         console.error("Error fetching packages:", error);
@@ -240,42 +272,49 @@ export default function ComplexCaseBuilder({
 
     const formDataId = `complex-case-${uuidv4()}`;
 
+    // Only include approvedAmount in the payload if showApproved is true
+    const formData: any = {
+      title: `Test for ${selectedIntervention}`,
+      test: "complex",
+      patient: selectedPatient,
+      provider: selectedProvider,
+      use: showApproved ? "preauth-claim" : "claim",
+      claimSubType: "ip",
+      practitioner: selectedPractitioner || undefined,
+      productOrService: [{
+        code: selectedIntervention,
+        display: interventionName,
+        quantity: { value: '1' },
+        unitPrice: {
+          value: isPerdiem ? Number(currentIntervention.unitPrice) * Number(currentIntervention.days) : Number(currentIntervention.unitPrice),
+          currency: "KES",
+        },
+        net: {
+          value: currentNetValue,
+          currency: "KES",
+        },
+        servicePeriod: {
+          start: currentIntervention.serviceStart,
+          end: currentIntervention.serviceEnd,
+        },
+        sequence: 1,
+      }],
+      billablePeriod: {
+        billableStart: selectedDates.billableStart ? format(selectedDates.billableStart, "yyyy-MM-dd") : "",
+        billableEnd: selectedDates.billableEnd ? format(selectedDates.billableEnd, "yyyy-MM-dd") : "",
+        created: format(selectedDates.created, "yyyy-MM-dd"),
+      },
+      total: { value: total, currency: "KES" },
+    };
+
+    // Conditionally add approvedAmount
+    if (showApproved) {
+      formData.approvedAmount = approvedAmount;
+    }
+
     const newIntervention: ComplexCase = {
       id: formDataId,
-      formData: {
-        title: `Test for ${selectedIntervention}`,
-        test: "complex",
-        patient: selectedPatient,
-        provider: selectedProvider,
-        use: showApproved ? "preauth-claim" : "claim",
-        claimSubType: "ip",
-        practitioner: selectedPractitioner || undefined,
-        approvedAmount: approvedAmount,
-        productOrService: [{
-          code: selectedIntervention,
-          display: interventionName,
-          quantity: { value: '1' },
-          unitPrice: {
-            value: isPerdiem ? Number(currentIntervention.unitPrice) * Number(currentIntervention.days) : Number(currentIntervention.unitPrice),
-            currency: "KES",
-          },
-          net: {
-            value: currentNetValue,
-            currency: "KES",
-          },
-          servicePeriod: {
-            start: currentIntervention.serviceStart,
-            end: currentIntervention.serviceEnd,
-          },
-          sequence: 1,
-        }],
-        billablePeriod: {
-          billableStart: selectedDates.billableStart ? format(selectedDates.billableStart, "yyyy-MM-dd") : "",
-          billableEnd: selectedDates.billableEnd ? format(selectedDates.billableEnd, "yyyy-MM-dd") : "",
-          created: format(selectedDates.created, "yyyy-MM-dd"),
-        },
-        total: { value: total, currency: "KES" },
-      },
+      formData,
       netValue: currentNetValue,
       status: "pending"
     };
@@ -327,8 +366,7 @@ export default function ComplexCaseBuilder({
       try {
         const testPayload: TestCase = {
           formData: {
-            ...complexCases[i].formData,
-            submissionDate: new Date().toISOString(),
+            ...complexCases[i].formData
           }
         };
 
@@ -356,8 +394,7 @@ export default function ComplexCaseBuilder({
     try {
       const testPayload: TestCase = {
         formData: {
-          ...testCase.formData,
-          submissionDate: new Date().toISOString(),
+          ...testCase.formData
         }
       };
 
@@ -375,6 +412,13 @@ export default function ComplexCaseBuilder({
   const handleApprovedAmountChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(e.target.value);
     setApprovedAmount(isNaN(value) ? 0 : value);
+    setIsApprovedAmountManuallyChanged(true);
+  }, []);
+
+  const handleTotalChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = parseFloat(e.target.value);
+    setTotal(newValue);
+    setIsTotalManuallyChanged(true);
   }, []);
 
   const renderDateField = (key: keyof DateFields, isCreated = false) => (
@@ -444,6 +488,8 @@ export default function ComplexCaseBuilder({
         return <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">Pending</span>;
     }
   };
+
+  const tableHeaders = useMemo(() => getTableHeaders(showApproved), [showApproved]);
 
   return (
     <div className="mx-auto px-4 py-8 text-gray-500">
@@ -543,24 +589,46 @@ export default function ComplexCaseBuilder({
           <div className="border-t border-gray-200 pt-4 mb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
-                <Label className="py-3">Total</Label>
+                <div className="flex items-center gap-2 mb-1">
+                  <Label className="py-3">{showApproved ? "Pre-auth amount" : "Total"}</Label>
+                  {isTotalManuallyChanged && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleResetTotal}
+                      className="text-xs text-blue-500 hover:text-blue-700"
+                    >
+                      Reset to calculated
+                    </Button>
+                  )}
+                </div>
                 <Input
                   type="number"
                   className="block w-full px-3 py-2 bg-green-100 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   value={total.toFixed(2)}
-                  readOnly
-                  step={0.01}
+                  onChange={handleTotalChange}
                 />
               </div>
               {showApproved && (
                 <div>
-                  <Label className="py-3">Approved amount</Label>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Label className="py-3">Claimed amount</Label>
+                    {isApprovedAmountManuallyChanged && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleResetApprovedAmount}
+                        className="text-xs text-blue-500 hover:text-blue-700"
+                      >
+                        Reset to calculated
+                      </Button>
+                    )}
+                  </div>
                   <Input
                     type="number"
                     className="block w-full bg-green-300 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     value={approvedAmount.toFixed(2)}
                     onChange={handleApprovedAmountChange}
-                    step={0.01}
                   />
                 </div>
               )}
@@ -586,7 +654,7 @@ export default function ComplexCaseBuilder({
               <Table className="min-w-full">
                 <TableHeader className="bg-gray-50">
                   <TableRow>
-                    {TABLE_HEADERS.map((header) => (
+                    {tableHeaders.map((header) => (
                       <TableHead
                         key={header}
                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
@@ -602,7 +670,11 @@ export default function ComplexCaseBuilder({
                       <TableCell className="px-6 py-4 text-sm">{intervention.formData.productOrService[0]?.code}</TableCell>
                       <TableCell className="px-6 py-4 text-sm">{intervention.formData.title}</TableCell>
                       <TableCell className="px-6 py-4 text-sm">{intervention.formData.total.value.toFixed(2)}</TableCell>
-                      <TableCell className="px-6 py-4 text-sm">{intervention.formData.approvedAmount?.toFixed(2)}</TableCell>
+                      {showApproved && (
+                        <TableCell className="px-6 py-4 text-sm">
+                          {intervention.formData.approvedAmount?.toFixed(2)}
+                        </TableCell>
+                      )}
                       <TableCell className="px-6 py-4 text-sm">
                         {getStatusBadge(intervention.status)}
                       </TableCell>
