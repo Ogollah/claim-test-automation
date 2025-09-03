@@ -113,19 +113,25 @@ export default function TestRunner({
     [currentIntervention.days, currentIntervention.unitPrice]
   );
 
-  const [total, setTotal] = useState<number>(currentNetValue);
+
   const [isTotalManuallyChanged, setIsTotalManuallyChanged] = useState(false);
 
   const isPerdiem = useMemo(() =>
     PER_DIEM_CODES.has(selectedIntervention),
     [selectedIntervention]
   );
+  const total = useMemo(() =>
+    interventions.reduce((sum, item) => sum + item.netValue, 0),
+    [interventions]
+  );
+
+  const [totalValue, setTotal] = useState<number>(total);
 
   useEffect(() => {
     if (!isTotalManuallyChanged) {
-      setTotal(currentNetValue);
+      setTotal(total);
     }
-  }, [currentNetValue, isTotalManuallyChanged]);
+  }, [total, isTotalManuallyChanged]);
 
   // Fetch packages on mount
   useEffect(() => {
@@ -224,7 +230,6 @@ export default function TestRunner({
       serviceEnd: format(today, "yyyy-MM-dd"),
     });
 
-    // Reset manual total change flag when adding new intervention
     setIsTotalManuallyChanged(false);
   }, [selectedPackage, selectedIntervention, availableInterventions, currentIntervention, currentNetValue, twoDays, today]);
 
@@ -284,7 +289,7 @@ export default function TestRunner({
   }, [selectedPatient, selectedProvider, interventions.length, buildTestPayload, onRunTests]);
 
   const handleTotalChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = parseFloat(e.target.value);
+    const newValue = parseFloat(e.target.value) || total;
     setTotal(newValue);
     setIsTotalManuallyChanged(true);
   }, []);
@@ -592,7 +597,7 @@ export default function TestRunner({
             <Input
               type="number"
               className="block w-full px-3 py-2 bg-green-100 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              value={total.toFixed(2)}
+              value={totalValue.toFixed(2)}
               onChange={handleTotalChange}
             />
           </div>

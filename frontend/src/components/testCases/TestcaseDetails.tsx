@@ -1,5 +1,5 @@
 // TestcaseDetails.tsx
-import React, { useEffect } from 'react';
+import React, { useState } from 'react';
 import { Checkbox } from "@/components/ui/checkbox";
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -7,24 +7,22 @@ import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
-  FormLabel,
-  FormMessage,
 } from "@/components/ui/form";
 import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { PlayIcon, UserIcon } from 'lucide-react';
+import { PlayIcon, UserIcon, XIcon } from 'lucide-react';
 import { Label } from '../ui/label';
 import { FormatPatient, TestCase } from '@/lib/types';
+import PatientDetailsPanel from '../Dashboard/PatientDetailsPanel';
 
 interface TestcaseDetailsProps {
   title: string;
   testCases?: TestCase[];
   onRunTests?: (selectedItems: string[]) => void;
   isRunning?: boolean;
-  onEditPatient?: (testCaseTitle: string) => void;
+  onUpdatePatient?: (testCaseTitle: string, patient: FormatPatient) => void;
   showPatientPanel?: boolean;
 }
 
@@ -33,10 +31,12 @@ export default function TestcaseDetails({
   testCases,
   onRunTests,
   isRunning,
-  onEditPatient,
-  showPatientPanel
+  onUpdatePatient,
+  showPatientPanel,
 }: TestcaseDetailsProps) {
+  const [editingTestCase, setEditingTestCase] = useState<string | null>(null);
   const items = testCases || [];
+
   const FormSchema = z.object({
     items: z.array(z.string()).refine((value) => value.length > 0, {
       message: "You have to select at least one item.",
@@ -72,6 +72,29 @@ export default function TestcaseDetails({
     }
   }
 
+  // Get current patient for the editing test case
+  const getCurrentPatient = () => {
+    if (!editingTestCase) return null;
+    const testCase = items.find(tc => tc.formData.title === editingTestCase);
+    return testCase?.formData.patient || null;
+  };
+
+  const handleSelectPatient = (patient: FormatPatient) => {
+    if (editingTestCase && onUpdatePatient) {
+      onUpdatePatient(editingTestCase, patient);
+      setEditingTestCase(null);
+      toast.success(`Patient updated for test case: ${editingTestCase}`);
+    }
+  };
+
+  const handleEditPatient = (testCaseTitle: string) => {
+    setEditingTestCase(testCaseTitle);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingTestCase(null);
+  };
+
   // Helper function to get patient info display
   const getPatientInfo = (patient: FormatPatient) => {
     if (!patient) return 'No patient selected';
@@ -81,6 +104,7 @@ export default function TestcaseDetails({
   return (
     <div className="border border-gray-200 rounded-lg p-4">
       <h2 className="text-lg font-semibold mb-4">{title}</h2>
+
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <FormField
@@ -120,16 +144,42 @@ export default function TestcaseDetails({
                                 {getPatientInfo(item.formData.patient)}
                               </div>
                             )}
+                            {/* Patient Editing Panel */}
+                            {showPatientPanel && editingTestCase && item.formData.title === editingTestCase && (
+                              <div className="mb-4 p-4 border border-gray-200 rounded-md bg-gray-50">
+                                <div className="flex items-center justify-between mb-3">
+                                  <h5 className="text-gray-700 font-medium">
+                                    Editing Patient
+                                  </h5>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handleCancelEdit}
+                                    className="h-8 w-8 p-0"
+                                    title="Cancel editing"
+                                  >
+                                    <XIcon className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                                <PatientDetailsPanel
+                                  patient={getCurrentPatient()}
+                                  onSelectPatient={handleSelectPatient}
+                                  show={false}
+                                />
+                              </div>
+                            )}
                           </div>
                         </div>
-                        {showPatientPanel && onEditPatient && (
+                        {showPatientPanel && onUpdatePatient && (
                           <Button
                             type="button"
                             variant="outline"
                             size="sm"
-                            onClick={() => onEditPatient(item.formData.title)}
+                            onClick={() => handleEditPatient(item.formData.title)}
                             className="ml-2 shrink-0"
                             title="Edit patient for this test case"
+                            disabled={!!editingTestCase && editingTestCase !== item.formData.title}
                           >
                             <UserIcon className="h-4 w-4" />
                           </Button>
@@ -138,14 +188,13 @@ export default function TestcaseDetails({
                     </FormItem>
                   ))}
                 </div>
-                <FormMessage />
               </FormItem>
             )}
           />
           <Button
             type="submit"
-            disabled={isRunning}
-            className={`inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${isRunning
+            disabled={isRunning || !!editingTestCase}
+            className={`inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${isRunning || editingTestCase
               ? 'bg-gray-400 cursor-not-allowed'
               : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
               }`}
