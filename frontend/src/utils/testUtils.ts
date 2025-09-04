@@ -71,9 +71,6 @@ export const runTestSuite = async (
       finalOutcome = 'Error determining outcome';
     }
 
-    console.log('finalOutcome:', finalOutcome);
-    console.log('claim id:', claimId);
-
     // Determine test status
     const testPassed = shouldTestPass(
       response.data.data.success,
@@ -206,6 +203,7 @@ const handleTestError = (error: any, testData: TestCase, testCase?: TestCaseItem
     duration: duration || 0,
     timestamp: new Date().toISOString(),
     message: errorMessage,
+    claimId: errorResponse?.preAuthResponseId,
     details: {
       request: testData,
       error: typeof errorResponse?.error?.error === 'object'
@@ -226,7 +224,7 @@ const handleTestError = (error: any, testData: TestCase, testCase?: TestCaseItem
       message: errorMessage,
       detail: error.message || errorMessage,
       status_code: statusCode.toString(),
-      claim_id: 'error-no-claim-id'
+      claim_id: errorResponse?.preAuthResponseId
     };
     createResult(respData).catch(err => console.error('Error saving error result:', err));
   }

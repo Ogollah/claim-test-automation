@@ -13,7 +13,6 @@ import { PlayIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { refreshTestResult } from '@/utils/claimUtils';
 import { runTestSuite } from '@/utils/testUtils';
-import PatientDetailsPanel from './PatientDetailsPanel';
 
 type TestRunnerProps = {
   isRunning?: boolean;
@@ -32,14 +31,16 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
     positive: TestCase[];
     negative: TestCase[];
   }>({ positive: [], negative: [] });
-  const [editingTestCase, setEditingTestCase] = useState<string | null>(null);
   const [showPatientPanel, setShowPatientPanel] = useState(false);
 
   useEffect(() => {
     const fetchPackages = async () => {
       try {
         const pck = await getPackages()
-        setPackages(pck || [])
+        setPackages(pck || []);
+        if (pck && pck.length > 0) {
+          setSelectedPackage(String(pck[0].id));
+        }
       } catch (error) {
         console.error("--> Error fetching packages:", error)
       }
@@ -48,6 +49,10 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
   }, []);
 
   useEffect(() => {
+    if (!selectedPackage) {
+      setAvailableInterventions([]);
+      return;
+    }
     if (selectedPackage) {
       const fetchInterventions = async () => {
         try {
@@ -55,7 +60,9 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
             Number(selectedPackage)
           )
           setAvailableInterventions(Array.isArray(intevents) ? intevents : (intevents ? [intevents] : []))
-          setSelectedIntervention("")
+          if (Array.isArray(intevents) && intevents.length > 0) {
+            setSelectedIntervention(intevents[0].code);
+          }
         } catch (error) {
           console.error("--> Error fetching interventions:", error)
         }
@@ -69,7 +76,7 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
   useEffect(() => {
     const packageObj = packages.find(p => p.id === Number(selectedPackage));
     const packageCode = packageObj?.code;
-    setShowPatientPanel(!!(packageCode && ['SHA-03', 'SHA-08', 'SHA-07', 'SHA-13'].includes(packageCode)));
+    setShowPatientPanel(!!(packageCode && ['SHA-03', 'SHA-08', 'SHA-07', 'SHA-13', 'SHA-19'].includes(packageCode)));
   }, [selectedPackage, packages]);
 
   useEffect(() => {
@@ -135,18 +142,7 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
       negative: updatedNegative
     });
 
-    setEditingTestCase(null);
     toast.success(`Patient updated for test case: ${testCaseTitle}`);
-  };
-
-  const handleEditPatient = (testCaseTitle: string) => {
-    setEditingTestCase(testCaseTitle);
-  };
-
-  const handleSelectPatient = (patient: FormatPatient) => {
-    if (editingTestCase) {
-      updateTestCasePatient(editingTestCase, patient);
-    }
   };
 
   const buildTestPayload = (tests: string[], type: 'positive' | 'negative') => {
@@ -281,15 +277,6 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
     }
   };
 
-  // Get current patient for the editing test case
-  const getCurrentPatient = () => {
-    if (!editingTestCase) return null;
-
-    const allTestCases = [...currentTestCases.positive, ...currentTestCases.negative];
-    const testCase = allTestCases.find(tc => tc.formData.title === editingTestCase);
-    return testCase?.formData.patient || null;
-  };
-
   return (
     <div className="mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold text-gray-500 mb-6">Automated test suite</h1>
@@ -326,26 +313,13 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
           />
         </div>
 
-        {showPatientPanel && editingTestCase && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div className=" p-4 rounded-md">
-              <h5 className=" text-gray-500 mb-2">Editing Patient for: <span className="font-small text-gray-800">{editingTestCase}</span></h5>
-              <PatientDetailsPanel
-                patient={getCurrentPatient()}
-                onSelectPatient={handleSelectPatient}
-                show={false}
-              />
-            </div>
-          </div>
-        )}
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <TestcaseDetails
             title={'Positive'}
             testCases={currentTestCases.positive}
             onRunTests={handleRunPositiveTests}
             isRunning={isRunning && runningSection === 'positive'}
-            onEditPatient={handleEditPatient}
+            onUpdatePatient={updateTestCasePatient}
             showPatientPanel={showPatientPanel}
           />
           <TestcaseDetails
@@ -353,7 +327,7 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
             testCases={currentTestCases.negative}
             onRunTests={handleRunNegativeTests}
             isRunning={isRunning && runningSection === 'negative'}
-            onEditPatient={handleEditPatient}
+            onUpdatePatient={updateTestCasePatient}
             showPatientPanel={showPatientPanel}
           />
         </div>

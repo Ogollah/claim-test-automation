@@ -113,15 +113,25 @@ export default function TestRunner({
     [currentIntervention.days, currentIntervention.unitPrice]
   );
 
-  const total = useMemo(() =>
-    interventions.reduce((sum, item) => sum + item.netValue, 0),
-    [interventions]
-  );
+
+  const [isTotalManuallyChanged, setIsTotalManuallyChanged] = useState(false);
 
   const isPerdiem = useMemo(() =>
     PER_DIEM_CODES.has(selectedIntervention),
     [selectedIntervention]
   );
+  const total = useMemo(() =>
+    interventions.reduce((sum, item) => sum + item.netValue, 0),
+    [interventions]
+  );
+
+  const [totalValue, setTotal] = useState<number>(total);
+
+  useEffect(() => {
+    if (!isTotalManuallyChanged) {
+      setTotal(total);
+    }
+  }, [total, isTotalManuallyChanged]);
 
   // Fetch packages on mount
   useEffect(() => {
@@ -219,6 +229,8 @@ export default function TestRunner({
       serviceStart: format(twoDays, "yyyy-MM-dd"),
       serviceEnd: format(today, "yyyy-MM-dd"),
     });
+
+    setIsTotalManuallyChanged(false);
   }, [selectedPackage, selectedIntervention, availableInterventions, currentIntervention, currentNetValue, twoDays, today]);
 
   const removeIntervention = useCallback((id: string) => {
@@ -279,7 +291,13 @@ export default function TestRunner({
   const handleTotalChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = parseFloat(e.target.value) || total;
     setTotal(newValue);
-  }, [total]);
+    setIsTotalManuallyChanged(true);
+  }, []);
+
+  const handleResetTotal = useCallback(() => {
+    setTotal(currentNetValue);
+    setIsTotalManuallyChanged(false);
+  }, [currentNetValue]);
 
   const renderDateField = useCallback((key: keyof DateFields, isCreated = false) => {
     const label = DATE_FIELD_LABELS[key];
@@ -563,13 +581,24 @@ export default function TestRunner({
 
         <div className="flex justify-between w-full">
           <div className="text-gray-500">
-            <Label className="py-3">Total</Label>
+            <div className="flex items-center gap-2 mb-1">
+              <Label className="py-3">Total</Label>
+              {isTotalManuallyChanged && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleResetTotal}
+                  className="text-xs text-blue-500 hover:text-blue-700"
+                >
+                  Reset to calculated
+                </Button>
+              )}
+            </div>
             <Input
               type="number"
               className="block w-full px-3 py-2 bg-green-100 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              value={total.toFixed(2)}
+              value={totalValue.toFixed(2)}
               onChange={handleTotalChange}
-              step={0.01}
             />
           </div>
           <Button
