@@ -69,7 +69,7 @@ export const CLAIM_STATUS = {
 };
 
 export const PER_DIEM_CODES = new Set([
-  'SHA-07-006-06', 'SHA-07-005', 'SHA-03-002', 'SHA-10-005',
+  'SHA-07-006', 'SHA-07-005', 'SHA-03-002', 'SHA-10-005',
   'SHA-10-001', 'SHA-10-002', 'SHA-10-003', 'SHA-10-004',
   'SHA-13-001', 'SHA-07-001', 'SHA-07-002', 'SHA-03-005',
   'SHA-03-001', 'SHA-03-004', 'SHA-03-003'
