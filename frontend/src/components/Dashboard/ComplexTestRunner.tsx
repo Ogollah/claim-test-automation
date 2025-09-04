@@ -38,7 +38,7 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
         positive: [],
         negative: []
     });
-    const [editingTestCase, setEditingTestCase] = useState<string | null>(null);
+    const [showPatientPanel, setShowPatientPanel] = useState(false);
 
     useEffect(() => {
         const fetchInterventions = async () => {
@@ -48,6 +48,7 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
                 setAvailableInterventions(interventions);
                 if (interventions.length > 0) {
                     setSelectedIntervention(interventions[0].code);
+                    setShowPatientPanel(true);
                 }
             } catch (error) {
                 console.error("Error fetching interventions:", error);
@@ -117,19 +118,6 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
             positive: updatedPositive,
             negative: updatedNegative
         });
-
-        setEditingTestCase(null);
-        toast.success(`Patient updated for test case: ${testCaseTitle}`);
-    };
-
-    const handleEditPatient = (testCaseTitle: string) => {
-        setEditingTestCase(testCaseTitle);
-    };
-
-    const handleSelectPatient = (patient: FormatPatient) => {
-        if (editingTestCase) {
-            updateTestCasePatient(editingTestCase, patient);
-        }
     };
 
     const buildTestPayload = (tests: string[], type: 'positive' | 'negative'): TestCase[] => {
@@ -264,14 +252,6 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
         }
     };
 
-    const getCurrentPatient = (): FormatPatient | null => {
-        if (!editingTestCase) return null;
-
-        const allTestCases = [...currentTestCases.positive, ...currentTestCases.negative];
-        const testCase = allTestCases.find(tc => tc.formData.title === editingTestCase);
-        return testCase?.formData.patient || null;
-    };
-
     return (
         <div className="max-auto px-4 py-8">
             <h1 className="text-2xl font-bold text-gray-500 mb-6">Complex Test Runner</h1>
@@ -297,18 +277,6 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
                         </SelectContent>
                     </Select>
                 </div>
-                {testCases.length > 0 && editingTestCase && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        <div className=" p-4 rounded-md">
-                            <h5 className=" text-gray-500 mb-2">Editing Patient for: <span className="font-small text-gray-800">{editingTestCase}</span></h5>
-                            <PatientDetailsPanel
-                                patient={getCurrentPatient()}
-                                onSelectPatient={handleSelectPatient}
-                                show={false}
-                            />
-                        </div>
-                    </div>
-                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <TestcaseDetails
@@ -316,16 +284,16 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
                         testCases={currentTestCases.positive}
                         onRunTests={handleRunPositiveTests}
                         isRunning={isRunning && runningSection === 'positive'}
-                        onEditPatient={handleEditPatient}
-                        showPatientPanel={true}
+                        onUpdatePatient={updateTestCasePatient}
+                        showPatientPanel={showPatientPanel}
                     />
                     <TestcaseDetails
                         title='Negative'
                         testCases={currentTestCases.negative}
                         onRunTests={handleRunNegativeTests}
                         isRunning={isRunning && runningSection === 'negative'}
-                        onEditPatient={handleEditPatient}
-                        showPatientPanel={true}
+                        onUpdatePatient={updateTestCasePatient}
+                        showPatientPanel={showPatientPanel}
                     />
                 </div>
                 <div className="flex justify-between w-full">
