@@ -279,11 +279,11 @@ export default function TestcaseEditor({ }: TestCaseEditorProps) {
                             <TabsList className="mb-0 text-gray-500">
                                 <TabsTrigger className='text-gray-500' value="tests">
                                     <TableIcon className="h-4 w-4" />
-                                    <span className="text-gray-500">Tests</span>
+                                    <span className="cursor-pointer text-gray-500">Tests</span>
                                 </TabsTrigger>
                                 <TabsTrigger className='text-gray-500' value="json">
                                     <CodeIcon className="h-4 w-4" />
-                                    <span className="text-gray-500">Json</span>
+                                    <span className="cursor-pointer text-gray-500">Json</span>
                                 </TabsTrigger>
                             </TabsList>
                             <TabsContent value='json' className='text-gray-500'>
@@ -300,7 +300,7 @@ export default function TestcaseEditor({ }: TestCaseEditorProps) {
                                                         <Button
                                                             variant="outline"
                                                             onClick={handleAddSampleTestCase}
-                                                            className='flex items-center gap-1 bg-blue-500 text-white hover:bg-blue-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+                                                            className='cursor-pointer flex items-center gap-1 bg-blue-500 text-white hover:bg-blue-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
                                                         >
                                                             <PlusIcon className="h-4 w-4 mr-2" />
                                                             <span>Add sample test case</span>
@@ -309,7 +309,7 @@ export default function TestcaseEditor({ }: TestCaseEditorProps) {
                                                     <Button
                                                         variant="outline"
                                                         onClick={handleClearJson}
-                                                        className='flex items-center gap-1'
+                                                        className='cursor-pointer flex items-center gap-1'
                                                     >
                                                         <XIcon className="h-4 w-4" />
                                                         <span className='text-gray-500'>Clear</span>
@@ -386,7 +386,7 @@ export default function TestcaseEditor({ }: TestCaseEditorProps) {
                         variant="secondary"
                         onClick={() => handleSave()}
                         disabled={isSubmitting || !jsonData}
-                        className='bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 text-white'
+                        className='cursor-pointer bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 text-white'
                     >
                         {isSubmitting ? (
                             <span className="flex items-center gap-2">
