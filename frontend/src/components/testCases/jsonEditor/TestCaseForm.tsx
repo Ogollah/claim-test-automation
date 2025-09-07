@@ -21,6 +21,7 @@ interface TestcaseFormProps {
 interface FormData {
   title?: string;
   test?: string;
+  use?: string;
   patient?: Patient;
   provider?: Provider;
   productOrService?: Array<{
@@ -301,7 +302,7 @@ export default function TestcaseForm({ jsonData, setJsonData }: TestcaseFormProp
         />
       </div>
 
-      <div className="mb-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 text-gray-500">
         <CustomSelector
           label="Test Type"
           value={formData.test || ''}
@@ -309,6 +310,17 @@ export default function TestcaseForm({ jsonData, setJsonData }: TestcaseFormProp
           options={[
             { id: "positive", label: "Positive" },
             { id: "negative", label: "Negative" }
+          ]}
+        />
+
+        <CustomSelector
+          label="Use Case"
+          value={formData.use || ''}
+          onChange={(value) => updateField(['formData', 'use'], value)}
+          options={[
+            { id: "claim", label: "Claim" },
+            { id: "preauthorization", label: "Preauthorization" },
+            { id: "preauth-claim", label: "Preauth and claim" }
           ]}
         />
       </div>

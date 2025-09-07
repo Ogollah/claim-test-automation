@@ -28,10 +28,10 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
   const [packages, setPackages] = useState<Package[]>([]);
   const [testCases, setTestCases] = useState<TestCaseItem[]>([]);
   const [currentTestCases, setCurrentTestCases] = useState<{
-    positive: TestCase[];
-    negative: TestCase[];
+    positive: TestCaseItem[];
+    negative: TestCaseItem[];
   }>({ positive: [], negative: [] });
-  const [showPatientPanel, setShowPatientPanel] = useState(false);
+  const [complexInterventions, setComplexInterventions] = useState<number[]>([]);
 
   useEffect(() => {
     const fetchPackages = async () => {
@@ -73,11 +73,11 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
     }
   }, [selectedPackage]);
 
-  useEffect(() => {
-    const packageObj = packages.find(p => p.id === Number(selectedPackage));
-    const packageCode = packageObj?.code;
-    setShowPatientPanel(!!(packageCode && ['SHA-03', 'SHA-08', 'SHA-07', 'SHA-13', 'SHA-19'].includes(packageCode)));
-  }, [selectedPackage, packages]);
+  // useEffect(() => {
+  //   const packageObj = packages.find(p => p.id === Number(selectedPackage));
+  //   const packageCode = packageObj?.code;
+  //   setShowPatientPanel(!!(packageCode && ['SHA-03', 'SHA-08', 'SHA-07', 'SHA-13', 'SHA-19'].includes(packageCode)));
+  // }, [selectedPackage, packages]);
 
   useEffect(() => {
     const fetchTestCases = async () => {
@@ -98,11 +98,11 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
     if (testCases && testCases.length) {
       const positiveCases = testCases
         .filter(item => item.description === 'positive')
-        .map(item => item.test_config);
+        .map(item => item);
 
       const negativeCases = testCases
         .filter(item => item.description === 'negative')
-        .map(item => item.test_config);
+        .map(item => item);
 
       setCurrentTestCases({
         positive: positiveCases,
@@ -114,27 +114,37 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
   }, [testCases]);
 
   const updateTestCasePatient = (testCaseTitle: string, patient: FormatPatient) => {
-    // Find and update the specific test case
+    console.log("Updating patient for:", testCaseTitle, "with:", patient);
+
     const allTestCases = [...currentTestCases.positive, ...currentTestCases.negative];
     const updatedTestCases = allTestCases.map(testCase => {
-      if (testCase.formData.title === testCaseTitle) {
+      if (testCase.test_config?.formData.title === testCaseTitle) {
         return {
           ...testCase,
-          formData: {
-            ...testCase.formData,
-            patient: patient
+          test_config: {
+            ...testCase.test_config,
+            formData: {
+              ...testCase.test_config.formData,
+              patient: patient
+            }
           }
         };
       }
       return testCase;
     });
 
+    console.log("Updated test cases:", updatedTestCases);
+
     const updatedPositive = updatedTestCases.filter(tc =>
-      currentTestCases.positive.some(positiveTc => positiveTc.formData.title === tc.formData.title)
+      currentTestCases.positive.some(positiveTc =>
+        positiveTc.test_config?.formData.title === tc.test_config?.formData.title
+      )
     );
 
     const updatedNegative = updatedTestCases.filter(tc =>
-      currentTestCases.negative.some(negativeTc => negativeTc.formData.title === tc.formData.title)
+      currentTestCases.negative.some(negativeTc =>
+        negativeTc.test_config?.formData.title === tc.test_config?.formData.title
+      )
     );
 
     setCurrentTestCases({
@@ -142,7 +152,7 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
       negative: updatedNegative
     });
 
-    toast.success(`Patient updated for test case: ${testCaseTitle}`);
+    toast.success(`Patient updated for ${testCaseTitle}`);
   };
 
   const buildTestPayload = (tests: string[], type: 'positive' | 'negative') => {
@@ -151,7 +161,7 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
       ...currentTestCases.negative
     ];
     return tests.map(testTitle => {
-      const testCase = allTestCases.find(tc => tc.formData.title === testTitle);
+      const testCase = allTestCases.find(tc => tc?.test_config?.formData.title === testTitle);
       if (!testCase) {
         throw new Error(`Test case with title "${testTitle}" not found`);
       }
@@ -178,8 +188,8 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
     }
 
     const testConfig = {
-      positive: buildTestPayload(currentTestCases.positive.map(tc => tc.formData.title), 'positive'),
-      negative: buildTestPayload(currentTestCases.negative.map(tc => tc.formData.title), 'negative')
+      positive: buildTestPayload(currentTestCases.positive.map(tc => tc?.test_config?.formData.title), 'positive'),
+      negative: buildTestPayload(currentTestCases.negative.map(tc => tc?.test_config?.formData.title), 'negative')
     };
 
     if (onRunTests) {
@@ -194,10 +204,10 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
         ...testConfig.negative
       ];
       for (const [index, testCase] of allTests.entries()) {
-        console.log(`Running test ${index + 1}/${allTests.length}: ${testCase.formData.title}`);
+        console.log(`Running test ${index + 1}/${allTests.length}: ${testCase?.test_config?.formData.title}`);
         console.log('Test case details:', testCase);
 
-        const response = await getTestCaseByCode(testCase.formData.productOrService[0].code);
+        const response = await getTestCaseByCode(testCase?.test_config?.formData.productOrService[0].code);
         const testCaseData = response?.data || [];
 
         const testResult = await runTestSuite(testCase, testCaseData);
@@ -257,10 +267,10 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
       const allTests = testConfig[type];
 
       for (const [index, testCase] of allTests.entries()) {
-        console.log(`Running test ${index + 1}/${allTests.length}: ${testCase.formData.title}`);
+        console.log(`Running test ${index + 1}/${allTests.length}: ${testCase?.test_config?.formData.title}`);
         console.log('Test case details:', testCase);
 
-        const response = await getTestCaseByCode(testCase.formData.productOrService[0].code);
+        const response = await getTestCaseByCode(testCase?.test_config?.formData.productOrService[0].code);
         const testCaseData = response?.data || [];
 
         const testResult = await runTestSuite(testCase, testCaseData);
@@ -320,7 +330,7 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
             onRunTests={handleRunPositiveTests}
             isRunning={isRunning && runningSection === 'positive'}
             onUpdatePatient={updateTestCasePatient}
-            showPatientPanel={showPatientPanel}
+            interventions={complexInterventions}
           />
           <TestcaseDetails
             title='Negative'
@@ -328,7 +338,7 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
             onRunTests={handleRunNegativeTests}
             isRunning={isRunning && runningSection === 'negative'}
             onUpdatePatient={updateTestCasePatient}
-            showPatientPanel={showPatientPanel}
+            interventions={complexInterventions}
           />
         </div>
 

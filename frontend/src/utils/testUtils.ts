@@ -13,13 +13,13 @@ import { patientPayload } from '@/lib/patient';
  * @returns Promise<TestResult[]> Array of test results
  */
 export const runTestSuite = async (
-  testData: TestCase,
+  testData: TestCaseItem,
   testCase?: TestCaseItem[]
 ): Promise<TestResult[]> => {
   try {
     // Track execution time
     const startTime = Date.now();
-    const response = await api.post(`${API_BASE_URL}/api/claims/submit`, testData);
+    const response = await api.post(`${API_BASE_URL}/api/claims/submit`, testData.test_config);
     const duration = Date.now() - startTime;
 
     console.log("API Response:", response.data);
@@ -27,13 +27,13 @@ export const runTestSuite = async (
     // Check if the overall request was successful
     if (!response.data.success) {
       // Handle API-level failure (like 400 errors)
-      return [handleTestError(response.data, testData, testCase, duration)];
+      return [handleTestError(response.data, testData.test_config, testCase, duration)];
     }
 
     // Check if the data layer was successful
     if (!response.data.data?.success) {
       // Handle data-level failure
-      return [handleTestError(response.data, testData, testCase, duration)];
+      return [handleTestError(response.data, testData.test_config, testCase, duration)];
     }
 
     // Validate response - check for either 200 or 201 status in the data layer
@@ -52,7 +52,7 @@ export const runTestSuite = async (
     const claimId = claimEntry?.resource?.id || 'unknown-claim-id';
 
     // Get test case ID if available
-    const testCaseId = testCase?.find(i => i.name === testData?.formData?.title)?.id;
+    const testCaseId = testCase?.find(i => i.name === testData?.test_config?.formData?.title)?.id;
 
     // Outcome
     let finalOutcome = '';
@@ -74,7 +74,7 @@ export const runTestSuite = async (
     // Determine test status
     const testPassed = shouldTestPass(
       response.data.data.success,
-      testData?.formData?.test,
+      testData?.test_config?.formData?.test,
       finalOutcome
     );
 
@@ -82,9 +82,9 @@ export const runTestSuite = async (
     const result: TestResult = {
       id: response.data.data.data?.id || `generated-${Date.now()}`,
       req: response.data.data.data,
-      test: testData?.formData?.test,
-      name: testData?.formData?.title || 'Claim Submission',
-      use: testData?.formData?.use,
+      test: testData?.test_config?.formData?.test,
+      name: testData?.test_config?.formData?.title || 'Claim Submission',
+      use: testData?.test_config?.formData?.use,
       status: testPassed ? 'passed' : 'failed',
       duration,
       timestamp: new Date().toISOString(),
@@ -92,7 +92,7 @@ export const runTestSuite = async (
       claimId,
       outcome: finalOutcome,
       details: {
-        request: testData,
+        request: testData?.test_config,
         response: response.data.data,
         fhirBundle: response.data.data.fhirBundle || response.data.fhirBundle,
         validationErrors: response.data.data.validation_errors || [],
@@ -125,7 +125,7 @@ export const runTestSuite = async (
 
     return [result];
   } catch (error: any) {
-    return [handleTestError(error, testData, testCase)];
+    return [handleTestError(error, testData?.test_config, testCase)];
   }
 };
 
@@ -209,7 +209,7 @@ const handleTestError = (error: any, testData: TestCase, testCase?: TestCaseItem
       error: typeof errorResponse?.error?.error === 'object'
         ? errorResponse?.error?.error?.message
         : errorResponse?.error?.error,
-      fhirBundle: errorResponse.error.fhirBundle,
+      fhirBundle: errorResponse.error?.fhirBundle,
       errorMessage: errorMessage,
       statusCode: statusCode,
       response: errorResponse,

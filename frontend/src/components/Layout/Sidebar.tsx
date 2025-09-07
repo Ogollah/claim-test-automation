@@ -5,8 +5,8 @@ import {
   Wrench,
   ChevronLeft,
   ChevronRight,
-  Beaker,
   CircuitBoard,
+  CheckCircle2,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -37,6 +37,11 @@ const navItems = [
     name: 'Complex test suite',
     href: '/complex-tests',
     icon: CircuitBoard,
+  },
+  {
+    name: 'Sanity checks',
+    href: '/sanity-checks',
+    icon: CheckCircle2,
   },
 ];
 

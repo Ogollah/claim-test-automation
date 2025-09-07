@@ -4,7 +4,7 @@ import ComplexTestRunner from "@/components/Dashboard/ComplexTestRunner";
 export default function TestCases() {
     return (
         <Layout>
-            <ComplexTestRunner />
+            <ComplexTestRunner isRunning={false} />
         </Layout>
     );
 }

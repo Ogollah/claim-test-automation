@@ -1,26 +1,25 @@
 import { toast } from "sonner";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import PatientDetailsPanel from "./PatientDetailsPanel";
-import ResultsTable from "./ResultsTable";
 import { refreshTestResult } from "@/utils/claimUtils";
-import { getInterventionByComplexity, getTestCaseByCode } from "@/lib/api";
+import { getInterventionByComplexity, getInterventionByPackageId, getPackages, getTestCaseByCode, getTestcases } from "@/lib/api";
 import { runTestSuite } from "@/utils/testUtils";
-import { FormatPatient, TestCaseItem, TestResult, Intervention } from "@/lib/types";
+import { FormatPatient, TestCase, TestCaseItem, TestResult, Intervention, Package } from "@/lib/types";
 import { useEffect, useState } from "react";
-import { Label } from "../ui/label";
-import TestcaseDetails from "../testCases/TestcaseDetails";
-import { Button } from "../ui/button";
 import { StopIcon } from "@heroicons/react/16/solid";
 import { PlayIcon } from "lucide-react";
+import TestcaseDetails from "@/components/testCases/TestcaseDetails";
+import { Button } from "@/components/ui/button";
+import ResultsTable from "../ResultsTable";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-interface ComplexTestRunnerProps {
+interface PackageTestCasesProps {
     isRunning: boolean;
     onRunTests?: (testConfig: TestConfig) => void;
 }
 
 interface TestConfig {
-    positive: TestCaseItem[];
-    negative: TestCaseItem[];
+    positive: TestCase[];
+    negative: TestCase[];
 }
 
 interface CurrentTestCases {
@@ -28,10 +27,8 @@ interface CurrentTestCases {
     negative: TestCaseItem[];
 }
 
-export default function ComplexTestRunner({ isRunning = false, onRunTests }: ComplexTestRunnerProps) {
-    const [selectedIntervention, setSelectedIntervention] = useState<string>('');
+export default function PackageTestCases({ isRunning = false, onRunTests }: PackageTestCasesProps) {
     const [runningSection, setRunningSection] = useState<string | null>(null);
-    const [availableInterventions, setAvailableInterventions] = useState<Intervention[]>([]);
     const [results, setResults] = useState<TestResult[]>([]);
     const [testCases, setTestCases] = useState<TestCaseItem[]>([]);
     const [currentTestCases, setCurrentTestCases] = useState<CurrentTestCases>({
@@ -39,41 +36,108 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
         negative: []
     });
     const [complexInterventions, setComplexInterventions] = useState<number[]>([]);
-    const [showPatientPanel, setShowPatientPanel] = useState(false);
+    const [packages, setPackages] = useState<Package[]>([]);
+    const [selectedPackage, setSelectedPackage] = useState<number | null>(null);
+    const [interventionIds, setInterventionIds] = useState<number[]>([]);
+
 
     useEffect(() => {
         const fetchInterventions = async () => {
             try {
-                const response = await getInterventionByComplexity(1);
-                const interventions: Intervention[] = response?.data || [];
-                setAvailableInterventions(interventions);
+                const response = await getInterventionByPackageId(selectedPackage || 1);
+                const interventions: Intervention[] = response || [];
                 if (interventions.length > 0) {
                     const interventionIds = interventions.map(intervention => intervention.id);
-                    setComplexInterventions(interventionIds);
-                    setSelectedIntervention(interventions[0].code);
-                    setShowPatientPanel(true);
+                    setInterventionIds(interventionIds);
+
+                    const complex = await getInterventionByComplexity(1);
+                    const complexInterventions: Intervention[] = complex?.data || [];
+                    const complexIds = complexInterventions?.map(intervention => intervention.id);
+                    setComplexInterventions(complexIds);
                 }
+
             } catch (error) {
                 console.error("Error fetching interventions:", error);
                 toast.error("Failed to load interventions");
             }
         };
         fetchInterventions();
+    }, [selectedPackage]);
+
+    useEffect(() => {
+        const fetchPackages = async () => {
+            try {
+                const response = await getPackages();
+                const packages = response || [];
+                setPackages(packages);
+            } catch (error) {
+                console.error("Error fetching packages:", error);
+                toast.error("Failed to load packages");
+            }
+        };
+        fetchPackages();
     }, []);
 
     useEffect(() => {
         const fetchTestCases = async () => {
             try {
-                const testCase = await getTestCaseByCode(selectedIntervention);
-                setTestCases(testCase?.data || []);
+                const resp = await getTestcases();
+
+                const testCases = resp?.filter(tc =>
+                    tc.intervention_id && interventionIds.includes(tc.intervention_id)
+                ) || [];
+
+                const groupedByIntervention = {};
+
+                testCases?.forEach(tc => {
+                    if (!tc.intervention_id) return;
+
+                    const interventionId = tc.intervention_id;
+                    const testType = tc.test_config?.formData.test ||
+                        (tc.description?.toLowerCase().includes('positive') ? 'positive' :
+                            tc.description?.toLowerCase().includes('negative') ? 'negative' : 'other');
+
+                    if (!groupedByIntervention[interventionId]) {
+                        groupedByIntervention[interventionId] = {
+                            positive: [],
+                            negative: []
+                        };
+                    }
+
+                    if (testType === 'positive') {
+                        groupedByIntervention[interventionId].positive.push(tc);
+                    } else if (testType === 'negative') {
+                        groupedByIntervention[interventionId].negative.push(tc);
+                    }
+                });
+
+                const selectedTestCases = [];
+
+                Object.values(groupedByIntervention).forEach(intervention => {
+                    if (intervention.positive.length > 0) {
+                        const randomPositive = intervention.positive
+                            .sort(() => 0.5 - Math.random())
+                            .slice(0, Math.min(2, intervention.positive.length));
+                        selectedTestCases.push(...randomPositive);
+                    }
+                    if (intervention.negative.length > 0) {
+                        const randomNegative = intervention.negative
+                            .sort(() => 0.5 - Math.random())
+                            .slice(0, Math.min(2, intervention.negative.length));
+                        selectedTestCases.push(...randomNegative);
+                    }
+                });
+
+                setTestCases(selectedTestCases);
             } catch (error) {
                 console.error("--> Error fetching test cases: ", error);
             }
         };
-        if (selectedIntervention) {
+
+        if (complexInterventions.length > 0) {
             fetchTestCases();
         }
-    }, [selectedIntervention]);
+    }, [complexInterventions]);
 
     useEffect(() => {
         if (testCases && testCases.length) {
@@ -95,6 +159,8 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
     }, [testCases]);
 
     const updateTestCasePatient = (testCaseTitle: string, patient: FormatPatient) => {
+        console.log("Updating patient for:", testCaseTitle, "with:", patient);
+
         const allTestCases = [...currentTestCases.positive, ...currentTestCases.negative];
         const updatedTestCases = allTestCases.map(testCase => {
             if (testCase.test_config?.formData.title === testCaseTitle) {
@@ -111,6 +177,8 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
             }
             return testCase;
         });
+
+        console.log("Updated test cases:", updatedTestCases);
 
         const updatedPositive = updatedTestCases.filter(tc =>
             currentTestCases.positive.some(positiveTc =>
@@ -181,13 +249,13 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
                 ...testConfig.negative
             ];
             for (const [index, testCase] of allTests.entries()) {
-                console.log(`Running test ${index + 1}/${allTests.length}: ${testCase.test_config?.formData.title}`);
+                console.log(`Running test ${index + 1}/${allTests.length}: ${testCase?.formData?.title}`);
                 console.log('Test case details:', testCase);
 
-                const response = await getTestCaseByCode(testCase.test_config?.formData.productOrService[0].code);
+                const response = await getTestCaseByCode(testCase?.formData?.productOrService[0].code);
                 const testCaseData: TestCaseItem[] = response?.data || [];
 
-                const testResult = await runTestSuite(testCase.test_config, testCaseData);
+                const testResult = await runTestSuite(testCase?.formData, testCaseData);
                 setResults(prev => [...prev, ...testResult]);
 
                 if (index < allTests.length - 1) {
@@ -244,10 +312,8 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
             const allTests = testConfig[type];
 
             for (const [index, testCase] of allTests.entries()) {
-                console.log(`Running test ${index + 1}/${allTests.length}: ${testCase.formData.title}`);
-                console.log('Test case details:', testCase);
 
-                const response = await getTestCaseByCode(testCase.formData.productOrService[0].code);
+                const response = await getTestCaseByCode(testCase.formData?.productOrService[0].code);
                 const testCaseData: TestCaseItem[] = response?.data || [];
 
                 const testResult = await runTestSuite(testCase, testCaseData);
@@ -266,30 +332,26 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
 
     return (
         <div className="max-auto px-4 py-8">
-            <h1 className="text-2xl font-bold text-gray-500 mb-6">Complex Test Runner</h1>
+            <h1 className="text-2xl font-bold text-gray-500 mb-6">All Test Cases</h1>
             <div className="bg-white rounded-sm shadow-md p-6 mb-8">
-                <h2 className="text-lg font-semibold text-gray-700 mb-4">Automated complex test cases</h2>
-                <div className="mb-3">
-                    <Label htmlFor="test" className="block text-sm font-small text-gray-500 mb-1">
-                        Intervention Code
-                    </Label>
+                <div className=" mb-3">
+                    <Label htmlFor="package" className="mb-2">Package</Label>
                     <Select
-                        onValueChange={setSelectedIntervention}
-                        value={selectedIntervention}
+                        value={selectedPackage || ""}
+                        onValueChange={(value) => setSelectedPackage(value)}
                     >
-                        <SelectTrigger id="test" className="w-full">
-                            <SelectValue placeholder="Select a test case" />
+                        <SelectTrigger id="package" className="w-full">
+                            <SelectValue placeholder="Select a package" />
                         </SelectTrigger>
-                        <SelectContent>
-                            {availableInterventions.map((intervention) => (
-                                <SelectItem key={intervention.code} value={intervention.code}>
-                                    {intervention.name} ({intervention.code})
+                        <SelectContent className=''>
+                            {packages.map((pkg) => (
+                                <SelectItem key={pkg.id} value={String(pkg.id)}>
+                                    {pkg.name} ({pkg.code})
                                 </SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
                 </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <TestcaseDetails
                         title={'Positive'}
