@@ -5,7 +5,7 @@ import ResultsTable from "./ResultsTable";
 import { refreshTestResult } from "@/utils/claimUtils";
 import { getInterventionByComplexity, getTestCaseByCode } from "@/lib/api";
 import { runTestSuite } from "@/utils/testUtils";
-import { FormatPatient, TestCaseItem, TestResult, Intervention } from "@/lib/types";
+import { FormatPatient, TestCaseItem, TestResult, Intervention, TestCase } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { Label } from "../ui/label";
 import TestcaseDetails from "../testCases/TestcaseDetails";
@@ -39,7 +39,7 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
         negative: []
     });
     const [complexInterventions, setComplexInterventions] = useState<number[]>([]);
-    const [showPatientPanel, setShowPatientPanel] = useState(false);
+
 
     useEffect(() => {
         const fetchInterventions = async () => {
@@ -51,7 +51,6 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
                     const interventionIds = interventions.map(intervention => intervention.id);
                     setComplexInterventions(interventionIds);
                     setSelectedIntervention(interventions[0].code);
-                    setShowPatientPanel(true);
                 }
             } catch (error) {
                 console.error("Error fetching interventions:", error);
@@ -164,9 +163,9 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
             return;
         }
 
-        const testConfig: TestConfig = {
-            positive: buildTestPayload(currentTestCases.positive.map(tc => tc.test_config?.formData.title), 'positive'),
-            negative: buildTestPayload(currentTestCases.negative.map(tc => tc.test_config?.formData.title), 'negative')
+        const testConfig = {
+            positive: buildTestPayload(currentTestCases.positive.map(tc => tc?.test_config?.formData.title), 'positive'),
+            negative: buildTestPayload(currentTestCases.negative.map(tc => tc?.test_config?.formData.title), 'negative')
         };
 
         if (onRunTests) {
@@ -181,13 +180,13 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
                 ...testConfig.negative
             ];
             for (const [index, testCase] of allTests.entries()) {
-                console.log(`Running test ${index + 1}/${allTests.length}: ${testCase.test_config?.formData.title}`);
+                console.log(`Running test ${index + 1}/${allTests.length}: ${testCase?.formData?.title}`);
                 console.log('Test case details:', testCase);
 
-                const response = await getTestCaseByCode(testCase.test_config?.formData.productOrService[0].code);
-                const testCaseData: TestCaseItem[] = response?.data || [];
+                const response = await getTestCaseByCode(testCase?.formData?.productOrService[0].code);
+                const testCaseData = response?.data || [];
 
-                const testResult = await runTestSuite(testCase.test_config, testCaseData);
+                const testResult = await runTestSuite(testCase, testCaseData);
                 setResults(prev => [...prev, ...testResult]);
 
                 if (index < allTests.length - 1) {
@@ -244,11 +243,11 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
             const allTests = testConfig[type];
 
             for (const [index, testCase] of allTests.entries()) {
-                console.log(`Running test ${index + 1}/${allTests.length}: ${testCase.formData.title}`);
+                console.log(`Running test ${index + 1}/${allTests.length}: ${testCase?.formData?.title}`);
                 console.log('Test case details:', testCase);
 
-                const response = await getTestCaseByCode(testCase.formData.productOrService[0].code);
-                const testCaseData: TestCaseItem[] = response?.data || [];
+                const response = await getTestCaseByCode(testCase?.formData?.productOrService[0].code);
+                const testCaseData = response?.data || [];
 
                 const testResult = await runTestSuite(testCase, testCaseData);
                 setResults((prev) => [...prev, ...testResult]);

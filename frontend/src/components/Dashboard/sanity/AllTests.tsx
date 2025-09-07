@@ -199,9 +199,9 @@ export default function AllTestCases({ isRunning = false, onRunTests }: AllTestC
             return;
         }
 
-        const testConfig: TestConfig = {
-            positive: buildTestPayload(currentTestCases.positive.map(tc => tc.test_config?.formData.title), 'positive'),
-            negative: buildTestPayload(currentTestCases.negative.map(tc => tc.test_config?.formData.title), 'negative')
+        const testConfig = {
+            positive: buildTestPayload(currentTestCases.positive.map(tc => tc?.test_config?.formData.title), 'positive'),
+            negative: buildTestPayload(currentTestCases.negative.map(tc => tc?.test_config?.formData.title), 'negative')
         };
 
         if (onRunTests) {
@@ -216,13 +216,13 @@ export default function AllTestCases({ isRunning = false, onRunTests }: AllTestC
                 ...testConfig.negative
             ];
             for (const [index, testCase] of allTests.entries()) {
-                console.log(`Running test ${index + 1}/${allTests.length}: ${testCase.formData.title}`);
+                console.log(`Running test ${index + 1}/${allTests.length}: ${testCase?.formData?.title}`);
                 console.log('Test case details:', testCase);
 
-                const response = await getTestCaseByCode(testCase.formData?.productOrService[0].code);
-                const testCaseData: TestCaseItem[] = response?.data || [];
+                const response = await getTestCaseByCode(testCase?.formData?.productOrService[0].code);
+                const testCaseData = response?.data || [];
 
-                const testResult = await runTestSuite(testCase.formData, testCaseData);
+                const testResult = await runTestSuite(testCase, testCaseData);
                 setResults(prev => [...prev, ...testResult]);
 
                 if (index < allTests.length - 1) {
@@ -279,9 +279,11 @@ export default function AllTestCases({ isRunning = false, onRunTests }: AllTestC
             const allTests = testConfig[type];
 
             for (const [index, testCase] of allTests.entries()) {
+                console.log(`Running test ${index + 1}/${allTests.length}: ${testCase?.formData?.title}`);
+                console.log('Test case details:', testCase);
 
-                const response = await getTestCaseByCode(testCase.formData?.productOrService[0].code);
-                const testCaseData: TestCaseItem[] = response?.data || [];
+                const response = await getTestCaseByCode(testCase?.formData?.productOrService[0].code);
+                const testCaseData = response?.data || [];
 
                 const testResult = await runTestSuite(testCase, testCaseData);
                 setResults((prev) => [...prev, ...testResult]);

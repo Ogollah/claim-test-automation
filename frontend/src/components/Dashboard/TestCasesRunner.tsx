@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { StopIcon } from '@heroicons/react/16/solid';
 import InterventionSelector from '@/components/Dashboard/InterventionSelector';
-import { FormatPatient, Package, TestCase, TestCaseItem, TestResult } from '@/lib/types';
-import { getInterventionByPackageId, getPackages, getTestCaseByCode } from '@/lib/api';
+import { FormatPatient, Intervention, Package, TestCase, TestCaseItem, TestResult } from '@/lib/types';
+import { getInterventionByComplexity, getInterventionByPackageId, getPackages, getTestCaseByCode } from '@/lib/api';
 import TestcaseDetails from '@/components/testCases/TestcaseDetails';
 import ResultsTable from '@/components/Dashboard/ResultsTable';
 import { DEFAULT_PACKAGE } from '@/packages/ShaPackages';
@@ -62,6 +62,11 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
           setAvailableInterventions(Array.isArray(intevents) ? intevents : (intevents ? [intevents] : []))
           if (Array.isArray(intevents) && intevents.length > 0) {
             setSelectedIntervention(intevents[0].code);
+
+            const complex = await getInterventionByComplexity(1);
+            const complexInterventions: Intervention[] = complex?.data || [];
+            const complexIds = complexInterventions?.map(intervention => intervention.id);
+            setComplexInterventions(complexIds);
           }
         } catch (error) {
           console.error("--> Error fetching interventions:", error)
@@ -73,11 +78,6 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
     }
   }, [selectedPackage]);
 
-  // useEffect(() => {
-  //   const packageObj = packages.find(p => p.id === Number(selectedPackage));
-  //   const packageCode = packageObj?.code;
-  //   setShowPatientPanel(!!(packageCode && ['SHA-03', 'SHA-08', 'SHA-07', 'SHA-13', 'SHA-19'].includes(packageCode)));
-  // }, [selectedPackage, packages]);
 
   useEffect(() => {
     const fetchTestCases = async () => {
@@ -133,8 +133,6 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
       return testCase;
     });
 
-    console.log("Updated test cases:", updatedTestCases);
-
     const updatedPositive = updatedTestCases.filter(tc =>
       currentTestCases.positive.some(positiveTc =>
         positiveTc.test_config?.formData.title === tc.test_config?.formData.title
@@ -155,7 +153,7 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
     toast.success(`Patient updated for ${testCaseTitle}`);
   };
 
-  const buildTestPayload = (tests: string[], type: 'positive' | 'negative') => {
+  const buildTestPayload = (tests: string[], type: 'positive' | 'negative'): TestCase[] => {
     const allTestCases = [
       ...currentTestCases.positive,
       ...currentTestCases.negative
