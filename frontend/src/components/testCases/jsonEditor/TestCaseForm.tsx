@@ -21,6 +21,7 @@ interface TestcaseFormProps {
 interface FormData {
   title?: string;
   test?: string;
+  use?: string;
   patient?: Patient;
   provider?: Provider;
   productOrService?: Array<{
@@ -31,6 +32,7 @@ interface FormData {
     net?: { value: number; currency: string };
     servicePeriod?: { start: string; end: string };
     sequence?: number;
+    packageId?: string;
   }>;
   billablePeriod?: {
     billableStart?: string;
@@ -40,9 +42,9 @@ interface FormData {
 }
 
 export default function TestcaseForm({ jsonData, setJsonData }: TestcaseFormProps) {
-  const [selectedPackage, setSelectedPackage] = useState<string>("");
   const [packages, setPackages] = useState<Package[]>([]);
-  const [availableInterventions, setAvailableInterventions] = useState<Intervention[]>([]);
+  const [itemPackages, setItemPackages] = useState<string[]>([]);
+  const [itemInterventions, setItemInterventions] = useState<Intervention[][]>([]);
   const [selectedInterventions, setSelectedInterventions] = useState<string[]>([]);
   const [interventionDisplays, setInterventionDisplays] = useState<string[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<any | null>(null);
@@ -64,34 +66,51 @@ export default function TestcaseForm({ jsonData, setJsonData }: TestcaseFormProp
     fetchPackages();
   }, []);
 
-  // Initialize selected interventions from form data
+  // Initialize arrays when productOrServices change
   useEffect(() => {
-    if (productOrServices.length > 0) {
-      const codes = productOrServices.map(item => item.code || "");
-      setSelectedInterventions(codes);
+    const serviceCount = productOrServices.length;
 
-      const displays = productOrServices.map(item => item.display || "");
-      setInterventionDisplays(displays);
+    // Initialize arrays to match the number of services
+    if (itemPackages.length !== serviceCount) {
+      setItemPackages(prev => {
+        const newPackages = [...prev];
+        while (newPackages.length < serviceCount) {
+          newPackages.push(productOrServices[newPackages.length]?.packageId || "");
+        }
+        return newPackages.slice(0, serviceCount);
+      });
+    }
+
+    if (itemInterventions.length !== serviceCount) {
+      setItemInterventions(prev => {
+        const newInterventions = [...prev];
+        while (newInterventions.length < serviceCount) {
+          newInterventions.push([]);
+        }
+        return newInterventions.slice(0, serviceCount);
+      });
+    }
+
+    if (selectedInterventions.length !== serviceCount) {
+      setSelectedInterventions(prev => {
+        const newSelected = [...prev];
+        while (newSelected.length < serviceCount) {
+          newSelected.push(productOrServices[newSelected.length]?.code || "");
+        }
+        return newSelected.slice(0, serviceCount);
+      });
+    }
+
+    if (interventionDisplays.length !== serviceCount) {
+      setInterventionDisplays(prev => {
+        const newDisplays = [...prev];
+        while (newDisplays.length < serviceCount) {
+          newDisplays.push(productOrServices[newDisplays.length]?.display || "");
+        }
+        return newDisplays.slice(0, serviceCount);
+      });
     }
   }, [productOrServices.length]);
-
-  // Fetch interventions when package changes
-  useEffect(() => {
-    if (!selectedPackage) {
-      setAvailableInterventions([]);
-      return;
-    }
-
-    const fetchInterventions = async () => {
-      try {
-        const intevents = await getInterventionByPackageId(Number(selectedPackage));
-        setAvailableInterventions(Array.isArray(intevents) ? intevents : intevents ? [intevents] : []);
-      } catch (error) {
-        console.error("Error fetching interventions:", error);
-      }
-    };
-    fetchInterventions();
-  }, [selectedPackage]);
 
   useEffect(() => {
     if (selectedPatient) {
@@ -121,6 +140,51 @@ export default function TestcaseForm({ jsonData, setJsonData }: TestcaseFormProp
       return newJson;
     });
   }, [setJsonData]);
+
+  // Handle package selection for a specific item
+  const handlePackageChange = useCallback(async (itemIndex: number, packageId: string) => {
+    const newItemPackages = [...itemPackages];
+    newItemPackages[itemIndex] = packageId;
+    setItemPackages(newItemPackages);
+
+    const newItems = [...productOrServices];
+    newItems[itemIndex] = { ...newItems[itemIndex], packageId };
+    updateField(['formData', 'productOrService'], newItems);
+
+    if (packageId) {
+      try {
+        const interventions = await getInterventionByPackageId(Number(packageId));
+        const interventionList = Array.isArray(interventions) ? interventions : interventions ? [interventions] : [];
+
+        const newItemInterventions = [...itemInterventions];
+        newItemInterventions[itemIndex] = interventionList;
+        setItemInterventions(newItemInterventions);
+
+        const newSelectedInterventions = [...selectedInterventions];
+        newSelectedInterventions[itemIndex] = "";
+        setSelectedInterventions(newSelectedInterventions);
+
+        const newInterventionDisplays = [...interventionDisplays];
+        newInterventionDisplays[itemIndex] = "";
+        setInterventionDisplays(newInterventionDisplays);
+
+        const updatedItems = [...newItems];
+        updatedItems[itemIndex] = {
+          ...updatedItems[itemIndex],
+          code: "",
+          display: ""
+        };
+        updateField(['formData', 'productOrService'], updatedItems);
+
+      } catch (error) {
+        console.error("Error fetching interventions:", error);
+      }
+    } else {
+      const newItemInterventions = [...itemInterventions];
+      newItemInterventions[itemIndex] = [];
+      setItemInterventions(newItemInterventions);
+    }
+  }, [itemPackages, itemInterventions, selectedInterventions, interventionDisplays, productOrServices, updateField]);
 
   const calculateDays = useCallback((start: string, end: string): number => {
     if (!start || !end) return 1;
@@ -162,10 +226,14 @@ export default function TestcaseForm({ jsonData, setJsonData }: TestcaseFormProp
       quantity: { value: "1" },
       sequence: productOrServices.length + 1,
       unitPrice: { value: null, currency: "KES" },
-      servicePeriod: { start: "", end: "" }
+      servicePeriod: { start: "", end: "" },
+      packageId: ""
     };
 
     updateField(['formData', 'productOrService'], [...productOrServices, newItem]);
+
+    setItemPackages(prev => [...prev, ""]);
+    setItemInterventions(prev => [...prev, []]);
     setSelectedInterventions(prev => [...prev, ""]);
     setInterventionDisplays(prev => [...prev, ""]);
   }, [productOrServices, updateField]);
@@ -174,14 +242,13 @@ export default function TestcaseForm({ jsonData, setJsonData }: TestcaseFormProp
     const newItems = productOrServices.filter((_, i) => i !== index);
     updateField(['formData', 'productOrService'], newItems);
 
-    const newSelected = selectedInterventions.filter((_, i) => i !== index);
-    setSelectedInterventions(newSelected);
-
-    const newDisplays = interventionDisplays.filter((_, i) => i !== index);
-    setInterventionDisplays(newDisplays);
+    setItemPackages(prev => prev.filter((_, i) => i !== index));
+    setItemInterventions(prev => prev.filter((_, i) => i !== index));
+    setSelectedInterventions(prev => prev.filter((_, i) => i !== index));
+    setInterventionDisplays(prev => prev.filter((_, i) => i !== index));
 
     recalculateTotal(newItems);
-  }, [productOrServices, selectedInterventions, interventionDisplays, updateField, recalculateTotal]);
+  }, [productOrServices, updateField, recalculateTotal]);
 
   const updateProductOrService = useCallback((index: number, field: string, value: any) => {
     const newItems = [...productOrServices];
@@ -201,7 +268,8 @@ export default function TestcaseForm({ jsonData, setJsonData }: TestcaseFormProp
 
   // Handle intervention selection for a specific item
   const handleInterventionSelect = useCallback((index: number, code: string) => {
-    const intervention = availableInterventions.find(i => i.code === code);
+    const availableInterventionsForItem = itemInterventions[index] || [];
+    const intervention = availableInterventionsForItem.find(i => i.code === code);
     if (!intervention) return;
 
     const newSelected = [...selectedInterventions];
@@ -224,7 +292,7 @@ export default function TestcaseForm({ jsonData, setJsonData }: TestcaseFormProp
     });
 
     updateField(['formData', 'productOrService'], updatedItems);
-  }, [availableInterventions, selectedInterventions, interventionDisplays, productOrServices, updateField]);
+  }, [itemInterventions, selectedInterventions, interventionDisplays, productOrServices, updateField]);
 
   const handleUnitPriceChange = useCallback((index: number, value: string) => {
     const numericValue = Number(value);
@@ -250,29 +318,6 @@ export default function TestcaseForm({ jsonData, setJsonData }: TestcaseFormProp
 
     return 1;
   }, [productOrServices, selectedInterventions, calculateDays]);
-
-
-  // Memoized form sections
-  const renderPackageSelector = useMemo(() => (
-    <div>
-      <Label className='py-2' htmlFor="package">Package</Label>
-      <Select
-        value={selectedPackage || ""}
-        onValueChange={setSelectedPackage}
-      >
-        <SelectTrigger id="package" className="w-full">
-          <SelectValue placeholder="Select a package" />
-        </SelectTrigger>
-        <SelectContent>
-          {packages.map((pkg) => (
-            <SelectItem key={pkg.id} value={String(pkg.id)}>
-              {pkg.name} ({pkg.code})
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  ), [selectedPackage, packages]);
 
   const renderPatientProviderPanels = useMemo(() => (
     <>
@@ -301,16 +346,30 @@ export default function TestcaseForm({ jsonData, setJsonData }: TestcaseFormProp
         />
       </div>
 
-      <div className="mb-3">
-        <CustomSelector
-          label="Test Type"
-          value={formData.test || ''}
-          onChange={(value) => updateField(['formData', 'test'], value)}
-          options={[
-            { id: "positive", label: "Positive" },
-            { id: "negative", label: "Negative" }
-          ]}
-        />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 text-gray-500">
+        <div className="mb-3">
+          <CustomSelector
+            label="Test Type"
+            value={formData.test || ''}
+            onChange={(value) => updateField(['formData', 'test'], value)}
+            options={[
+              { id: "positive", label: "Positive" },
+              { id: "negative", label: "Negative" }
+            ]}
+          />
+        </div>
+        <div className="mb-3">
+          <CustomSelector
+            label="Use Type"
+            value={formData.use || ''}
+            onChange={(value) => updateField(['formData', 'use'], value)}
+            options={[
+              { id: "claim", label: "Claim" },
+              { id: "preauthorization", label: "Preauthorization" },
+              { id: "preauth-claim", label: "Preauth & claim" }
+            ]}
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 text-gray-500">
@@ -345,13 +404,10 @@ export default function TestcaseForm({ jsonData, setJsonData }: TestcaseFormProp
           </Button>
         </div>
 
-        {/* Package selector moved outside the items loop */}
-        <div className="text-sm text-gray-500 mb-4">
-          {renderPackageSelector}
-        </div>
-
+        {/* loop through product or services */}
         {productOrServices.map((item, index) => {
           const days = getDaysForDisplay(index);
+          const availableInterventionsForItem = itemInterventions[index] || [];
 
           return (
             <div key={index} className="border rounded-md p-4 mb-4 bg-white relative">
@@ -364,7 +420,25 @@ export default function TestcaseForm({ jsonData, setJsonData }: TestcaseFormProp
                 <TrashIcon className="h-4 w-4" />
               </Button>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3 text-gray-500 w-full">
+                <div className="text-sm text-gray-500 mb-4">
+                  <Label className='py-2' htmlFor={`package-${index}`}>Package</Label>
+                  <Select
+                    value={itemPackages[index] || ""}
+                    onValueChange={(value) => handlePackageChange(index, value)}
+                  >
+                    <SelectTrigger id={`package-${index}`} className="w-full">
+                      <SelectValue placeholder="Select a package" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {packages.map((pkg) => (
+                        <SelectItem key={pkg.id} value={String(pkg.id)}>
+                          {pkg.name} ({pkg.code})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div>
                   <Label className="py-2">Intervention Code</Label>
                   <Select
@@ -375,7 +449,7 @@ export default function TestcaseForm({ jsonData, setJsonData }: TestcaseFormProp
                       <SelectValue placeholder="Select an intervention" />
                     </SelectTrigger>
                     <SelectContent>
-                      {availableInterventions.map((intervention) => (
+                      {availableInterventionsForItem.map((intervention) => (
                         <SelectItem key={intervention.code} value={intervention.code}>
                           {intervention.code} - {intervention.name}
                         </SelectItem>
@@ -383,14 +457,15 @@ export default function TestcaseForm({ jsonData, setJsonData }: TestcaseFormProp
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label className="py-2">Display Name</Label>
-                  <Input
-                    value={item.display || interventionDisplays[index] || ''}
-                    onChange={(e) => updateProductOrService(index, 'display', e.target.value)}
-                    className="bg-white"
-                  />
-                </div>
+              </div>
+
+              <div className='mb-3'>
+                <Label className="py-2">Intervention</Label>
+                <Input
+                  value={item.code + ', ' + (item.display || interventionDisplays[index] || '')}
+                  onChange={(e) => updateProductOrService(index, 'display', e.target.value)}
+                  className="bg-white"
+                />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
