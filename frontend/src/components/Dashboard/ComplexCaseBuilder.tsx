@@ -222,13 +222,11 @@ export default function ComplexCaseBuilder({
     const fetchPackages = async () => {
       try {
         const pck = await getPackages();
-        setPackages(pck || []);
-        if (pck && pck.length > 0) {
-          setSelectedPackage(String(pck[0].id));
-        }
+        const allowedCodes = ['SHA-03', 'SHA-08', 'SHA-05', 'SHA-13', 'SHA-19', 'SHA-06'];
+        const filteredPackages = pck?.filter(p => allowedCodes.includes(p.code)) || [];
+        setPackages(filteredPackages);
       } catch (error) {
         console.error("Error fetching packages:", error);
-        toast.error("Failed to load packages");
       }
     };
     fetchPackages();
