@@ -3,10 +3,10 @@ import AllTestCases from "./AllTests";
 import PackageTestCases from "./PackageTest";
 import { TestConfig } from "./types/sanityCheck";
 
-type SanityCheckProps = {
+interface SanityCheckProps {
     isRunning: boolean;
     onRunTests: (payload: TestConfig) => void;
-};
+}
 
 export default function SanityCheck({ isRunning, onRunTests }: SanityCheckProps) {
     const handleClearSession = () => {

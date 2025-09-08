@@ -52,3 +52,25 @@ export interface Package {
     code: string;
     [key: string]: any;
 }
+
+export interface TestConfig {
+    positive: TestCase[];
+    negative: TestCase[];
+}
+
+export interface CurrentTestCases {
+    positive: TestCaseItem[];
+    negative: TestCaseItem[];
+}
+
+export interface TestRunnerHook {
+    runningSection: string | null;
+    results: TestResult[];
+    currentTestCases: CurrentTestCases;
+    complexInterventions: number[];
+    handleRunPositiveTests: (selectedItems: string[]) => void;
+    handleRunNegativeTests: (selectedItems: string[]) => void;
+    handleRunAllTests: () => void;
+    handleRefreshResult: (claimId: string, test?: string) => void;
+    updateTestCasePatient: (testCaseTitle: string, patient: FormatPatient) => void;
+}
