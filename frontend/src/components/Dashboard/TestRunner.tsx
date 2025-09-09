@@ -1,77 +1,35 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
-import {
-  StopIcon,
-  PlayIcon,
-  TrashIcon,
-} from "@heroicons/react/16/solid";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "../ui/select";
+import { useState, useCallback, useMemo } from "react";
+import { StopIcon, PlayIcon, TrashIcon } from "@heroicons/react/16/solid";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../ui/select";
 import { Label } from "../ui/label";
+import { Input } from "../ui/input";
+import { Button } from "../ui/button";
+import { format } from "date-fns/format";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
+import { toast } from "sonner";
+import { Plus } from "lucide-react";
+
+import { usePackages } from '@/hook/usePackages';
+import { useInterventions } from '@/hook/useInterventions';
+import { useDateFields } from '@/hook/useDateFields';
+import { useCurrentIntervention } from '@/hook/useCurrentIntervention';
+import { useManualTotal } from '@/hook/useManualTotal';
+import { useFormValidation } from '@/hook/useFormValidation';
+
 import PatientDetailsPanel from "./PatientDetailsPanel";
 import ProviderDetailsPanel from "./ProviderDetailsPanel";
 import InterventionSelector from "./InterventionSelector";
 import PractitionerDetailsPanel from "./PractitionerDetailsPanel";
-import {
-  getInterventionByPackageId,
-  getPackages,
-} from "@/lib/api";
-import {
-  Intervention,
-  InterventionItem,
-  Package,
-  Provider,
-  Practitioner,
-} from "@/lib/types";
-import { Input } from "../ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import { Button } from "../ui/button";
-import { Calendar } from "../ui/calendar";
-import { CalendarIcon, Plus } from "lucide-react";
-import { format } from "date-fns/format";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import CustomSelector from "./UseSelector";
-import { toast } from "sonner";
-import { PER_DIEM_CODES } from "@/lib/utils";
+import { InterventionItem, Provider, Practitioner } from "@/lib/types";
+import { DateFieldRenderer } from "./DateFieldRenderer";
 
 type TestRunnerProps = {
   isRunning?: boolean;
   onRunTests?: (testConfig: any) => void;
 };
 
-interface DateFields {
-  billableStart: Date | undefined;
-  billableEnd: Date | undefined;
-  created: Date;
-}
-
-const DATE_FIELD_LABELS: Record<keyof DateFields, string> = {
-  billableStart: "Billable Start Date",
-  billableEnd: "Billable End Date",
-  created: "Created Date"
-};
-
-const INTERVENTION_FIELDS = [
-  { label: "Days", key: "days", disabled: true },
-  { label: "Unit price", key: "unitPrice", disabled: false },
-  { label: "Net value", key: "netValue", disabled: true }
-];
-
-const TABLE_HEADERS = [
-  "Package",
-  "Intervention",
-  "Quantity",
-  "Unit Price",
-  "Net Value",
-  "Service Period",
-  "Actions"
-];
-
-export default function TestRunner({
+export default function OptimizedTestRunner({
   isRunning = false,
   onRunTests,
 }: TestRunnerProps) {
@@ -80,124 +38,38 @@ export default function TestRunner({
   const [selectedUse, setSelectedUse] = useState<string>("claim");
   const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null);
   const [selectedPractitioner, setSelectedPractitioner] = useState<Practitioner | null>(null);
-  const [selectedIntervention, setSelectedIntervention] = useState<string>("");
-
-  const today = useMemo(() => new Date(), []);
-  const twoDays = useMemo(() => {
-    const date = new Date(today);
-    date.setDate(today.getDate() - 2);
-    return date;
-  }, [today]);
-
-  const [selectedDates, setSelectedDates] = useState<DateFields>({
-    billableStart: twoDays,
-    billableEnd: today,
-    created: today,
-  });
-
-  const [packages, setPackages] = useState<Package[]>([]);
-  const [interventions, setInterventions] = useState<InterventionItem[]>([]);
-  const [availableInterventions, setAvailableInterventions] = useState<Intervention[]>([]);
   const [selectedClaimSubType, setClaimSubType] = useState<string>("ip");
   const [relatedClaimId, setRelatedClaimId] = useState("");
+  const [interventions, setInterventions] = useState<InterventionItem[]>([]);
 
-  const [currentIntervention, setCurrentIntervention] = useState({
-    days: "1",
-    unitPrice: "10000",
-    serviceStart: format(twoDays, "yyyy-MM-dd"),
-    serviceEnd: format(today, "yyyy-MM-dd"),
-  });
-
-  const currentNetValue = useMemo(() =>
-    Number(currentIntervention.days) * Number(currentIntervention.unitPrice) || 0,
-    [currentIntervention.days, currentIntervention.unitPrice]
+  const { packages } = usePackages();
+  const { interventions: availableInterventions, selectedIntervention, setSelectedIntervention } = useInterventions(selectedPackage);
+  const { dates, updateDate, today, twoDaysAgo } = useDateFields();
+  const { intervention, updateIntervention, isPerdiem, netValue } = useCurrentIntervention(
+    selectedIntervention, twoDaysAgo, today
   );
 
-
-  const [isTotalManuallyChanged, setIsTotalManuallyChanged] = useState(false);
-
-  const isPerdiem = useMemo(() =>
-    PER_DIEM_CODES.has(selectedIntervention),
-    [selectedIntervention]
-  );
-  const total = useMemo(() =>
+  const calculatedTotal = useMemo(() =>
     interventions.reduce((sum, item) => sum + item.netValue, 0),
     [interventions]
   );
 
-  const [totalValue, setTotal] = useState<number>(total);
+  const { total, isManuallyChanged, handleTotalChange, resetTotal } = useManualTotal(calculatedTotal);
 
-  useEffect(() => {
-    if (!isTotalManuallyChanged) {
-      setTotal(total);
+  const { canAddIntervention, canRunTests } = useFormValidation({
+    selectedPackage,
+    selectedIntervention,
+    selectedPatient,
+    selectedProvider,
+    itemsCount: interventions.length,
+    total: calculatedTotal
+  });
+
+  useState(() => {
+    if (packages.length > 0 && !selectedPackage) {
+      setSelectedPackage(String(packages[0].id));
     }
-  }, [total, isTotalManuallyChanged]);
-
-  // Fetch packages on mount
-  useEffect(() => {
-    const fetchPackages = async () => {
-      try {
-        const pck = await getPackages();
-        setPackages(pck || []);
-        if (pck && pck.length > 0) {
-          setSelectedPackage(String(pck[0].id));
-        }
-      } catch (error) {
-        console.error("Error fetching packages:", error);
-        toast.error("Failed to load packages");
-      }
-    };
-    fetchPackages();
-  }, []);
-
-  // Fetch interventions when package changes
-  useEffect(() => {
-    if (!selectedPackage) {
-      setAvailableInterventions([]);
-      return;
-    }
-
-    const fetchInterventions = async () => {
-      try {
-        const intevents = await getInterventionByPackageId(Number(selectedPackage));
-        setAvailableInterventions(Array.isArray(intevents) ? intevents : []);
-        if (Array.isArray(intevents) && intevents.length > 0) {
-          setSelectedIntervention(intevents[0].code);
-        }
-      } catch (error) {
-        console.error("Error fetching interventions:", error);
-        toast.error("Failed to load interventions");
-      }
-    };
-    fetchInterventions();
-  }, [selectedPackage]);
-
-  // Update days for per diem interventions
-  useEffect(() => {
-    if (isPerdiem && currentIntervention.serviceStart && currentIntervention.serviceEnd) {
-      try {
-        const start = new Date(currentIntervention.serviceStart);
-        const end = new Date(currentIntervention.serviceEnd);
-
-        if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
-          const diffInMs = end.getTime() - start.getTime();
-          const diffInDays = Math.max(1, Math.ceil(diffInMs / (1000 * 60 * 60 * 24)));
-
-          setCurrentIntervention(prev => ({
-            ...prev,
-            days: String(diffInDays),
-          }));
-        }
-      } catch (error) {
-        console.error("Error calculating date difference:", error);
-      }
-    } else {
-      setCurrentIntervention(prev => ({
-        ...prev,
-        days: "1",
-      }));
-    }
-  }, [isPerdiem, currentIntervention.serviceStart, currentIntervention.serviceEnd]);
+  });
 
   const addIntervention = useCallback(() => {
     if (!selectedPackage || !selectedIntervention) {
@@ -214,24 +86,20 @@ export default function TestRunner({
       packageId: selectedPackage,
       code: selectedIntervention,
       name: interventionName,
-      days: currentIntervention.days,
-      unitPrice: currentIntervention.unitPrice,
-      serviceStart: currentIntervention.serviceStart,
-      serviceEnd: currentIntervention.serviceEnd,
-      netValue: currentNetValue,
+      days: intervention.days,
+      unitPrice: intervention.unitPrice,
+      serviceStart: intervention.serviceStart,
+      serviceEnd: intervention.serviceEnd,
+      netValue: netValue,
       serviceQuantity: "1",
     };
 
     setInterventions(prev => [...prev, newIntervention]);
-    setCurrentIntervention({
-      days: "1",
-      unitPrice: "10000",
-      serviceStart: format(twoDays, "yyyy-MM-dd"),
-      serviceEnd: format(today, "yyyy-MM-dd"),
-    });
 
-    setIsTotalManuallyChanged(false);
-  }, [selectedPackage, selectedIntervention, availableInterventions, currentIntervention, currentNetValue, twoDays, today]);
+    // Reset intervention form but keep service dates
+    updateIntervention('days', "1");
+    updateIntervention('unitPrice', "10000");
+  }, [selectedPackage, selectedIntervention, availableInterventions, intervention, netValue, updateIntervention]);
 
   const removeIntervention = useCallback((id: string) => {
     setInterventions(prev => prev.filter(item => item.id !== id));
@@ -252,7 +120,9 @@ export default function TestRunner({
         display: intervention.name,
         quantity: { value: "1" },
         unitPrice: {
-          value: isPerdiem ? Number(intervention.unitPrice) * Number(intervention.days) : intervention.unitPrice,
+          value: isPerdiem
+            ? Number(intervention.unitPrice) * Number(intervention.days)
+            : intervention.unitPrice,
           currency: "KES",
         },
         net: {
@@ -266,16 +136,16 @@ export default function TestRunner({
         sequence: index + 1,
       })),
       billablePeriod: {
-        billableStart: selectedDates.billableStart ? format(selectedDates.billableStart, "yyyy-MM-dd") : "",
-        billableEnd: selectedDates.billableEnd ? format(selectedDates.billableEnd, "yyyy-MM-dd") : "",
-        created: format(selectedDates.created, "yyyy-MM-dd"),
+        billableStart: dates.billableStart ? format(dates.billableStart, "yyyy-MM-dd") : "",
+        billableEnd: dates.billableEnd ? format(dates.billableEnd, "yyyy-MM-dd") : "",
+        created: format(dates.created, "yyyy-MM-dd"),
       },
       total: { value: total, currency: "KES" },
     },
   }), [
     selectedIntervention, selectedPatient, selectedProvider, selectedUse,
     selectedClaimSubType, selectedPractitioner, relatedClaimId, interventions,
-    isPerdiem, selectedDates, total
+    isPerdiem, dates, total
   ]);
 
   const handleRunTests = useCallback(() => {
@@ -288,78 +158,16 @@ export default function TestRunner({
     onRunTests?.(testConfig);
   }, [selectedPatient, selectedProvider, interventions.length, buildTestPayload, onRunTests]);
 
-  const handleTotalChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = parseFloat(e.target.value) || total;
-    setTotal(newValue);
-    setIsTotalManuallyChanged(true);
-  }, []);
+  const TABLE_HEADERS = [
+    "Package", "Intervention", "Quantity", "Unit Price",
+    "Net Value", "Service Period", "Actions"
+  ];
 
-  const handleResetTotal = useCallback(() => {
-    setTotal(currentNetValue);
-    setIsTotalManuallyChanged(false);
-  }, [currentNetValue]);
-
-  const renderDateField = useCallback((key: keyof DateFields, isCreated = false) => {
-    const label = DATE_FIELD_LABELS[key];
-    const dateValue = selectedDates[key];
-
-    return (
-      <div key={key} className="flex flex-col gap-3">
-        <Label htmlFor={key}>{label}</Label>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className="justify-start text-left font-normal"
-              disabled={isCreated}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {dateValue ? format(dateValue, "PPP") : <span>Pick a date</span>}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto overflow-hidden p-0 z-50">
-            <Calendar
-              className="text-blue-500"
-              mode="single"
-              selected={dateValue}
-              onSelect={(date) => {
-                setSelectedDates(prev => ({
-                  ...prev,
-                  [key]: date || undefined,
-                }));
-              }}
-              captionLayout="dropdown"
-            />
-          </PopoverContent>
-        </Popover>
-      </div>
-    );
-  }, [selectedDates]);
-
-  const renderInterventionField = useCallback(({ label, value, key, disabled }: {
-    label: string;
-    value: string | number;
-    key: string;
-    disabled?: boolean;
-  }) => (
-    <div key={key}>
-      <Label className="py-3">{label}</Label>
-      <Input
-        type="number"
-        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-        value={value}
-        disabled={disabled}
-        onChange={(e) => {
-          if (!disabled) {
-            setCurrentIntervention(prev => ({
-              ...prev,
-              [key]: e.target.value,
-            }));
-          }
-        }}
-      />
-    </div>
-  ), []);
+  const INTERVENTION_FIELDS = [
+    { label: "Days", key: "days", disabled: true },
+    { label: "Unit price", key: "unitPrice", disabled: false },
+    { label: "Net value", key: "netValue", disabled: true }
+  ];
 
   return (
     <div className="mx-auto py-4 text-gray-500">
@@ -372,6 +180,7 @@ export default function TestRunner({
           Test Configuration
         </h2>
 
+        {/* Use and Claim Type Selection */}
         <div className="grid grid-cols-2 gap-6 mb-6">
           <CustomSelector
             options={[
@@ -396,14 +205,11 @@ export default function TestRunner({
           />
         </div>
 
+        {/* Package and Intervention Selection */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 text-gray-500">
-          {/* Package Selector */}
           <div className="space-y-2">
             <Label htmlFor="package">Package</Label>
-            <Select
-              value={selectedPackage || ""}
-              onValueChange={setSelectedPackage}
-            >
+            <Select value={selectedPackage || ""} onValueChange={setSelectedPackage}>
               <SelectTrigger id="package" className="w-full">
                 <SelectValue placeholder="Select a package" />
               </SelectTrigger>
@@ -442,64 +248,63 @@ export default function TestRunner({
           </div>
         )}
 
+        {/* Date Fields */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-gray-500">
-          {Object.keys(selectedDates).map((key) =>
-            renderDateField(key as keyof DateFields, key === "created")
-          )}
+          <DateFieldRenderer
+            label="Billable Start Date"
+            date={dates.billableStart}
+            onDateChange={(date) => updateDate('billableStart', date)}
+          />
+          <DateFieldRenderer
+            label="Billable End Date"
+            date={dates.billableEnd}
+            onDateChange={(date) => updateDate('billableEnd', date)}
+          />
+          <DateFieldRenderer
+            label="Created Date"
+            date={dates.created}
+            onDateChange={(date) => updateDate('created', date)}
+            disabled={true}
+          />
         </div>
 
-        {/* Add Intervention */}
+        {/* Add Intervention Section */}
         <div className="border-t border-gray-200 pt-4 mb-6 text-gray-500">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             {INTERVENTION_FIELDS.map(({ label, key, disabled }) => (
-              renderInterventionField({
-                label,
-                value: key === "netValue" ? currentNetValue : currentIntervention[key as keyof typeof currentIntervention],
-                key,
-                disabled
-              })
+              <div key={key}>
+                <Label className="py-3">{label}</Label>
+                <Input
+                  type="number"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  value={key === "netValue" ? netValue : intervention[key as keyof typeof intervention]}
+                  disabled={disabled}
+                  onChange={(e) => {
+                    if (!disabled) {
+                      updateIntervention(key as keyof typeof intervention, e.target.value);
+                    }
+                  }}
+                />
+              </div>
             ))}
           </div>
 
+          {/* Service Dates and Add Button */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            {["serviceStart", "serviceEnd"].map((key) => {
-              const label = key === "serviceStart" ? "Service Start Date" : "Service End Date";
-              const dateValue = currentIntervention[key as keyof typeof currentIntervention]
-                ? new Date(currentIntervention[key as keyof typeof currentIntervention])
-                : undefined;
-
-              return (
-                <div key={key} className="flex flex-col gap-2">
-                  <Label>{label}</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="justify-start text-left font-normal"
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {dateValue ? format(dateValue, "PPP") : <span>Pick a date</span>}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        className="text-blue-500"
-                        selected={dateValue}
-                        onSelect={(date) =>
-                          setCurrentIntervention(prev => ({
-                            ...prev,
-                            [key]: date ? format(date, "yyyy-MM-dd") : "",
-                          }))
-                        }
-                        captionLayout="dropdown"
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              );
-            })}
+            <DateFieldRenderer
+              label="Service Start Date"
+              date={intervention.serviceStart ? new Date(intervention.serviceStart) : undefined}
+              onDateChange={(date) =>
+                updateIntervention('serviceStart', date ? format(date, "yyyy-MM-dd") : "")
+              }
+            />
+            <DateFieldRenderer
+              label="Service End Date"
+              date={intervention.serviceEnd ? new Date(intervention.serviceEnd) : undefined}
+              onDateChange={(date) =>
+                updateIntervention('serviceEnd', date ? format(date, "yyyy-MM-dd") : "")
+              }
+            />
 
             <div className="flex items-end">
               <Button
@@ -538,11 +343,21 @@ export default function TestRunner({
                 <TableBody className="bg-white divide-y divide-gray-200">
                   {interventions.map((intervention) => (
                     <TableRow key={intervention.id}>
-                      <TableCell className="px-6 py-4 text-sm text-gray-500">{intervention.packageId}</TableCell>
-                      <TableCell className="px-6 py-4 text-sm text-gray-500">{intervention.code}</TableCell>
-                      <TableCell className="px-6 py-4 text-sm text-gray-500">{intervention.serviceQuantity}</TableCell>
-                      <TableCell className="px-6 py-4 text-sm text-gray-500">{intervention.unitPrice}</TableCell>
-                      <TableCell className="px-6 py-4 text-sm text-gray-500">{intervention.netValue}</TableCell>
+                      <TableCell className="px-6 py-4 text-sm text-gray-500">
+                        {intervention.packageId}
+                      </TableCell>
+                      <TableCell className="px-6 py-4 text-sm text-gray-500">
+                        {intervention.code}
+                      </TableCell>
+                      <TableCell className="px-6 py-4 text-sm text-gray-500">
+                        {intervention.serviceQuantity}
+                      </TableCell>
+                      <TableCell className="px-6 py-4 text-sm text-gray-500">
+                        {intervention.unitPrice}
+                      </TableCell>
+                      <TableCell className="px-6 py-4 text-sm text-gray-500">
+                        {intervention.netValue}
+                      </TableCell>
                       <TableCell className="px-6 py-4 text-sm text-gray-500">
                         {intervention.serviceStart} to {intervention.serviceEnd}
                       </TableCell>
@@ -579,15 +394,16 @@ export default function TestRunner({
           />
         </div>
 
+        {/* Total and Run Tests */}
         <div className="flex justify-between w-full">
           <div className="text-gray-500">
             <div className="flex items-center gap-2 mb-1">
               <Label className="py-3">Total</Label>
-              {isTotalManuallyChanged && (
+              {isManuallyChanged && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={handleResetTotal}
+                  onClick={resetTotal}
                   className="text-xs text-blue-500 hover:text-blue-700"
                 >
                   Reset to calculated
@@ -597,7 +413,7 @@ export default function TestRunner({
             <Input
               type="number"
               className="block w-full px-3 py-2 bg-green-100 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              value={totalValue.toFixed(2)}
+              value={total.toFixed(2)}
               onChange={handleTotalChange}
             />
           </div>

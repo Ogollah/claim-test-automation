@@ -1,94 +1,38 @@
-import { useEffect, useState, useCallback, useMemo } from "react"
-import {
-  StopIcon,
-  PlayIcon,
-  TrashIcon,
-} from "@heroicons/react/16/solid"
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "../ui/select"
-import { Label } from "../ui/label"
-import PatientDetailsPanel from "./PatientDetailsPanel"
-import ProviderDetailsPanel from "./ProviderDetailsPanel"
-import InterventionSelector from "./InterventionSelector"
-import PractitionerDetailsPanel from "./PractitionerDetailsPanel"
-import {
-  getInterventionByPackageId,
-  getPackages,
-  getPackagesByIsPreauth,
-} from "@/lib/api"
-import {
-  ComplexCase,
-  Intervention,
-  Package,
-  Patient,
-  Provider,
-  Practitioner,
-  TestCase
-} from "@/lib/types"
-import { Input } from "../ui/input"
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover"
-import { Button } from "../ui/button"
-import { Calendar } from "../ui/calendar"
-import { CalendarIcon, Plus } from "lucide-react"
-import { format } from "date-fns/format"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table"
-import { toast } from "sonner"
-import { cn, PER_DIEM_CODES } from "@/lib/utils"
-import { v4 as uuidv4 } from 'uuid'
+import { useState, useCallback, useMemo } from "react";
+import { StopIcon, PlayIcon, TrashIcon } from "@heroicons/react/16/solid";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../ui/select";
+import { Label } from "../ui/label";
+import { Input } from "../ui/input";
+import { Button } from "../ui/button";
+import { format } from "date-fns/format";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
+import { toast } from "sonner";
+import { Plus } from "lucide-react";
+import { v4 as uuidv4 } from 'uuid';
+
+import { usePackages } from '@/hook/usePackages';
+import { useInterventions } from '@/hook/useInterventions';
+import { useDateFields } from '@/hook/useDateFields';
+import { useCurrentIntervention } from '@/hook/useCurrentIntervention';
+import { useManualTotal } from '@/hook/useManualTotal';
+import { useFormValidation } from '@/hook/useFormValidation';
+import { useTestExecution } from '@/hook/useTestExecution';
+
+import PatientDetailsPanel from "./PatientDetailsPanel";
+import ProviderDetailsPanel from "./ProviderDetailsPanel";
+import InterventionSelector from "./InterventionSelector";
+import PractitionerDetailsPanel from "./PractitionerDetailsPanel";
+import { ComplexCase, Patient, Provider, Practitioner, TestCase } from "@/lib/types";
+import { cn } from "@/lib/utils";
+import { DateFieldRenderer } from "./DateFieldRenderer";
+import { StatusBadge } from './StatusBadge';
 
 type ComplexCaseBuilderProps = {
-  isRunning?: boolean
-  onRunTests?: (testConfig: TestCase) => void
+  isRunning?: boolean;
+  onRunTests?: (testConfig: TestCase) => void;
 }
 
-interface DateFields {
-  billableStart: Date | undefined
-  billableEnd: Date | undefined
-  created: Date
-}
-
-interface CurrentIntervention {
-  days: string
-  unitPrice: string
-  serviceStart: string
-  serviceEnd: string
-}
-
-const DATE_FIELD_LABELS: Record<keyof DateFields, string> = {
-  billableStart: "Billable Start Date",
-  billableEnd: "Billable End Date",
-  created: "Created Date"
-};
-
-const INTERVENTION_FIELDS = [
-  { label: "Days", key: "days", disabled: true },
-  { label: "Unit price", key: "unitPrice", disabled: false },
-  { label: "Net value", key: "netValue", disabled: true }
-];
-
-const getTableHeaders = (showApproved: boolean) => {
-  const baseHeaders = [
-    "Intervention",
-    "Test",
-    "Pre-auth amount",
-    "Status",
-    "Actions"
-  ];
-
-  if (showApproved) {
-    // Insert "Claimed amount" after "Pre-auth amount"
-    baseHeaders.splice(3, 0, "Claimed amount");
-  }
-
-  return baseHeaders;
-};
-
-export default function ComplexCaseBuilder({
+export default function OptimizedComplexCaseBuilder({
   isRunning = false,
   onRunTests,
 }: ComplexCaseBuilderProps) {
@@ -96,167 +40,57 @@ export default function ComplexCaseBuilder({
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null);
   const [selectedPractitioner, setSelectedPractitioner] = useState<Practitioner | null>(null);
-  const [selectedIntervention, setSelectedIntervention] = useState<string>("");
-  const [currentTestIndex, setCurrentTestIndex] = useState<number>(0);
-  const [packageIds, setPackageIds] = useState<string[]>([]);
-  const [showApproved, setShowApproved] = useState(false);
-
-  const today = useMemo(() => new Date(), []);
-  const twoDays = useMemo(() => {
-    const date = new Date(today);
-    date.setDate(today.getDate() - 2);
-    return date;
-  }, [today]);
-
-  const [selectedDates, setSelectedDates] = useState<DateFields>({
-    billableStart: twoDays,
-    billableEnd: today,
-    created: today,
-  });
-
-  const [packages, setPackages] = useState<Package[]>([]);
   const [complexCases, setComplexCases] = useState<ComplexCase[]>([]);
-  const [availableInterventions, setAvailableInterventions] = useState<Intervention[]>([]);
 
-  const [currentIntervention, setCurrentIntervention] = useState<CurrentIntervention>({
-    days: "1",
-    unitPrice: "10000",
-    serviceStart: format(twoDays, "yyyy-MM-dd"),
-    serviceEnd: format(today, "yyyy-MM-dd"),
+  const allowedCodes = ['SHA-03', 'SHA-08', 'SHA-05', 'SHA-13', 'SHA-19', 'SHA-06'];
+  const { packages, packageIds } = usePackages(allowedCodes);
+  const { interventions, selectedIntervention, setSelectedIntervention } = useInterventions(selectedPackage);
+  const { dates, updateDate, today, twoDaysAgo } = useDateFields();
+  const { intervention, updateIntervention, resetIntervention, isPerdiem, netValue } = useCurrentIntervention(
+    selectedIntervention, twoDaysAgo, today
+  );
+
+  const { total: totalAmount, isManuallyChanged: isTotalManuallyChanged, handleTotalChange, resetTotal } = useManualTotal(netValue);
+  const { total: approvedAmount, isManuallyChanged: isApprovedAmountManuallyChanged, handleTotalChange: handleApprovedAmountChange, resetTotal: resetApprovedAmount } = useManualTotal(netValue);
+
+  const { canAddIntervention, canRunTests } = useFormValidation({
+    selectedPackage,
+    selectedIntervention,
+    selectedPatient,
+    selectedProvider,
+    itemsCount: complexCases.length,
+    total: totalAmount
   });
 
-  const currentNetValue = useMemo(() =>
-    Number(currentIntervention.days) * Number(currentIntervention.unitPrice) || 0,
-    [currentIntervention.days, currentIntervention.unitPrice]
+  const showApproved = useMemo(() =>
+    !!(selectedPackage && packageIds.includes(selectedPackage)),
+    [selectedPackage, packageIds]
   );
 
-  const [approvedAmount, setApprovedAmount] = useState<number>(currentNetValue);
-  const [total, setTotal] = useState<number>(currentNetValue);
-  const [isTotalManuallyChanged, setIsTotalManuallyChanged] = useState(false);
-  const [isApprovedAmountManuallyChanged, setIsApprovedAmountManuallyChanged] = useState(false);
-
-  useEffect(() => {
-    if (!isApprovedAmountManuallyChanged) {
-      setApprovedAmount(currentNetValue);
-    }
-  }, [currentNetValue, isApprovedAmountManuallyChanged]);
-
-  useEffect(() => {
-    if (!isTotalManuallyChanged) {
-      setTotal(currentNetValue);
-    }
-  }, [currentNetValue, isTotalManuallyChanged]);
-
-  const handleResetTotal = useCallback(() => {
-    setTotal(currentNetValue);
-    setIsTotalManuallyChanged(false);
-  }, [currentNetValue]);
-
-  const handleResetApprovedAmount = useCallback(() => {
-    setApprovedAmount(currentNetValue);
-    setIsApprovedAmountManuallyChanged(false);
-  }, [currentNetValue]);
-
-  const canAddIntervention = useMemo(() =>
-    selectedPackage && selectedIntervention && selectedPatient && selectedProvider && total > 0,
-    [selectedPackage, selectedIntervention, selectedPatient, selectedProvider, total]
-  );
-
-  const canRunTests = useMemo(() =>
-    !isRunning && selectedPatient && selectedProvider && complexCases.length > 0,
-    [isRunning, selectedPatient, selectedProvider, complexCases.length]
-  );
-
-  useEffect(() => {
-    const fetchPackageIds = async () => {
-      try {
-        const pck = await getPackagesByIsPreauth(1);
-        const packageIds = Array.isArray(pck)
-          ? pck.map(pkg => pkg.id?.toString() ?? "").filter(Boolean)
-          : [];
-        setPackageIds(packageIds);
-      } catch (error) {
-        console.error("Error fetching packages:", error);
-        toast.error("Failed to load packages");
-      }
-    };
-    fetchPackageIds();
+  // Complex case management
+  const updateCaseStatus = useCallback((id: string, status: string) => {
+    setComplexCases(prev =>
+      prev.map(item =>
+        item.id === id ? { ...item, status } : item
+      )
+    );
   }, []);
 
-  useEffect(() => {
-    setShowApproved(!!(selectedPackage && packageIds.includes(selectedPackage)));
-  }, [packageIds, selectedPackage]);
-
-  const isPerdiem = useMemo(() =>
-    PER_DIEM_CODES.has(selectedIntervention),
-    [selectedIntervention]
-  );
-
-  useEffect(() => {
-    if (isPerdiem && currentIntervention.serviceStart && currentIntervention.serviceEnd) {
-      try {
-        const start = new Date(currentIntervention.serviceStart);
-        const end = new Date(currentIntervention.serviceEnd);
-
-        if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
-          const diffInMs = end.getTime() - start.getTime();
-          const diffInDays = Math.max(1, Math.ceil(diffInMs / (1000 * 60 * 60 * 24)));
-
-          setCurrentIntervention(prev => ({
-            ...prev,
-            days: String(diffInDays),
-          }));
-        }
-      } catch (error) {
-        console.error("Error calculating date difference:", error);
-      }
-    } else {
-      setCurrentIntervention(prev => ({
-        ...prev,
-        days: "1",
-      }));
-    }
-  }, [isPerdiem, currentIntervention.serviceStart, currentIntervention.serviceEnd]);
-
-  useEffect(() => {
-    const fetchPackages = async () => {
-      try {
-        const pck = await getPackages();
-        const allowedCodes = ['SHA-03', 'SHA-08', 'SHA-05', 'SHA-13', 'SHA-19', 'SHA-06'];
-        const filteredPackages = pck?.filter(p => allowedCodes.includes(p.code)) || [];
-        setPackages(filteredPackages);
-      } catch (error) {
-        console.error("Error fetching packages:", error);
-      }
-    };
-    fetchPackages();
+  const removeCase = useCallback((id: string) => {
+    setComplexCases(prev => prev.filter(item => item.id !== id));
   }, []);
 
-  useEffect(() => {
-    if (!selectedPackage) {
-      setAvailableInterventions([]);
-      return;
+  const buildTestPayload = useCallback((complexCase: ComplexCase) => ({
+    formData: {
+      ...complexCase.formData
     }
+  }), []);
 
-    const fetchInterventions = async () => {
-      try {
-        const interventions = await getInterventionByPackageId(Number(selectedPackage));
-        const interventionsArray = Array.isArray(interventions)
-          ? interventions
-          : interventions
-            ? [interventions]
-            : [];
-        setAvailableInterventions(interventionsArray);
-        if (interventionsArray.length > 0) {
-          setSelectedIntervention(interventionsArray[0].code);
-        }
-      } catch (error) {
-        console.error("Error fetching interventions:", error);
-        toast.error("Failed to load interventions");
-      }
-    };
-    fetchInterventions();
-  }, [selectedPackage]);
+  const { currentTestIndex, runAllTests, runSingleTest } = useTestExecution(
+    complexCases,
+    updateCaseStatus,
+    onRunTests
+  );
 
   const addIntervention = useCallback(() => {
     if (!canAddIntervention || !selectedPatient || !selectedProvider) {
@@ -264,13 +98,12 @@ export default function ComplexCaseBuilder({
       return;
     }
 
-    const interventionName = availableInterventions.find(
+    const interventionName = interventions.find(
       i => i.code === selectedIntervention
     )?.name || "";
 
     const formDataId = `complex-case-${uuidv4()}`;
 
-    // Only include approvedAmount in the payload if showApproved is true
     const formData: any = {
       title: `Test for ${selectedIntervention}`,
       test: "complex",
@@ -284,210 +117,73 @@ export default function ComplexCaseBuilder({
         display: interventionName,
         quantity: { value: '1' },
         unitPrice: {
-          value: isPerdiem ? Number(currentIntervention.unitPrice) * Number(currentIntervention.days) : Number(currentIntervention.unitPrice),
+          value: isPerdiem
+            ? Number(intervention.unitPrice) * Number(intervention.days)
+            : Number(intervention.unitPrice),
           currency: "KES",
         },
         net: {
-          value: currentNetValue,
+          value: netValue,
           currency: "KES",
         },
         servicePeriod: {
-          start: currentIntervention.serviceStart,
-          end: currentIntervention.serviceEnd,
+          start: intervention.serviceStart,
+          end: intervention.serviceEnd,
         },
         sequence: 1,
       }],
       billablePeriod: {
-        billableStart: selectedDates.billableStart ? format(selectedDates.billableStart, "yyyy-MM-dd") : "",
-        billableEnd: selectedDates.billableEnd ? format(selectedDates.billableEnd, "yyyy-MM-dd") : "",
-        created: format(selectedDates.created, "yyyy-MM-dd"),
+        billableStart: dates.billableStart ? format(dates.billableStart, "yyyy-MM-dd") : "",
+        billableEnd: dates.billableEnd ? format(dates.billableEnd, "yyyy-MM-dd") : "",
+        created: format(dates.created, "yyyy-MM-dd"),
       },
-      total: { value: total, currency: "KES" },
+      total: { value: totalAmount, currency: "KES" },
     };
 
-    // Conditionally add approvedAmount
     if (showApproved) {
       formData.approvedAmount = approvedAmount;
     }
 
-    const newIntervention: ComplexCase = {
+    const newCase: ComplexCase = {
       id: formDataId,
       formData,
-      netValue: currentNetValue,
+      netValue,
       status: "pending"
     };
 
-    setComplexCases(prev => [...prev, newIntervention]);
-
-    // Reset current intervention but keep service dates for continuity
-    setCurrentIntervention(prev => ({
-      days: prev.days,
-      unitPrice: "10000",
-      serviceStart: prev.serviceStart,
-      serviceEnd: prev.serviceEnd,
-    }));
+    setComplexCases(prev => [...prev, newCase]);
+    resetIntervention();
   }, [
-    canAddIntervention, availableInterventions, selectedIntervention,
-    selectedPatient, selectedProvider, selectedPractitioner, showApproved,
-    approvedAmount, isPerdiem, currentIntervention, currentNetValue,
-    selectedDates, total
+    canAddIntervention, interventions, selectedIntervention, selectedPatient,
+    selectedProvider, selectedPractitioner, showApproved, approvedAmount,
+    isPerdiem, intervention, netValue, dates, totalAmount, resetIntervention
   ]);
 
-  const removeIntervention = useCallback((id: string) => {
-    setComplexCases(prev => prev.filter(item => item.id !== id));
-  }, []);
-
-  const updateCaseStatus = useCallback((id: string, status: string) => {
-    setComplexCases(prev =>
-      prev.map(item =>
-        item.id === id ? { ...item, status } : item
-      )
-    );
-  }, []);
-
-  const handleRunTests = useCallback(async () => {
-    if (!canRunTests || !onRunTests) {
+  const handleRunTests = useCallback(() => {
+    if (!canRunTests) {
       toast.error("Please select all required fields and add at least one intervention");
       return;
     }
+    runAllTests(buildTestPayload);
+  }, [canRunTests, runAllTests, buildTestPayload]);
 
-    setComplexCases(prev =>
-      prev.map(item => ({ ...item, status: "pending" }))
-    );
+  const handleRunSingleTest = useCallback((caseId: string) => {
+    runSingleTest(caseId, buildTestPayload);
+  }, [runSingleTest, buildTestPayload]);
 
-    setCurrentTestIndex(0);
-
-    for (let i = 0; i < complexCases.length; i++) {
-      setCurrentTestIndex(i);
-      updateCaseStatus(complexCases[i].id, "running");
-
-      try {
-        const testPayload: TestCase = {
-          formData: {
-            ...complexCases[i].formData
-          }
-        };
-
-        console.log(`Running test ${i + 1}/${complexCases.length}`, testPayload);
-        await onRunTests(testPayload);
-        updateCaseStatus(complexCases[i].id, "completed");
-
-        await new Promise(resolve => setTimeout(resolve, 500));
-      } catch (error) {
-        console.error(`Error running test ${i + 1}:`, error);
-        updateCaseStatus(complexCases[i].id, "failed");
-      }
+  const tableHeaders = useMemo(() => {
+    const baseHeaders = ["Intervention", "Test", "Pre-auth amount", "Status", "Actions"];
+    if (showApproved) {
+      baseHeaders.splice(3, 0, "Claimed amount");
     }
+    return baseHeaders;
+  }, [showApproved]);
 
-    setCurrentTestIndex(-1);
-    toast.success("All tests completed");
-  }, [canRunTests, complexCases, onRunTests, updateCaseStatus]);
-
-  const handleRunSingleTest = useCallback(async (caseId: string) => {
-    const testCase = complexCases.find(c => c.id === caseId);
-    if (!testCase || !onRunTests) return;
-
-    updateCaseStatus(caseId, "running");
-
-    try {
-      const testPayload: TestCase = {
-        formData: {
-          ...testCase.formData
-        }
-      };
-
-      console.log("Running single test", testPayload);
-      await onRunTests(testPayload);
-      updateCaseStatus(caseId, "completed");
-      toast.success("Test completed successfully");
-    } catch (error) {
-      console.error("Error running test:", error);
-      updateCaseStatus(caseId, "failed");
-      toast.error("Test failed");
-    }
-  }, [complexCases, onRunTests, updateCaseStatus]);
-
-  const handleApprovedAmountChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseFloat(e.target.value);
-    setApprovedAmount(isNaN(value) ? 0 : value);
-    setIsApprovedAmountManuallyChanged(true);
-  }, []);
-
-  const handleTotalChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = parseFloat(e.target.value);
-    setTotal(newValue);
-    setIsTotalManuallyChanged(true);
-  }, []);
-
-  const renderDateField = (key: keyof DateFields, isCreated = false) => (
-    <div key={key} className="flex flex-col gap-3">
-      <Label htmlFor={key}>{DATE_FIELD_LABELS[key]}</Label>
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            className="justify-start text-left font-normal"
-            disabled={isCreated}
-          >
-            <CalendarIcon className="mr-2 h-4 w-4" />
-            {selectedDates[key] ? format(selectedDates[key] as Date, "PPP") : "Pick a date"}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto overflow-hidden p-0 z-50">
-          <Calendar
-            className="text-blue-500"
-            mode="single"
-            selected={selectedDates[key] as Date}
-            onSelect={(date) => {
-              setSelectedDates(prev => ({
-                ...prev,
-                [key]: date || undefined,
-              }));
-            }}
-            captionLayout="dropdown"
-          />
-        </PopoverContent>
-      </Popover>
-    </div>
-  );
-
-  const renderInterventionField = ({ label, key, disabled }: typeof INTERVENTION_FIELDS[0]) => (
-    <div key={key}>
-      <Label className="py-3">{label}</Label>
-      <Input
-        type="number"
-        className={cn(
-          "block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
-          disabled && "bg-gray-100"
-        )}
-        value={key === "netValue" ? currentNetValue : currentIntervention[key as keyof CurrentIntervention]}
-        disabled={disabled}
-        onChange={(e) => {
-          if (!disabled) {
-            setCurrentIntervention(prev => ({
-              ...prev,
-              [key]: e.target.value,
-            }));
-          }
-        }}
-      />
-    </div>
-  );
-
-  const getStatusBadge = (status: string | undefined) => {
-    switch (status) {
-      case "running":
-        return <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">Running</span>;
-      case "completed":
-        return <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Completed</span>;
-      case "failed":
-        return <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">Failed</span>;
-      default:
-        return <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">Pending</span>;
-    }
-  };
-
-  const tableHeaders = useMemo(() => getTableHeaders(showApproved), [showApproved]);
+  const INTERVENTION_FIELDS = [
+    { label: "Days", key: "days", disabled: true },
+    { label: "Unit price", key: "unitPrice", disabled: false },
+    { label: "Net value", key: "netValue", disabled: true }
+  ];
 
   return (
     <div className="mx-auto px-4 py-8 text-gray-500">
@@ -496,8 +192,8 @@ export default function ComplexCaseBuilder({
       <div className="bg-white rounded-lg shadow-md p-6 mb-8">
         <h2 className="text-xl font-semibold mb-4">Test Configuration</h2>
 
+        {/* Package and Intervention Selection */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          {/* Package Selector */}
           <div className="space-y-2">
             <Label htmlFor="package">Package</Label>
             <Select value={selectedPackage} onValueChange={setSelectedPackage}>
@@ -516,12 +212,13 @@ export default function ComplexCaseBuilder({
 
           <InterventionSelector
             packageId={selectedPackage}
-            interventions={availableInterventions}
+            interventions={interventions}
             selectedIntervention={selectedIntervention}
             onSelectIntervention={setSelectedIntervention}
           />
         </div>
 
+        {/* Patient, Provider, Practitioner */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <PatientDetailsPanel
             patient={selectedPatient}
@@ -537,53 +234,69 @@ export default function ComplexCaseBuilder({
           />
         </div>
 
+        {/* Date Fields */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          {Object.keys(selectedDates).map((key) =>
-            renderDateField(key as keyof DateFields, key === "created")
-          )}
+          <DateFieldRenderer
+            label="Billable Start Date"
+            date={dates.billableStart}
+            onDateChange={(date) => updateDate('billableStart', date)}
+          />
+          <DateFieldRenderer
+            label="Billable End Date"
+            date={dates.billableEnd}
+            onDateChange={(date) => updateDate('billableEnd', date)}
+          />
+          <DateFieldRenderer
+            label="Created Date"
+            date={dates.created}
+            onDateChange={(date) => updateDate('created', date)}
+            disabled={true}
+          />
         </div>
 
+        {/* Intervention Details */}
         <div className="border-t border-gray-200 pt-4 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            {INTERVENTION_FIELDS.map(renderInterventionField)}
+            {INTERVENTION_FIELDS.map(({ label, key, disabled }) => (
+              <div key={key}>
+                <Label className="py-3">{label}</Label>
+                <Input
+                  type="number"
+                  className={cn(
+                    "block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
+                    disabled && "bg-gray-100"
+                  )}
+                  value={key === "netValue" ? netValue : intervention[key as keyof typeof intervention]}
+                  disabled={disabled}
+                  onChange={(e) => {
+                    if (!disabled) {
+                      updateIntervention(key as keyof typeof intervention, e.target.value);
+                    }
+                  }}
+                />
+              </div>
+            ))}
           </div>
 
+          {/* Service Dates */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            {["serviceStart", "serviceEnd"].map((key) => {
-              const label = key === "serviceStart" ? "Service Start Date" : "Service End Date";
-              const dateValue = currentIntervention[key as keyof CurrentIntervention]
-                ? new Date(currentIntervention[key as keyof CurrentIntervention])
-                : undefined;
-
-              return (
-                <div key={key} className="flex flex-col gap-2">
-                  <Label>{label}</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className="justify-start text-left font-normal">
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {dateValue ? format(dateValue, "PPP") : "Pick a date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        className="text-blue-500"
-                        selected={dateValue}
-                        onSelect={(date) => setCurrentIntervention(prev => ({
-                          ...prev,
-                          [key]: date ? format(date, "yyyy-MM-dd") : "",
-                        }))}
-                        captionLayout="dropdown"
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              );
-            })}
+            <DateFieldRenderer
+              label="Service Start Date"
+              date={intervention.serviceStart ? new Date(intervention.serviceStart) : undefined}
+              onDateChange={(date) =>
+                updateIntervention('serviceStart', date ? format(date, "yyyy-MM-dd") : "")
+              }
+            />
+            <DateFieldRenderer
+              label="Service End Date"
+              date={intervention.serviceEnd ? new Date(intervention.serviceEnd) : undefined}
+              onDateChange={(date) =>
+                updateIntervention('serviceEnd', date ? format(date, "yyyy-MM-dd") : "")
+              }
+            />
           </div>
 
+          {/* Total and Approved Amount */}
           <div className="border-t border-gray-200 pt-4 mb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
@@ -593,7 +306,7 @@ export default function ComplexCaseBuilder({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={handleResetTotal}
+                      onClick={resetTotal}
                       className="text-xs text-blue-500 hover:text-blue-700"
                     >
                       Reset to calculated
@@ -603,7 +316,7 @@ export default function ComplexCaseBuilder({
                 <Input
                   type="number"
                   className="block w-full px-3 py-2 bg-green-100 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  value={total.toFixed(2)}
+                  value={totalAmount.toFixed(2)}
                   onChange={handleTotalChange}
                 />
               </div>
@@ -615,7 +328,7 @@ export default function ComplexCaseBuilder({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={handleResetApprovedAmount}
+                        onClick={resetApprovedAmount}
                         className="text-xs text-blue-500 hover:text-blue-700"
                       >
                         Reset to calculated
@@ -634,6 +347,7 @@ export default function ComplexCaseBuilder({
           </div>
         </div>
 
+        {/* Add Intervention Button */}
         <div className="flex items-end py-4">
           <Button
             onClick={addIntervention}
@@ -645,6 +359,7 @@ export default function ComplexCaseBuilder({
           </Button>
         </div>
 
+        {/* Complex Cases Table */}
         {complexCases.length > 0 && (
           <div className="mb-6 py-4 border-t pt-4">
             <h3 className="text-lg font-bold mb-2 text-green-500">Added cases ({complexCases.length})</h3>
@@ -663,32 +378,36 @@ export default function ComplexCaseBuilder({
                   </TableRow>
                 </TableHeader>
                 <TableBody className="bg-white divide-y divide-gray-200">
-                  {complexCases.map((intervention, index) => (
-                    <TableRow key={intervention.id} className={currentTestIndex === index ? "bg-blue-50" : ""}>
-                      <TableCell className="px-6 py-4 text-sm">{intervention.formData.productOrService[0]?.code}</TableCell>
-                      <TableCell className="px-6 py-4 text-sm">{intervention.formData.title}</TableCell>
-                      <TableCell className="px-6 py-4 text-sm">{intervention.formData.total.value.toFixed(2)}</TableCell>
+                  {complexCases.map((complexCase, index) => (
+                    <TableRow key={complexCase.id} className={currentTestIndex === index ? "bg-blue-50" : ""}>
+                      <TableCell className="px-6 py-4 text-sm">
+                        {complexCase.formData.productOrService[0]?.code}
+                      </TableCell>
+                      <TableCell className="px-6 py-4 text-sm">{complexCase.formData.title}</TableCell>
+                      <TableCell className="px-6 py-4 text-sm">
+                        {complexCase.formData.total.value.toFixed(2)}
+                      </TableCell>
                       {showApproved && (
                         <TableCell className="px-6 py-4 text-sm">
-                          {intervention.formData.approvedAmount?.toFixed(2)}
+                          {complexCase.formData.approvedAmount?.toFixed(2)}
                         </TableCell>
                       )}
                       <TableCell className="px-6 py-4 text-sm">
-                        {getStatusBadge(intervention.status)}
+                        <StatusBadge status={complexCase.status} />
                       </TableCell>
                       <TableCell className="px-6 py-4 text-sm">
                         <div className="flex space-x-2">
                           <Button
                             variant="ghost"
-                            onClick={() => handleRunSingleTest(intervention.id)}
-                            disabled={intervention.status === "running"}
+                            onClick={() => handleRunSingleTest(complexCase.id)}
+                            disabled={complexCase.status === "running"}
                             className="text-blue-500 hover:text-blue-900"
                           >
                             <PlayIcon className="h-5 w-5" />
                           </Button>
                           <Button
                             variant="ghost"
-                            onClick={() => removeIntervention(intervention.id)}
+                            onClick={() => removeCase(complexCase.id)}
                             className="text-red-500 hover:text-red-900"
                           >
                             <TrashIcon className="h-5 w-5" />
@@ -703,6 +422,7 @@ export default function ComplexCaseBuilder({
           </div>
         )}
 
+        {/* Run Tests Button */}
         <div className="flex justify-between w-full pt-4">
           <Button
             onClick={handleRunTests}
