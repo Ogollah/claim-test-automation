@@ -105,6 +105,12 @@ export default function ProviderDetailsPanel({
     )
     : providers;
 
+  useEffect(() => {
+    if (!provider && providers.length > 1) {
+      onSelectProvider(providers[1]);
+    }
+  }, [providers, provider, onSelectProvider]);
+
   return (
     <div className="border border-gray-200 rounded-lg p-4 w-full">
       <h3 className="text-lg font-medium text-gray-500 mb2">Provider Details</h3>

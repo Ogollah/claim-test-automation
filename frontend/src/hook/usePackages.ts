@@ -29,6 +29,7 @@ export function usePackages(filterCodes?: string[]) {
                     ? preauthPackages.map(pkg => pkg.id?.toString() ?? "").filter(Boolean)
                     : [];
                 setPackageIds(ids);
+
             } catch (error) {
                 console.error("Error fetching packages:", error);
                 toast.error("Failed to load packages");

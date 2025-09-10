@@ -191,6 +191,7 @@ const handleTestError = (error: any, testData: TestCase, testCase?: TestCaseItem
 
 
   const isNegativeTest = testData?.formData?.test === "negative";
+  const isBundleOnly = testData?.formData?.is_bundle_only === true;
   const testCaseId = testCase?.find(i => i.name === testData?.formData?.title)?.id;
 
   const errorResult: TestResult = {
@@ -198,7 +199,7 @@ const handleTestError = (error: any, testData: TestCase, testCase?: TestCaseItem
     req: error,
     test: testData?.formData?.test,
     name: testData?.formData?.title || 'Claim Submission',
-    status: isNegativeTest ? 'passed' : 'failed',
+    status: isNegativeTest ? 'passed' : isBundleOnly ? 'ready' : 'failed',
     use: testData?.formData?.use,
     duration: duration || 0,
     timestamp: new Date().toISOString(),

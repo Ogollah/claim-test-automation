@@ -168,6 +168,7 @@ interface Total {
 interface FormData {
   test: string;
   title: string;
+  is_bundle_only?: boolean;
   patient: FormatPatient;
   provider: Provider;
   practitioner: Practitioner;
@@ -322,7 +323,7 @@ export interface TestResult {
   test: string;
   name: string;
   use?: string;
-  status: 'passed' | 'failed' | 'running';
+  status: 'passed' | 'failed' | 'running' | 'pending' | 'bundle' | 'ready';
   duration?: number;
   timestamp: string;
   message?: string;

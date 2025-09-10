@@ -70,6 +70,7 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
     if (status === 'passed') return 'bg-green-100 text-green-800';
     if (status === 'failed' && outcome === 'Pending') return 'bg-yellow-100 text-yellow-800';
     if (status === 'failed') return 'bg-red-100 text-red-800';
+    if (status === 'ready') return 'bg-blue-100 text-blue-800';
     return 'bg-gray-100 text-gray-800';
   };
 
@@ -121,12 +122,17 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                           onClick={() => handleRefresh(result.id, result.claimId ?? '', result.test)}
                           size="sm"
                           disabled={refreshingIds[result.id]}
-                          className="h-4 w-4 p-0 mr-1"
+                          className="h-4 w-4 mr-1"
                         >
                           <RefreshCcwIcon className={`h-4 w-4 ${refreshingIds[result.id] ? 'text-orange-500 animate-spin' : 'text-orange-400'}`} />
                         </Button>
                       ) : (
-                        <Minus className="h-4 w-4 mr-1" />
+                        <Button
+                          onClick={() => copyPayload(result.details.fhirBundle)}
+                          className="h-4 w-4 mr-1 bg-blue-100 text-blue-800 hover:text-blue-500 hover:bg-blue-100 text-sm"
+                        >
+                          <ClipboardIcon className="h-4 w-4 mr-1" />
+                        </Button>
                       )}
                       {result.outcome !== 'Pending' ? (
                         result.status.toUpperCase()
@@ -165,44 +171,46 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                 <TableRow>
                   <TableCell colSpan={6} className="px-6 py-4 bg-gray-50">
                     <div className="space-y-4">
-                      <div className="border rounded-lg overflow-hidden">
-                        <div className="flex justify-between items-center bg-gray-100 p-3">
-                          <div className="flex items-center">
-                            <Button
-                              onClick={() => togglePayload(result.id, 'request')}
-                              className="flex items-center bg-gray-100 text-gray-700 hover:text-gray-500 hover:bg-100"
-                            >
-                              {expandedPayloads[result.id]?.request ? (
-                                <ChevronDownIcon className="h-5 w-5 mr-2" />
-                              ) : (
-                                <ChevronRightIcon className="h-5 w-5 mr-2" />
-                              )}
-                              <span className="font-medium">Request Payload</span>
-                            </Button>
+                      {result.details.request.formData.is_bundle_only === false && (
+                        <div className="border rounded-lg overflow-hidden">
+                          <div className="flex justify-between items-center bg-gray-100 p-3">
+                            <div className="flex items-center">
+                              <Button
+                                onClick={() => togglePayload(result.id, 'request')}
+                                className="flex items-center bg-gray-100 text-gray-700 hover:text-gray-500 hover:bg-100"
+                              >
+                                {expandedPayloads[result.id]?.request ? (
+                                  <ChevronDownIcon className="h-5 w-5 mr-2" />
+                                ) : (
+                                  <ChevronRightIcon className="h-5 w-5 mr-2" />
+                                )}
+                                <span className="font-medium">Request Payload</span>
+                              </Button>
+                            </div>
+                            <div className="flex space-x-2">
+                              <Button
+                                onClick={() => downloadPayload(result.details.request, `${result.id}-request.json`)}
+                                className="flex items-center bg-gray-50 text-blue-600 hover:bg-gray-200 hover:text-blue-800 text-sm"
+                              >
+                                <ArrowDownTrayIcon className="h-4 w-4 mr-1" />
+                                Download
+                              </Button>
+                              <Button
+                                onClick={() => copyPayload(result.details.request)}
+                                className="flex items-center bg-gray-100 text-gray-500 hover:text-gray-500 hover:bg-100 hover:text-gray-900 text-sm"
+                              >
+                                <ClipboardIcon className="h-4 w-4 mr-1" />
+                                Copy
+                              </Button>
+                            </div>
                           </div>
-                          <div className="flex space-x-2">
-                            <Button
-                              onClick={() => downloadPayload(result.details.request, `${result.id}-request.json`)}
-                              className="flex items-center bg-gray-50 text-blue-600 hover:bg-gray-200 hover:text-blue-800 text-sm"
-                            >
-                              <ArrowDownTrayIcon className="h-4 w-4 mr-1" />
-                              Download
-                            </Button>
-                            <Button
-                              onClick={() => copyPayload(result.details.request)}
-                              className="flex items-center bg-gray-100 text-gray-500 hover:text-gray-500 hover:bg-100 hover:text-gray-900 text-sm"
-                            >
-                              <ClipboardIcon className="h-4 w-4 mr-1" />
-                              Copy
-                            </Button>
-                          </div>
+                          {expandedPayloads[result.id]?.request && (
+                            <pre className="mt-1 bg-white text-xs whitespace-pre-wrap break-words overflow-hidden">
+                              {JSON.stringify(result.details.request, null, 2)}
+                            </pre>
+                          )}
                         </div>
-                        {expandedPayloads[result.id]?.request && (
-                          <pre className="mt-1 bg-white text-xs whitespace-pre-wrap break-words overflow-hidden">
-                            {JSON.stringify(result.details.request, null, 2)}
-                          </pre>
-                        )}
-                      </div>
+                      )}
 
                       {result.details.response && (
                         <>
@@ -218,7 +226,12 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                                   ) : (
                                     <ChevronRightIcon className="h-5 w-5 mr-2" />
                                   )}
-                                  <span className="font-medium">Submited payload</span>
+                                  <span className="font-medium">
+                                    {result.details.request.formData.is_bundle_only
+                                      ? "Built bundle"
+                                      : "Submitted payload"}
+                                  </span>
+
                                 </Button>
                               </div>
                               <div className="flex space-x-2">
@@ -244,30 +257,31 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                               </pre>
                             )}
                           </div>
-
-                          <div className="bg-gray-100 p-3 rounded-lg">
-                            <div className='flex  item-center justify-between p-3'>
-                              <h4 className="text-sm font-medium text-gray-500 mb-2">Response Summary</h4>
-                              {result?.claimId && (
-                                <Button
-                                  onClick={() => handleRefresh(result.id, result.claimId ?? '', result.test)}
-                                  className={`bg-gray-100 hover:bg-gree-200 ${refreshingIds[result.id] ? 'text-orange-500' : 'text-green-500'} hover:text-green-600`}
-                                  size="sm"
-                                  disabled={refreshingIds[result.id]}
-                                >
-                                  <RefreshCcwIcon className={`h-4 w-4 mr-1 ${refreshingIds[result.id] ? 'text-orange-500 animate-spin' : 'text-green-600'}`} />
-                                  {refreshingIds[result.id] ? 'Refreshing...' : 'Refresh'}
-                                </Button>
-                              )}
+                          {result.details.request.formData.is_bundle_only === false && (
+                            <div className="bg-gray-100 p-3 rounded-lg">
+                              <div className='flex  item-center justify-between p-3'>
+                                <h4 className="text-sm font-medium text-gray-500 mb-2">Response Summary</h4>
+                                {result?.claimId && (
+                                  <Button
+                                    onClick={() => handleRefresh(result.id, result.claimId ?? '', result.test)}
+                                    className={`bg-gray-100 hover:bg-gree-200 ${refreshingIds[result.id] ? 'text-orange-500' : 'text-green-500'} hover:text-green-600`}
+                                    size="sm"
+                                    disabled={refreshingIds[result.id]}
+                                  >
+                                    <RefreshCcwIcon className={`h-4 w-4 mr-1 ${refreshingIds[result.id] ? 'text-orange-500 animate-spin' : 'text-green-600'}`} />
+                                    {refreshingIds[result.id] ? 'Refreshing...' : 'Refresh'}
+                                  </Button>
+                                )}
+                              </div>
+                              <div className={`${result.status === 'passed' ? 'bg-white p-3 text-green-500' : 'bg-red-50 text-red-500'} p-3 rounded text-xs`}>
+                                <div className="mb-1 p-2"><span className="font-medium">Message:</span> {result?.message}</div>
+                                {result?.claimId && (
+                                  <div className="mb-1 p-2"><span className="font-medium">Claim ID:</span> {result?.claimId}</div>
+                                )}
+                                <div className='p-2'><span className="font-medium">Outcome:</span> {result.outcome}</div>
+                              </div>
                             </div>
-                            <div className={`${result.status === 'passed' ? 'bg-white p-3 text-green-500' : 'bg-red-50 text-red-500'} p-3 rounded text-xs`}>
-                              <div className="mb-1 p-2"><span className="font-medium">Message:</span> {result?.message}</div>
-                              {result?.claimId && (
-                                <div className="mb-1 p-2"><span className="font-medium">Claim ID:</span> {result?.claimId}</div>
-                              )}
-                              <div className='p-2'><span className="font-medium">Outcome:</span> {result.outcome}</div>
-                            </div>
-                          </div>
+                          )}
                         </>
                       )}
 
