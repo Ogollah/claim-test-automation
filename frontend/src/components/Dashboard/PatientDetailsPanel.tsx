@@ -103,6 +103,12 @@ export default function PatientDetailsPanel({
     )
     : patients;
 
+  useEffect(() => {
+    if (!patient && patients.length > 1) {
+      onSelectPatient(patients[1]);
+    }
+  }, [patients, patient, onSelectPatient]);
+
   return (
     <div className="border border-gray-200 rounded-lg p-4">
       <h3 className="text-lg font-medium text-gray-500 mb-2">Patient Details</h3>

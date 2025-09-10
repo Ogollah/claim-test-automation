@@ -23,6 +23,7 @@ import PractitionerDetailsPanel from "./PractitionerDetailsPanel";
 import CustomSelector from "./UseSelector";
 import { InterventionItem, Provider, Practitioner } from "@/lib/types";
 import { DateFieldRenderer } from "./DateFieldRenderer";
+import { Switch } from "../ui/switch";
 
 type TestRunnerProps = {
   isRunning?: boolean;
@@ -39,6 +40,8 @@ export default function OptimizedTestRunner({
   const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null);
   const [selectedPractitioner, setSelectedPractitioner] = useState<Practitioner | null>(null);
   const [selectedClaimSubType, setClaimSubType] = useState<string>("ip");
+  const [isDev, setIsDev] = useState<boolean>();
+  const [isBundleOnly, setIsBundleOnly] = useState<boolean>();
   const [relatedClaimId, setRelatedClaimId] = useState("");
   const [interventions, setInterventions] = useState<InterventionItem[]>([]);
 
@@ -66,7 +69,7 @@ export default function OptimizedTestRunner({
   });
 
   useState(() => {
-    if (packages.length > 0 && !selectedPackage) {
+    if (packages.length > 0) {
       setSelectedPackage(String(packages[0].id));
     }
   });
@@ -109,6 +112,8 @@ export default function OptimizedTestRunner({
     formData: {
       title: `Test for ${selectedIntervention}`,
       test: "build",
+      is_bundle_only: isBundleOnly,
+      is_dev: isDev,
       patient: selectedPatient,
       provider: selectedProvider,
       use: selectedUse,
@@ -145,7 +150,7 @@ export default function OptimizedTestRunner({
   }), [
     selectedIntervention, selectedPatient, selectedProvider, selectedUse,
     selectedClaimSubType, selectedPractitioner, relatedClaimId, interventions,
-    isPerdiem, dates, total
+    isPerdiem, dates, total, isBundleOnly, isDev
   ]);
 
   const handleRunTests = useCallback(() => {
@@ -169,6 +174,9 @@ export default function OptimizedTestRunner({
     { label: "Net value", key: "netValue", disabled: true }
   ];
 
+  console.log('selected is_bundle:', isBundleOnly);
+
+
   return (
     <div className="mx-auto py-4 text-gray-500">
       <h1 className="text-2xl font-bold text-gray-500 mb-6">
@@ -176,9 +184,34 @@ export default function OptimizedTestRunner({
       </h1>
 
       <div className="bg-white rounded-sm shadow-md p-6 mb-8">
-        <h2 className="text-xl font-semibold text-gray-500 mb-4">
-          Test Configuration
-        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div className="flex items-center space-x-2">
+            <Switch
+              className="bg-red-700"
+              id="isBundleOnly"
+              checked={isBundleOnly}
+              onCheckedChange={(checked: boolean) => {
+                setIsBundleOnly(checked);
+                if (!isBundleOnly) {
+                  setIsDev(false);
+                }
+              }}
+            />
+            <Label htmlFor="isBundleOnly">Build bundle only</Label>
+          </div>
+          {isBundleOnly && (
+            <CustomSelector
+              options={[
+                { id: "true", label: "Dev" },
+                { id: "false", label: "QA" }
+              ]}
+              value={String(isDev)}
+              onChange={(val) => setIsDev(val === "true")}
+              label="Select environment"
+              placeholder="Choose environment"
+            />
+          )}
+        </div>
 
         {/* Use and Claim Type Selection */}
         <div className="grid grid-cols-2 gap-6 mb-6">
@@ -428,12 +461,13 @@ export default function OptimizedTestRunner({
             {isRunning ? (
               <>
                 <StopIcon className="-ml-1 mr-2 h-5 w-5" />
-                Running Tests...
+                {isBundleOnly ? 'Generating bundle ...' : 'Running Tests...'}
+
               </>
             ) : (
               <>
                 <PlayIcon className="-ml-1 mr-2 h-5 w-5" />
-                Run Tests
+                {isBundleOnly ? 'Generate bundle' : 'Run Test'}
               </>
             )}
           </Button>

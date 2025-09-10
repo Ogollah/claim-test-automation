@@ -90,6 +90,11 @@ export default function PractitionerDetailsPanel({ practitioner, onSelectPractit
     )
     : practitioners;
 
+  useEffect(() => {
+    if (!practitioner && practitioners.length > 1) {
+      onSelectPractitioner(practitioners[1]);
+    }
+  }, [practitioners, practitioner, onSelectPractitioner]);
 
   return (
     <div className="border border-gray-200 rounded-lg p-4 text-gray-500">
