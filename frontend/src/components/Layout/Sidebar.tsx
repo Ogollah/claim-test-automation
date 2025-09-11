@@ -5,7 +5,7 @@ import {
   Wrench,
   ChevronLeft,
   ChevronRight,
-  Beaker,
+  CheckCircle,
   CircuitBoard,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -41,7 +41,7 @@ const navItems = [
   {
     name: 'Sanity check',
     href: '/sanity-checks',
-    icon: Beaker
+    icon: CheckCircle
   }
 ];
 

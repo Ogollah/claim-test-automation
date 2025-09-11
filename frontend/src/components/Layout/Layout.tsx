@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import Header from './Header';
 import Sidebar from './Sidebar';
+import Footer from './Footer';
 
 interface LayoutProps {
   children: ReactNode;
@@ -8,15 +9,18 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center p-3 gap-7">
-      <Header/>
-      <div className="flex flex-1 overflow-hidden">
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <div className="flex flex-1">
         <Sidebar />
-        <main className="flex-1 overflow-y-auto focus:outline-none bg-gray-100">
-          <div className="px-8">
+        <main className="flex-1 p-6 pb-24 bg-gray-100 overflow-auto">
+          <div className="px-4 sm:px-6 lg:px-8">
             {children}
           </div>
         </main>
+      </div>
+      <div className="bottom-0 w-full">
+        <Footer />
       </div>
     </div>
   );
