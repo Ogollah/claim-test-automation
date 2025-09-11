@@ -1,6 +1,6 @@
 import { getClaimOutcome, shouldTestPass } from '@/utils/claimUtils';
 import { TestResult, TestCaseItem, Result, TestCase } from '@/lib/types';
-import { api, API_BASE_URL } from '@/lib/utils';
+import { api, API_BASE_URL, CLAIM_STATUS } from '@/lib/utils';
 import { createResult, getPatientByCrID, getPractitionerByPuID, getProviderByFID, postPatient, postPractitioner, postProvider } from '@/lib/api';
 import { practitionerPayload } from '@/lib/practitioner';
 import { providerPayload } from '@/lib/providers';
@@ -56,26 +56,39 @@ export const runTestSuite = async (
 
     // Outcome
     let finalOutcome = '';
-    try {
-      const initialOutcome = response.data.data.data?.entry
-        ?.find((e: any) => e.resource?.resourceType === 'ClaimResponse')
-        ?.resource?.extension?.find((i: any) => i.url.endsWith('claim-state-extension'))
-        ?.valueCodeableConcept?.coding?.find((s: any) => s.system.endsWith('claim-state'))
-        ?.display || '';
 
-      finalOutcome = initialOutcome !== 'Pending'
-        ? initialOutcome
-        : await getClaimOutcome(claimId);
+    try {
+      const entry = response.data?.data?.data?.entry?.find(
+        (e: any) => e.resource?.resourceType === 'ClaimResponse'
+      );
+
+      const extension = entry?.resource?.extension?.find(
+        (ext: any) => ext.url?.endsWith('claim-state-extension')
+      );
+
+      const coding = extension?.valueCodeableConcept?.coding?.find(
+        (code: any) => code.system?.endsWith('claim-state')
+      );
+
+      const initialOutcome = coding?.display || '';
+
+      finalOutcome = initialOutcome === 'Pending'
+        ? await getClaimOutcome(claimId)
+        : initialOutcome;
+
     } catch (outcomeError) {
       console.error('Error getting claim outcome:', outcomeError);
       finalOutcome = 'Error determining outcome';
     }
 
+
+
     // Determine test status
+    const bOutcome = [CLAIM_STATUS.APPROVED, CLAIM_STATUS.SENT_FOR_PAYMENT, CLAIM_STATUS.CLINICAL_REVIEW].includes(finalOutcome);
     const testPassed = shouldTestPass(
-      response.data.data.success,
       testData?.formData?.test,
-      finalOutcome
+      finalOutcome,
+      bOutcome
     );
 
     // Create test result
