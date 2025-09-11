@@ -38,6 +38,11 @@ const navItems = [
     href: '/complex-tests',
     icon: CircuitBoard,
   },
+  {
+    name: 'Sanity check',
+    href: '/sanity-checks',
+    icon: Beaker
+  }
 ];
 
 export default function Sidebar() {

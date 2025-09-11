@@ -1,10 +1,10 @@
+import SanityTestCases from "@/components/Dashboard/sanity/SanityCheck";
 import Layout from "@/components/Layout/Layout";
-import ComplexTestRunner from "@/components/Dashboard/ComplexTestRunner";
 
 export default function TestCases() {
     return (
         <Layout>
-            <ComplexTestRunner isRunning={false} />
+            <SanityTestCases isRunning={false} />
         </Layout>
     );
 }

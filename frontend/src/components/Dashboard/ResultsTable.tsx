@@ -171,7 +171,7 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                 <TableRow>
                   <TableCell colSpan={6} className="px-6 py-4 bg-gray-50">
                     <div className="space-y-4">
-                      {result.details.request.formData.is_bundle_only === false && (
+                      {!result.details.request.formData?.is_bundle_only && (
                         <div className="border rounded-lg overflow-hidden">
                           <div className="flex justify-between items-center bg-gray-100 p-3">
                             <div className="flex items-center">
@@ -227,7 +227,7 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                                     <ChevronRightIcon className="h-5 w-5 mr-2" />
                                   )}
                                   <span className="font-medium">
-                                    {result.details.request.formData.is_bundle_only
+                                    {result.details.request.formData?.is_bundle_only
                                       ? "Built bundle"
                                       : "Submitted payload"}
                                   </span>
@@ -257,7 +257,7 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                               </pre>
                             )}
                           </div>
-                          {result.details.request.formData.is_bundle_only === false && (
+                          {result.details.request.formData?.is_bundle_only === false && (
                             <div className="bg-gray-100 p-3 rounded-lg">
                               <div className='flex  item-center justify-between p-3'>
                                 <h4 className="text-sm font-medium text-gray-500 mb-2">Response Summary</h4>
