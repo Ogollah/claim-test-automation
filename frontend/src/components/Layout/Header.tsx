@@ -7,11 +7,50 @@ import {
   ChevronDown,
   X,
   User2Icon,
+  ClipboardList,
+  FlaskConical,
+  Wrench,
+  Workflow,
+  CircuitBoard,
+  CheckCircle,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const mobileNavItems = [
+    {
+      name: 'Custom test form',
+      href: '/',
+      icon: ClipboardList,
+    },
+    {
+      name: 'Automated test suite',
+      href: '/test-cases',
+      icon: FlaskConical,
+    },
+    {
+      name: 'Simple test setup',
+      href: '/add-test',
+      icon: Wrench,
+    },
+    {
+      name: 'Complex test builder',
+      href: '/complex-cases',
+      icon: Workflow,
+    },
+    {
+      name: 'Complex test suite',
+      href: '/complex-tests',
+      icon: CircuitBoard,
+    },
+    {
+      name: 'Sanity check',
+      href: '/sanity-checks',
+      icon: CheckCircle
+    }
+  ];
 
   return (
     <header className="top-0 z-50 bg-blue-100 w-full shadow">
@@ -27,26 +66,9 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6">
-            {/* <Link href="/" className="text-gray-600 hover:text-blue-600 font-medium">
-              Custom Test
-            </Link>
-            <Link href="/test-cases" className="text-gray-600 hover:text-blue-600 font-medium">
-              Test Cases
-            </Link>
-            <Link href="/add-test" className="text-gray-600 hover:text-blue-600 font-medium">
-              Add Test
-            </Link> */}
-
             {/* User Avatar */}
             <div className="flex items-center space-x-1 cursor-pointer hover:opacity-90">
               <User2Icon className='h-6 w-6 text-gray-500' />
-              {/* <Image
-                src="/avatar.png" // Make sure this exists in your `public/` folder
-                alt="User Avatar"
-                width={32}
-                height={32}
-                className="rounded-full border border-gray-300"
-              /> */}
               <ChevronDown className="h-4 w-4 text-gray-500" />
             </div>
           </div>
@@ -66,38 +88,29 @@ export default function Header() {
         {/* Mobile Menu */}
         {menuOpen && (
           <div className="md:hidden mt-2 relative bg-blue-50 p-4 shadow rounded">
-            <div className="flex justify-end">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-700">Navigation</h3>
               <Button
                 onClick={() => setMenuOpen(false)}
-                className="text-red-500 hover:text-red-700 font-bold text-lg bg-blue-50"
+                className="text-red-500 hover:text-red-700 bg-blue-50"
                 aria-label="Close menu"
               >
                 <X className="h-6 w-6 text-gray-500" />
               </Button>
             </div>
 
-            <div className="mt-2 space-y-2">
-              <Link
-                href="/"
-                className="block text-gray-600 hover:text-blue-600 font-medium"
-                onClick={() => setMenuOpen(false)}
-              >
-                Build Test Case
-              </Link>
-              <Link
-                href="/test-cases"
-                className="block text-gray-600 hover:text-blue-600 font-medium"
-                onClick={() => setMenuOpen(false)}
-              >
-                Auto Test Cases
-              </Link>
-              <Link
-                href="/add-test"
-                className="block text-gray-600 hover:text-blue-600 font-medium"
-                onClick={() => setMenuOpen(false)}
-              >
-                Add Test Case
-              </Link>
+            <div className="mt-2 space-y-1">
+              {mobileNavItems.map(({ name, href, icon: Icon }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className="flex items-center px-3 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-100 rounded-md transition-colors"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <Icon className="h-5 w-5 mr-3 text-gray-500" />
+                  {name}
+                </Link>
+              ))}
             </div>
           </div>
         )}

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { StopIcon } from '@heroicons/react/16/solid';
 import InterventionSelector from '@/components/Dashboard/InterventionSelector';
 import { FormatPatient, Package, TestCase, TestCaseItem, TestResult } from '@/lib/types';
-import { getInterventionByPackageId, getPackages, getTestCaseByCode } from '@/lib/api';
+import { getInterventionByComplexity, getInterventionByPackageId, getPackages, getTestCaseByCode } from '@/lib/api';
 import TestcaseDetails from '@/components/testCases/TestcaseDetails';
 import ResultsTable from '@/components/Dashboard/ResultsTable';
 import { DEFAULT_PACKAGE } from '@/packages/ShaPackages';
@@ -31,7 +31,21 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
     positive: TestCase[];
     negative: TestCase[];
   }>({ positive: [], negative: [] });
-  const [showPatientPanel, setShowPatientPanel] = useState(false);
+  const [complexInterventions, setComplexInterventions] = useState<string[]>([]);
+
+  useEffect(() => {
+    getInterventionByComplexity(1)
+      .then(interventions => {
+        if (interventions?.data.length > 0) {
+          const codes = interventions?.data.map(intervention => intervention.code);
+          setComplexInterventions(codes || []);
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        toast.error("Failed to load complex interventions");
+      });
+  }, []);
 
   useEffect(() => {
     const fetchPackages = async () => {
@@ -73,11 +87,11 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
     }
   }, [selectedPackage]);
 
-  useEffect(() => {
-    const packageObj = packages.find(p => p.id === Number(selectedPackage));
-    const packageCode = packageObj?.code;
-    setShowPatientPanel(!!(packageCode && ['SHA-03', 'SHA-08', 'SHA-07', 'SHA-13', 'SHA-19'].includes(packageCode)));
-  }, [selectedPackage, packages]);
+  // useEffect(() => {
+  //   const packageObj = packages.find(p => p.id === Number(selectedPackage));
+  //   const packageCode = packageObj?.code;
+  //   setShowPatientPanel(!!(packageCode && ['SHA-03', 'SHA-08', 'SHA-07', 'SHA-13', 'SHA-19'].includes(packageCode)));
+  // }, [selectedPackage, packages]);
 
   useEffect(() => {
     const fetchTestCases = async () => {
@@ -320,7 +334,7 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
             onRunTests={handleRunPositiveTests}
             isRunning={isRunning && runningSection === 'positive'}
             onUpdatePatient={updateTestCasePatient}
-            showPatientPanel={showPatientPanel}
+            complexInterventions={complexInterventions}
           />
           <TestcaseDetails
             title='Negative'
@@ -328,7 +342,7 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
             onRunTests={handleRunNegativeTests}
             isRunning={isRunning && runningSection === 'negative'}
             onUpdatePatient={updateTestCasePatient}
-            showPatientPanel={showPatientPanel}
+            complexInterventions={complexInterventions}
           />
         </div>
 

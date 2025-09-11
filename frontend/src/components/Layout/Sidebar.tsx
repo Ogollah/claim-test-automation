@@ -5,7 +5,7 @@ import {
   Wrench,
   ChevronLeft,
   ChevronRight,
-  Beaker,
+  CheckCircle,
   CircuitBoard,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -38,6 +38,11 @@ const navItems = [
     href: '/complex-tests',
     icon: CircuitBoard,
   },
+  {
+    name: 'Sanity check',
+    href: '/sanity-checks',
+    icon: CheckCircle
+  }
 ];
 
 export default function Sidebar() {
