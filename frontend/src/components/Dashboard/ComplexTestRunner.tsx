@@ -38,7 +38,7 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
         positive: [],
         negative: []
     });
-    const [showPatientPanel, setShowPatientPanel] = useState(false);
+    const [complexInterventions, setComplexInterventions] = useState<string[]>([]);
 
     useEffect(() => {
         const fetchInterventions = async () => {
@@ -48,7 +48,10 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
                 setAvailableInterventions(interventions);
                 if (interventions.length > 0) {
                     setSelectedIntervention(interventions[0].code);
-                    setShowPatientPanel(true);
+                    if (interventions?.length > 0) {
+                        const codes = interventions?.map(intervention => intervention.code);
+                        setComplexInterventions(codes || []);
+                    }
                 }
             } catch (error) {
                 console.error("Error fetching interventions:", error);
@@ -285,7 +288,7 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
                         onRunTests={handleRunPositiveTests}
                         isRunning={isRunning && runningSection === 'positive'}
                         onUpdatePatient={updateTestCasePatient}
-                        showPatientPanel={showPatientPanel}
+                        complexInterventions={complexInterventions}
                     />
                     <TestcaseDetails
                         title='Negative'
@@ -293,7 +296,7 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
                         onRunTests={handleRunNegativeTests}
                         isRunning={isRunning && runningSection === 'negative'}
                         onUpdatePatient={updateTestCasePatient}
-                        showPatientPanel={showPatientPanel}
+                        complexInterventions={complexInterventions}
                     />
                 </div>
                 <div className="flex justify-between w-full">

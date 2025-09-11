@@ -20,7 +20,6 @@ export default function SanityTestCases({ isRunning = false, onRunTests }: Sanit
     const [results, setResults] = useState<TestResult[]>([]);
     const [currentTestCases, setCurrentTestCases] = useState<{ positive: TestCase[] }>({ positive: [] });
     const [complexInterventions, setComplexInterventions] = useState<string[]>([]);
-    const [showPatientPanel, setShowPatientPanel] = useState(false);
 
     useEffect(() => {
         getInterventionByComplexity(1)
