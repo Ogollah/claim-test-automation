@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Button } from '../ui/button';
 import { Minus, RefreshCcwIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import TestResultsReport from './result/TestResultsReport';
 
 interface ResultsTableProps {
   results: TestResult[];
@@ -76,6 +77,8 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
 
   return (
     <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+      <TestResultsReport results={results} />
+
       <Table className="min-w-full divide-y divide-gray-200">
         <TableHeader className="bg-gray-50">
           <TableRow>
