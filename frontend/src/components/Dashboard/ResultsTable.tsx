@@ -257,7 +257,7 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                               </pre>
                             )}
                           </div>
-                          {result.details.request.formData?.is_bundle_only === false && (
+                          {!result.details.request.formData?.is_bundle_only && (
                             <div className="bg-gray-100 p-3 rounded-lg">
                               <div className='flex  item-center justify-between p-3'>
                                 <h4 className="text-sm font-medium text-gray-500 mb-2">Response Summary</h4>
