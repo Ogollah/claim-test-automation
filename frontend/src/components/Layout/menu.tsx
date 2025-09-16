@@ -76,7 +76,7 @@ export function Menu({ isOpen }: MenuProps) {
                                 </span>
                                 <p
                                   className={cn(
-                                    "max-w-[200px] truncate",
+                                    "text-gray-600 max-w-[200px] truncate",
                                     isOpen === false
                                       ? "-translate-x-96 opacity-0"
                                       : "translate-x-0 opacity-100"

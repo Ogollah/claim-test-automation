@@ -121,7 +121,7 @@ export default function SanityTestCases({ isRunning = false, onRunTests }: Sanit
     };
 
     return (
-        <div className="max-auto py-3">
+        <div className="max-auto py-3 px-4">
             <div className="bg-white rounded-sm shadow-md p-6 mb-8 max-w-9xl mx-auto px-4 sm:px-6 lg:px-8">
                 <TestcaseDetails
                     title="Positive Test Cases"

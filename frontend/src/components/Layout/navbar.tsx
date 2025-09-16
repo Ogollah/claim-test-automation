@@ -13,10 +13,10 @@ export function Navbar({ title }: NavbarProps) {
       <div className="mx-4 sm:mx-8 flex h-14 items-center bg-blue-100">
         <div className="flex items-center space-x-4 lg:space-x-0">
           <SheetMenu />
-          <h1 className=" px-3 font-bold text-gray-700">{title}</h1>
+          <h1 className=" px-3 font-bold text-gray-600">{title}</h1>
         </div>
         <div className="flex flex-1 items-center justify-end bg-blue-100">
-          <ModeToggle />
+          {/* <ModeToggle /> */}
           <UserNav />
         </div>
       </div>
