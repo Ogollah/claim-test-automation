@@ -72,7 +72,7 @@ export function Menu({ isOpen }: MenuProps) {
                                 <span
                                   className={cn(isOpen === false ? "" : "mr-4")}
                                 >
-                                  <Icon size={18} />
+                                  <Icon size={18} className="text-blue-400" />
                                 </span>
                                 <p
                                   className={cn(
@@ -123,11 +123,11 @@ export function Menu({ isOpen }: MenuProps) {
                     className="w-full justify-center h-10 mt-5"
                   >
                     <span className={cn(isOpen === false ? "" : "mr-4")}>
-                      <LogOut size={18} />
+                      <LogOut className="text-blue-500" size={18} />
                     </span>
                     <p
                       className={cn(
-                        "whitespace-nowrap",
+                        "text-blue-500 whitespace-nowrap",
                         isOpen === false ? "opacity-0 hidden" : "opacity-100"
                       )}
                     >

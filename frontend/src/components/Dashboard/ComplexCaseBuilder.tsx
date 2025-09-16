@@ -492,9 +492,9 @@ export default function ComplexCaseBuilder({
   const tableHeaders = useMemo(() => getTableHeaders(showApproved), [showApproved]);
 
   return (
-    <div className="mx-auto py-4 text-gray-500">
+    <div className="py-3 text-gray-500">
 
-      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+      <div className="bg-white rounded-sm shadow-md p-6 mb-8 max-w-9xl mx-auto px-4 sm:px-6 lg:px-8">
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           {/* Package Selector */}

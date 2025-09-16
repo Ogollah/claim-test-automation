@@ -72,11 +72,11 @@ export function CollapseMenuButton({
           <div className="w-full items-center flex justify-between">
             <div className="flex items-center">
               <span className="mr-4">
-                <Icon size={18} />
+                <Icon size={18} className="text-blue-400" />
               </span>
               <p
                 className={cn(
-                  "max-w-[150px] truncate",
+                  " text-gray-600 max-w-[150px] truncate",
                   isOpen
                     ? "translate-x-0 opacity-100"
                     : "-translate-x-96 opacity-0"
@@ -173,10 +173,9 @@ export function CollapseMenuButton({
         {submenus.map(({ href, label, active }, index) => (
           <DropdownMenuItem key={index} asChild>
             <Link
-              className={`cursor-pointer ${
-                ((active === undefined && pathname === href) || active) &&
+              className={`cursor-pointer ${((active === undefined && pathname === href) || active) &&
                 "bg-secondary"
-              }`}
+                }`}
               href={href}
             >
               <p className="max-w-[180px] truncate">{label}</p>

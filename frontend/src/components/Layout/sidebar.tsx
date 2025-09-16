@@ -36,7 +36,7 @@ export function Sidebar() {
           asChild
         >
           <Link href="/" className="flex items-center gap-2">
-            <BookOpenCheckIcon className="h-8 w-8 text-blue-500" />
+            <LayoutDashboard className="h-8 w-8 text-blue-600" />
             <h1
               className={cn(
                 "font-bold text-lg text-blue-600 whitespace-nowrap transition-[transform,opacity,display] ease-in-out duration-300",

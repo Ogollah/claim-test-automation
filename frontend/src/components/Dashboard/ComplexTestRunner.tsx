@@ -256,8 +256,8 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
     };
 
     return (
-        <div className="max-auto py-4">
-            <div className="bg-white rounded-sm shadow-md p-6 mb-8">
+        <div className="max-auto py-3">
+            <div className="bg-white rounded-sm shadow-md p-6 mb-8 max-w-9xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="mb-3">
                     <Label htmlFor="test" className="block text-sm font-small text-gray-500 mb-1">
                         Intervention Code
@@ -321,7 +321,9 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
                     </Button>
                 </div>
             </div>
-            <ResultsTable results={results} onRefresh={handleRefreshResult} />
+            {results.length > 0 && (
+                <ResultsTable results={results} onRefresh={handleRefreshResult} />
+            )}
         </div>
     );
 }

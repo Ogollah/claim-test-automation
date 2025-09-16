@@ -178,9 +178,9 @@ export default function OptimizedTestRunner({
 
 
   return (
-    <div className="mx-auto py-4 text-gray-500">
+    <div className="text-gray-500 py-3">
 
-      <div className="bg-white rounded-sm shadow-md p-6 mb-8">
+      <div className="bg-white rounded-sm shadow-md p-6 mb-8 max-w-9xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div className="flex items-center space-x-2">
             <Switch

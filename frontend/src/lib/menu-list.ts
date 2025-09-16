@@ -5,7 +5,11 @@ import {
   Bookmark,
   SquarePen,
   LayoutGrid,
-  LucideIcon
+  LucideIcon,
+  CheckCircle,
+  Wrench,
+  FlaskConical,
+  ClipboardList
 } from "lucide-react";
 
 type Submenu = {
@@ -33,7 +37,7 @@ export function getMenuList(pathname: string): Group[] {
       groupLabel: "",
       menus: [
         {
-          href: "/dashboard",
+          href: "/reports",
           label: "Dashboard",
           icon: LayoutGrid,
           submenus: []
@@ -46,7 +50,7 @@ export function getMenuList(pathname: string): Group[] {
         {
           href: "",
           label: "Custom builder",
-          icon: SquarePen,
+          icon: ClipboardList,
           submenus: [
             {
               href: "/",
@@ -61,7 +65,7 @@ export function getMenuList(pathname: string): Group[] {
         {
           href: "",
           label: "Automated test suite",
-          icon: SquarePen,
+          icon: FlaskConical,
           submenus: [
             {
               href: "/test-cases",
@@ -76,24 +80,29 @@ export function getMenuList(pathname: string): Group[] {
         {
           href: "/add-test",
           label: "Simple test setup",
-          icon: Bookmark
+          icon: Wrench
+        },
+        {
+          href: "/sanity-checks",
+          label: "Sanity check",
+          icon: CheckCircle
         }
       ]
     },
-    {
-      groupLabel: "Settings",
-      menus: [
-        {
-          href: "/users",
-          label: "Users",
-          icon: Users
-        },
-        {
-          href: "/account",
-          label: "Account",
-          icon: Settings
-        }
-      ]
-    }
+    // {
+    //   groupLabel: "Settings",
+    //   menus: [
+    //     {
+    //       href: "/users",
+    //       label: "Users",
+    //       icon: Users
+    //     },
+    //     {
+    //       href: "/account",
+    //       label: "Account",
+    //       icon: Settings
+    //     }
+    //   ]
+    // }
   ];
 }

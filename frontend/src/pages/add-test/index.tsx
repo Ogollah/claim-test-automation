@@ -31,7 +31,7 @@ export default function AddTestCase() {
           </BreadcrumbList>
         </Breadcrumb>
       </div>
-      <div className="container mx-auto px-6">
+      <div className=" mx-auto px-6">
         <TestcaseEditor />
       </div>
     </Layout>

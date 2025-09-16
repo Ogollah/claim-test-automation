@@ -35,7 +35,7 @@ export default function Layout({ children, session }: LayoutProps) {
         </main>
         <footer
           className={cn(
-            "transition-[margin-left] ease-in-out duration-300 py-4",
+            "transition-[margin-left] ease-in-out duration-300 m-t-20 px-3 ",
             !settings.disabled && (!getOpenState() ? "lg:ml-[90px]" : "lg:ml-72")
           )}
         >

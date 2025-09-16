@@ -80,12 +80,14 @@ export default function ComplexCases() {
         </Breadcrumb>
       </div>
 
-      <div className="container mx-auto px-6">
+      <div className=" mx-auto px-6">
         <ComplexCaseBuilder
           isRunning={isRunning}
           onRunTests={handleRunTests}
         />
-        <ResultsTable results={results} onRefresh={handleRefreshResult} />
+        {results.length > 0 && (
+          <ResultsTable results={results} onRefresh={handleRefreshResult} />
+        )}
       </div>
     </Layout>
   );

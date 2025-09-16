@@ -30,7 +30,7 @@ export default function TestCases() {
                     </BreadcrumbList>
                 </Breadcrumb>
             </div>
-            <div className="container mx-auto px-6">
+            <div className=" mx-auto px-6">
                 <ComplexTestRunner isRunning={false} />
             </div>
         </Layout>
