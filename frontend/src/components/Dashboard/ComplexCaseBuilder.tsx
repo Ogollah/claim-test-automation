@@ -492,11 +492,9 @@ export default function ComplexCaseBuilder({
   const tableHeaders = useMemo(() => getTableHeaders(showApproved), [showApproved]);
 
   return (
-    <div className="mx-auto px-4 py-8 text-gray-500">
-      <h1 className="text-2xl font-bold mb-6">Custom complex claim form</h1>
+    <div className="mx-auto py-4 text-gray-500">
 
       <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-        <h2 className="text-xl font-semibold mb-4">Test Configuration</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           {/* Package Selector */}

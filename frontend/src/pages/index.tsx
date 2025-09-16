@@ -1,3 +1,4 @@
+'use client'
 import { useState } from 'react'
 import Layout from '@/components/Layout/Layout'
 import TestRunner from '../components/Dashboard/TestRunner'
@@ -6,6 +7,16 @@ import { TestResult } from "@/lib/types";
 import { runTestSuite } from "@/utils/testUtils";
 import { toast } from "sonner";
 import { refreshTestResult } from "@/utils/claimUtils";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator
+} from "@/components/ui/breadcrumb";
+import Link from "next/link";
+import { Navbar } from '@/components/Layout/navbar'
 
 export default function Home() {
   const [isRunning, setIsRunning] = useState(false);
@@ -16,8 +27,10 @@ export default function Home() {
     try {
       const result = await runTestSuite(payload);
       setResults(prev => [...prev, ...result]);
+      toast.success('Tests completed successfully');
     } catch (error) {
       console.error('Test execution failed:', error);
+      toast.error('Test execution failed');
     } finally {
       setIsRunning(false);
     }
@@ -26,37 +39,63 @@ export default function Home() {
   const handleRefreshResult = async (claimId: string) => {
     try {
       const { outcome, status, message } = await refreshTestResult(claimId);
-      
-      setResults(prevResults => 
-        prevResults.map(result => {
-          if (result.claimId === claimId) {
-            return {
+
+      setResults(prevResults =>
+        prevResults.map(result =>
+          result.claimId === claimId
+            ? {
               ...result,
               outcome,
               status,
               message,
               timestamp: new Date().toISOString()
-            };
-          }
-          return result;
-        })
+            }
+            : result
+        )
       );
-      
+
       toast.success('Result refreshed successfully');
     } catch (error) {
       console.error('Error refreshing result:', error);
       toast.error('Failed to refresh result');
-      throw error;
     }
+  };
+
+  const handleClearResults = () => {
+    setResults([]);
+    toast.info('Results cleared');
   };
 
   return (
     <Layout>
-      <TestRunner 
-        isRunning={isRunning}
-        onRunTests={handleRunTests}
-      />
-      <ResultsTable results={results} onRefresh={handleRefreshResult} />
+      <Navbar title={"Custom builder"} />
+      <div className="p-6">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href="/">Home</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>Custom builder</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
+
+      <div className="container mx-auto px-6">
+        <TestRunner
+          isRunning={isRunning}
+          onRunTests={handleRunTests}
+        />
+
+        <ResultsTable
+          results={results}
+          onRefresh={handleRefreshResult}
+        />
+      </div>
     </Layout>
   );
 }

@@ -271,7 +271,6 @@ export default function TestcaseEditor({ }: TestCaseEditorProps) {
 
     return (
         <div className=" mx-auto py-4">
-            <h1 className="text-2xl font-bold text-gray-500 mb-6">Test setup</h1>
             <div className="bg-white rounded-sm shadow-md p-6 mb-8">
                 <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                     <div className="py-2 bg-gray-50 text-gray-500">

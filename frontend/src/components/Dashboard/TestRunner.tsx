@@ -179,9 +179,6 @@ export default function OptimizedTestRunner({
 
   return (
     <div className="mx-auto py-4 text-gray-500">
-      <h1 className="text-2xl font-bold text-gray-500 mb-6">
-        Custom test claim form
-      </h1>
 
       <div className="bg-white rounded-sm shadow-md p-6 mb-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">

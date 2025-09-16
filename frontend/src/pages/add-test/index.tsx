@@ -1,11 +1,39 @@
 import TestcaseEditor from "@/components/testCases/jsonEditor/TestcaseEditor";
 import Layout from "@/components/Layout/Layout";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator
+} from "@/components/ui/breadcrumb";
+import Link from "next/link";
+import { Navbar } from "@/components/Layout/navbar";
 
 export default function AddTestCase() {
 
   return (
     <Layout>
-      <TestcaseEditor />
+      <Navbar title="Simple test setup" />
+      <div className="p-6">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href="/">Home</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>Test setup</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
+      <div className="container mx-auto px-6">
+        <TestcaseEditor />
+      </div>
     </Layout>
   );
 }

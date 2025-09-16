@@ -256,10 +256,8 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
     };
 
     return (
-        <div className="max-auto px-4 py-8">
-            <h1 className="text-2xl font-bold text-gray-500 mb-6">Complex Test Runner</h1>
+        <div className="max-auto py-4">
             <div className="bg-white rounded-sm shadow-md p-6 mb-8">
-                <h2 className="text-lg font-semibold text-gray-700 mb-4">Automated complex test cases</h2>
                 <div className="mb-3">
                     <Label htmlFor="test" className="block text-sm font-small text-gray-500 mb-1">
                         Intervention Code

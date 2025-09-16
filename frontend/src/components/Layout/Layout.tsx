@@ -1,27 +1,47 @@
+'use client';
 import { ReactNode } from 'react';
-import Header from './Header';
-import Sidebar from './Sidebar';
-import Footer from './Footer';
+
+import SessionProviderWrapper from '../SessionProviderWrapper';
+import { Session } from "next-auth";
+import { Navbar } from './navbar';
+import { useStore } from '@/hook/use-store';
+import { useSidebar } from '@/hook/use-sidebar';
+import { Sidebar } from './sidebar';
+import { cn } from "@/lib/utils";
+import { Footer } from './footer';
 
 interface LayoutProps {
   children: ReactNode;
+  session?: Session | null;
 }
 
-export default function Layout({ children }: LayoutProps) {
+export default function Layout({ children, session }: LayoutProps) {
+
+  const sidebar = useStore(useSidebar, (x) => x);
+  if (!sidebar) return null;
+  const { getOpenState, settings } = sidebar;
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <div className="flex flex-1">
+    <SessionProviderWrapper session={session}>
+      <div>
+        {/* <Navbar title={title} /> */}
         <Sidebar />
-        <main className="flex-1 p-6 pb-24 bg-gray-100 overflow-auto">
-          <div className="px-4 sm:px-6 lg:px-8">
-            {children}
-          </div>
+        <main
+          className={cn(
+            "min-h-[calc(100vh_-_56px)] bg-zinc-50 dark:bg-zinc-900 transition-[margin-left] ease-in-out duration-300",
+            !settings.disabled && (!getOpenState() ? "lg:ml-[90px]" : "lg:ml-72")
+          )}
+        >
+          {children}
         </main>
+        <footer
+          className={cn(
+            "transition-[margin-left] ease-in-out duration-300 py-4",
+            !settings.disabled && (!getOpenState() ? "lg:ml-[90px]" : "lg:ml-72")
+          )}
+        >
+          <Footer />
+        </footer>
       </div>
-      <div className="bottom-0 w-full">
-        <Footer />
-      </div>
-    </div>
+    </SessionProviderWrapper>
   );
 }
