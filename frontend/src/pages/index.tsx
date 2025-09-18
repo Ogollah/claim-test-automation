@@ -1,5 +1,7 @@
 'use client'
+
 import { useState } from 'react'
+import { useAuthSession } from '@/hook/useAuth'
 import Layout from '@/components/Layout/Layout'
 import TestRunner from '../components/Dashboard/TestRunner'
 import ResultsTable from '../components/Dashboard/ResultsTable'
@@ -17,10 +19,20 @@ import {
 } from "@/components/ui/breadcrumb";
 import Link from "next/link";
 import { Navbar } from '@/components/Layout/navbar'
+import LoadingSpinner from '@/components/ui/loading-spinner'
 
 export default function Home() {
   const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState<TestResult[]>([]);
+  const { session, isLoading } = useAuthSession()
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
 
   const handleRunTests = async (payload: any) => {
     setIsRunning(true);
@@ -61,13 +73,8 @@ export default function Home() {
     }
   };
 
-  const handleClearResults = () => {
-    setResults([]);
-    toast.info('Results cleared');
-  };
-
   return (
-    <Layout>
+    <Layout session={session}>
       <Navbar title={"Custom builder"} />
       <div className="p-6">
         <Breadcrumb>

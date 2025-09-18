@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/hook/use-sidebar";
 import { useStore } from "@/hook/use-store";
 import { cn } from "@/lib/utils";
-import { BookOpenCheckIcon, LayoutDashboard, PanelsTopLeft } from "lucide-react";
+import { LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import { SidebarToggle } from "./sidebar-toggle";
 import { Menu } from "./menu";

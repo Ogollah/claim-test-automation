@@ -1,3 +1,4 @@
+'use client';
 import TestcaseEditor from "@/components/testCases/jsonEditor/TestcaseEditor";
 import Layout from "@/components/Layout/Layout";
 import {
@@ -10,11 +11,23 @@ import {
 } from "@/components/ui/breadcrumb";
 import Link from "next/link";
 import { Navbar } from "@/components/Layout/navbar";
+import { useAuthSession } from "@/hook/useAuth";
+import LoadingSpinner from "@/components/ui/loading-spinner";
 
 export default function AddTestCase() {
 
+  const { session, isLoading } = useAuthSession();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
   return (
-    <Layout>
+    <Layout session={session}>
       <Navbar title="Simple test setup" />
       <div className="p-6">
         <Breadcrumb>

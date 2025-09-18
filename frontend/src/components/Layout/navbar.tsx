@@ -1,6 +1,8 @@
+import { getServerSession } from "next-auth";
 import { ModeToggle } from "../mode-toggle";
 import { SheetMenu } from "./sheet-menu";
 import { UserNav } from "./user-nav";
+import { authOptions } from "@/lib/auth";
 
 
 interface NavbarProps {
@@ -8,6 +10,7 @@ interface NavbarProps {
 }
 
 export function Navbar({ title }: NavbarProps) {
+
   return (
     <header className="bg-blue-100 sticky top-0 z-10 w-full bg-background/95 shadow backdrop-blur supports-[backdrop-filter]:bg-background/60 dark:shadow-secondary">
       <div className="mx-4 sm:mx-8 flex h-14 items-center bg-blue-100">

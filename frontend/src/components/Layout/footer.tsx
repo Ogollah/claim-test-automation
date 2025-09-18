@@ -1,13 +1,4 @@
-import Link from "next/link";
-import {
-  LayoutDashboard,
-  Github,
-  Mail,
-  FileText,
-  HelpCircle,
-  ExternalLink
-} from 'lucide-react';
-
+'use client'
 export function Footer() {
   return (
 

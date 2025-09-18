@@ -16,10 +16,21 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Navbar } from "@/components/Layout/navbar";
 import Link from "next/link";
+import { useAuthSession } from "@/hook/useAuth";
+import LoadingSpinner from "@/components/ui/loading-spinner";
 
 export default function ComplexCases() {
   const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState<TestResult[]>([]);
+  const { session, isLoading } = useAuthSession();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
 
   const handleRunTests = async (payload: any) => {
     setIsRunning(true);
@@ -60,7 +71,7 @@ export default function ComplexCases() {
     }
   };
   return (
-    <Layout>
+    <Layout session={session}>
 
       <Navbar title={"Complex builder"} />
 

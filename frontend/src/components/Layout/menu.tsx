@@ -15,6 +15,7 @@ import {
   TooltipProvider
 } from "@/components/ui/tooltip";
 import { CollapseMenuButton } from "./collapse-menu-button";
+import { signOut } from "next-auth/react";
 
 interface MenuProps {
   isOpen: boolean | undefined;
@@ -118,7 +119,7 @@ export function Menu({ isOpen }: MenuProps) {
               <Tooltip delayDuration={100}>
                 <TooltipTrigger asChild>
                   <Button
-                    onClick={() => { }}
+                    onClick={() => signOut()}
                     variant="outline"
                     className="w-full justify-center h-10 mt-5"
                   >
