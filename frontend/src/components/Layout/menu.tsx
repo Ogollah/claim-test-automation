@@ -66,18 +66,30 @@ export function Menu({ isOpen }: MenuProps) {
                                   ? "secondary"
                                   : "ghost"
                               }
-                              className="w-full justify-start h-10 mb-1"
+                              className={cn(
+                                "w-full justify-start h-10 mb-1 group",
+                                (active === undefined && pathname.startsWith(href)) || active
+                                  ? "text-green-900"
+                                  : "text-gray-100 hover:text-green-900"
+                              )}
                               asChild
                             >
-                              <Link href={href}>
-                                <span
-                                  className={cn(isOpen === false ? "" : "mr-4")}
-                                >
-                                  <Icon size={18} className="text-blue-400" />
-                                </span>
+                              <Link href={href} className="flex items-center w-full">
+                                <Icon
+                                  size={18}
+                                  className={cn(
+                                    "transition-colors",
+                                    (active === undefined && pathname.startsWith(href)) || active
+                                      ? "text-green-900"
+                                      : "text-gray-100 group-hover:text-green-900"
+                                  )}
+                                />
                                 <p
                                   className={cn(
-                                    "text-gray-600 max-w-[200px] truncate",
+                                    "transition-colors max-w-[200px] truncate group-hover:text-green-900",
+                                    (active === undefined && pathname.startsWith(href)) || active
+                                      ? "text-green-900"
+                                      : "text-gray-100",
                                     isOpen === false
                                       ? "-translate-x-96 opacity-0"
                                       : "translate-x-0 opacity-100"
@@ -87,6 +99,7 @@ export function Menu({ isOpen }: MenuProps) {
                                 </p>
                               </Link>
                             </Button>
+
                           </TooltipTrigger>
                           {isOpen === false && (
                             <TooltipContent side="right">
@@ -124,11 +137,11 @@ export function Menu({ isOpen }: MenuProps) {
                     className="w-full justify-center h-10 mt-5"
                   >
                     <span className={cn(isOpen === false ? "" : "mr-4")}>
-                      <LogOut className="text-blue-500" size={18} />
+                      <LogOut className="text-green-900" size={18} />
                     </span>
                     <p
                       className={cn(
-                        "text-blue-500 whitespace-nowrap",
+                        "text-green-900 whitespace-nowrap",
                         isOpen === false ? "opacity-0 hidden" : "opacity-100"
                       )}
                     >

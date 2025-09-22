@@ -324,6 +324,7 @@ export interface TestResult {
   name: string;
   use?: string;
   status: 'passed' | 'failed' | 'running' | 'pending' | 'bundle' | 'ready';
+  ruleStatus?: string;
   duration?: number;
   timestamp: string;
   message?: string;

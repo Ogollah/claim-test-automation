@@ -137,7 +137,7 @@ export default function SanityTestCases({ isRunning = false, onRunTests }: Sanit
                     type="button"
                     onClick={handleRunAll}
                     disabled={isRunning}
-                    className={`mt-4 inline-flex items-center px-4 py-1 text-white ${isRunning ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+                    className={`mt-4 inline-flex items-center px-4 py-1 text-white ${isRunning ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-900 hover:bg-green-700'
                         }`}
                 >
                     {isRunning && runningSection === 'positive' ? (

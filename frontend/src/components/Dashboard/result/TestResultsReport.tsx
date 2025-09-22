@@ -91,7 +91,7 @@ export default function TestResultsReport({ results, onRefresh }: TestResultsRep
                             {[...failedResults].reverse().map(result => (
                                 <TableRow key={result.id}>
                                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-red-500">{result.name}</TableCell>
-                                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{result.outcome ?? result.details?.error ?? result.details?.errorMessage}</TableCell>
+                                    <TableCell className="px-6 py-4 break-words whitespace-pre-wrap text-sm text-gray-500">{result.outcome ?? result.details?.error ?? result.details?.errorMessage}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>

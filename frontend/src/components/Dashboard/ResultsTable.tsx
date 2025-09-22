@@ -94,7 +94,7 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
           <Button
             variant="ghost"
             onClick={() => setShowSummary(!showSummary)}
-            className="text-blue-600 hover:text-blue-800"
+            className="text-green-900 hover:text-green-700"
           >
             {showSummary ? (
               <>
@@ -124,7 +124,7 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                   Status
                 </TableHead>
                 <TableHead scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Duration
+                  Rule Status
                 </TableHead>
                 <TableHead scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Timestamp
@@ -138,8 +138,17 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
               {[...results].reverse().map((result) => (
                 <>
                   <TableRow key={result.id} className="hover:bg-gray-50">
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-500">
-                      {result.name}
+                    <TableCell className="px-6 py-4 align-top text-sm font-medium text-gray-500">
+                      <div className="break-words whitespace-normal text-gray-500">
+                        {result.name}
+                      </div>
+                      <div className="text-xs text-gray-400 break-words whitespace-pre-wrap">
+                        {result.outcome ?? (
+                          <span className="text-red-400 break-words">
+                            {result.details.error}
+                          </span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {result?.use || 'N/A'}
@@ -177,8 +186,8 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {result.duration}ms
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                      {result.ruleStatus?.toUpperCase() || <span className="h-4 w-4 text-red-500">{result.details.statusCode}</span>}
                     </TableCell>
                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(result.timestamp).toLocaleString()}
@@ -186,7 +195,7 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <Button
                         onClick={() => toggleRow(result.id)}
-                        className="text-blue-600 bg-gray-50 hover:bg-gray-100 hover:text-blue-900 flex items-center"
+                        className="text-green-900 bg-gray-50 hover:bg-gray-100 hover:text-green-700 flex items-center"
                       >
                         {expandedRows[result.id] ? (
                           <>
@@ -225,7 +234,7 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                                 <div className="flex space-x-2">
                                   <Button
                                     onClick={() => downloadPayload(result.details.request, `${result.id}-request.json`)}
-                                    className="flex items-center bg-gray-50 text-blue-600 hover:bg-gray-200 hover:text-blue-800 text-sm"
+                                    className="flex items-center bg-gray-50 text-green-900 hover:bg-gray-200 hover:text-green-700 text-sm"
                                   >
                                     <ArrowDownTrayIcon className="h-4 w-4 mr-1" />
                                     Download
@@ -272,7 +281,7 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                                   <div className="flex space-x-2">
                                     <Button
                                       onClick={() => downloadPayload(result.details.fhirBundle, `${result.id}-response.json`)}
-                                      className="flex items-center bg-gray-50 text-blue-600 hover:bg-gray-200 hover:text-blue-800 text-sm"
+                                      className="flex items-center bg-gray-50 text-green-900 hover:bg-gray-200 hover:text-green-700 text-sm"
                                     >
                                       <ArrowDownTrayIcon className="h-4 w-4 mr-1" />
                                       Download

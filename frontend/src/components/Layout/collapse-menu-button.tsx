@@ -67,16 +67,26 @@ export function CollapseMenuButton({
       >
         <Button
           variant={isSubmenuActive ? "secondary" : "ghost"}
-          className="w-full justify-start h-10"
+          className="w-full justify-start h-10 group"
         >
           <div className="w-full items-center flex justify-between">
             <div className="flex items-center">
               <span className="mr-4">
-                <Icon size={18} className="text-blue-400" />
+                <Icon
+                  size={18}
+                  className={cn(
+                    isSubmenuActive
+                      ? "text-green-900"
+                      : "text-gray-100 group-hover:text-green-900"
+                  )}
+                />
               </span>
               <p
                 className={cn(
-                  " text-gray-600 max-w-[150px] truncate",
+                  "max-w-[150px] truncate transition-colors",
+                  isSubmenuActive
+                    ? "text-green-900"
+                    : "text-gray-100 group-hover:text-green-900",
                   isOpen
                     ? "translate-x-0 opacity-100"
                     : "-translate-x-96 opacity-0"
@@ -95,11 +105,17 @@ export function CollapseMenuButton({
             >
               <ChevronDown
                 size={18}
-                className="transition-transform duration-200"
+                className={cn(
+                  "transition-transform duration-200",
+                  isSubmenuActive
+                    ? "text-green-900"
+                    : "text-gray-100 group-hover:text-green-900"
+                )}
               />
             </div>
           </div>
         </Button>
+
       </CollapsibleTrigger>
       <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
         {submenus.map(({ href, label, active }, index) => (
@@ -110,16 +126,29 @@ export function CollapseMenuButton({
                 ? "secondary"
                 : "ghost"
             }
-            className="w-full justify-start h-10 mb-1"
+            className={cn("w-full justify-start h-10 mb-1 group", (active === undefined && pathname.startsWith(href)) || active
+              ? "text-green-900"
+              : "text-gray-100 hover:text-green-900")}
             asChild
           >
             <Link href={href}>
               <span className="mr-4 ml-2">
-                <Dot size={18} />
+                <Dot
+                  size={18}
+                  className={cn(
+                    "transition-colors",
+                    (active === undefined && pathname === href) || active
+                      ? "text-green-900"
+                      : "text-gray-100 group-hover:text-green-900"
+                  )}
+                />
               </span>
               <p
                 className={cn(
-                  "max-w-[170px] truncate",
+                  "transition-colors max-w-[170px] truncate truncate group-hover:text-green-900",
+                  (active === undefined && pathname === href) || active
+                    ? "text-green-900"
+                    : "text-gray-100",
                   isOpen
                     ? "translate-x-0 opacity-100"
                     : "-translate-x-96 opacity-0"
@@ -140,12 +169,17 @@ export function CollapseMenuButton({
             <DropdownMenuTrigger asChild>
               <Button
                 variant={isSubmenuActive ? "secondary" : "ghost"}
-                className="w-full justify-start h-10 mb-1"
+                className="w-full justify-start h-10 mb-1 group"
               >
                 <div className="w-full items-center flex justify-between">
                   <div className="flex items-center">
                     <span className={cn(isOpen === false ? "" : "mr-4")}>
-                      <Icon size={18} />
+                      <Icon size={18}
+                        className={cn(
+                          isSubmenuActive
+                            ? "text-green-900"
+                            : "text-gray-100 group-hover:text-green-900"
+                        )} />
                     </span>
                     <p
                       className={cn(

@@ -44,9 +44,9 @@ export function UserNav() {
                 variant="outline"
                 className="relative h-8 w-8 rounded-full"
               >
-                <Avatar className="h-8 w-8 text-gray-500">
+                <Avatar className="h-8 w-8 text-gray-600">
                   <AvatarImage src={session?.user?.image || "#"} alt="Avatar" />
-                  <AvatarFallback className="bg-transparent bg-blue-200">
+                  <AvatarFallback className="bg-transparent bg-gray-200">
                     {session?.user?.name?.substring(0, 2) || "JD"}
                   </AvatarFallback>
                 </Avatar>
@@ -68,7 +68,7 @@ export function UserNav() {
             </p>
           </div>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator />
+        {/* <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem className="hover:cursor-pointer" asChild>
             <Link href="/" className="flex items-center">
@@ -76,7 +76,7 @@ export function UserNav() {
               Dashboard
             </Link>
           </DropdownMenuItem>
-        </DropdownMenuGroup>
+        </DropdownMenuGroup> */}
         <DropdownMenuSeparator />
         <DropdownMenuItem className="hover:cursor-pointer" onClick={() => signOut()}>
           <LogOut className="w-4 h-4 mr-3 text-muted-foreground" />

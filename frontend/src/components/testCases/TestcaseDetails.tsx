@@ -161,7 +161,7 @@ export default function TestcaseDetails({
   return (
     <div className="border border-gray-200 rounded-lg p-4">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold">{title}</h2>
+        <h2 className="text-lg font-semibold text-green-900">{title}</h2>
 
         {showDisplayToggle && (
           <div className="flex items-center space-x-2">
@@ -219,7 +219,7 @@ export default function TestcaseDetails({
                           <div className="flex items-start space-x-3 flex-1">
                             <FormControl>
                               <Checkbox
-                                className="data-[state=checked]:border-blue-600 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white dark:data-[state=checked]:border-blue-700 dark:data-[state=checked]:bg-blue-700 mt-1"
+                                className="data-[state=checked]:border-green-900 data-[state=checked]:bg-green-900 data-[state=checked]:text-white dark:data-[state=checked]:border-blue-700 dark:data-[state=checked]:bg-blue-700 mt-1"
                                 checked={field.value?.includes(testCaseTitle)}
                                 onCheckedChange={(checked) => {
                                   return checked
@@ -290,7 +290,7 @@ export default function TestcaseDetails({
             disabled={isRunning || !!editingTestCase}
             className={`inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${isRunning || editingTestCase
               ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+              : 'bg-green-900 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500'
               }`}
           >
             <PlayIcon className="-ml-1 mr-2 h-5 w-5" />

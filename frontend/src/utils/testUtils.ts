@@ -99,6 +99,7 @@ export const runTestSuite = async (
       name: testData?.formData?.title || 'Claim Submission',
       use: testData?.formData?.use,
       status: testPassed ? 'passed' : 'failed',
+      ruleStatus: finalOutcome,
       duration,
       timestamp: new Date().toISOString(),
       message: response.data.data.message || 'Claim submitted successfully',
@@ -181,7 +182,7 @@ const ensureResourcesExist = async (formData: TestCase['formData']) => {
 /**
  * Handles test execution errors and returns error result
  */
-const handleTestError = (error: any, testData: TestCase, testCase?: TestCaseItem[], duration?: number): TestResult => {
+const handleTestError = (error: any, testData: TestCase, testCase?: TestCaseItem[], duration?: number, ruleStatus?: string): TestResult => {
   const errorResponse = error?.response?.data || error;
   const statusCode = error?.response?.status || error?.status || 500;
 
@@ -214,6 +215,7 @@ const handleTestError = (error: any, testData: TestCase, testCase?: TestCaseItem
     name: testData?.formData?.title || 'Claim Submission',
     status: isNegativeTest ? 'passed' : isBundleOnly ? 'ready' : 'failed',
     use: testData?.formData?.use,
+    ruleStatus: ruleStatus || '',
     duration: duration || 0,
     timestamp: new Date().toISOString(),
     message: errorMessage,

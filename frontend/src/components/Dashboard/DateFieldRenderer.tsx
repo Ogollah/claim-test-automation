@@ -34,7 +34,7 @@ export function DateFieldRenderer({
                 </PopoverTrigger>
                 <PopoverContent className="w-auto overflow-hidden p-0 z-50">
                     <Calendar
-                        className="text-blue-500"
+                        className="text-green-700"
                         mode="single"
                         selected={date}
                         onSelect={onDateChange}

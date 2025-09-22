@@ -16,7 +16,7 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "bg-blue-100 fixed top-0 left-0 z-20 h-screen -translate-x-full lg:translate-x-0 transition-[width] ease-in-out duration-300",
+        "bg-green-900 fixed top-0 left-0 z-20 h-screen -translate-x-full lg:translate-x-0 transition-[width] ease-in-out duration-300",
         !getOpenState() ? "w-[90px]" : "w-72",
         settings.disabled && "hidden"
       )}
@@ -36,10 +36,10 @@ export function Sidebar() {
           asChild
         >
           <Link href="/" className="flex items-center gap-2">
-            <LayoutDashboard className="h-8 w-8 text-blue-600" />
+            <LayoutDashboard className="h-8 w-8 text-gray-100" />
             <h1
               className={cn(
-                "font-bold text-lg text-blue-600 whitespace-nowrap transition-[transform,opacity,display] ease-in-out duration-300",
+                "font-bold text-lg text-gray-100 whitespace-nowrap transition-[transform,opacity,display] ease-in-out duration-300",
                 !getOpenState()
                   ? "-translate-x-96 opacity-0 hidden"
                   : "translate-x-0 opacity-100"
