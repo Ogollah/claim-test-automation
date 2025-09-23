@@ -11,7 +11,7 @@ import ProviderDetailsPanel from '@/components/Dashboard/ProviderDetailsPanel';
 import CustomSelector from '@/components/Dashboard/UseSelector';
 import { Button } from '@/components/ui/button';
 import { PlusIcon, TrashIcon } from 'lucide-react';
-import { PER_DIEM_CODES } from '@/lib/utils';
+import { cn, PER_DIEM_CODES } from '@/lib/utils';
 
 interface TestcaseFormProps {
   jsonData: any;
@@ -336,7 +336,7 @@ export default function TestcaseForm({ jsonData, setJsonData }: TestcaseFormProp
 
   return (
     <div className="p-3 border rounded-lg bg-gray-50 w-full md:w-full text-gray-500">
-      <h2 className="text-lg font-semibold mb-4">Testcase Form</h2>
+      <h2 className="text-lg font-semibold mb-4 text-green-900">Testcase Form</h2>
 
       <div className="mb-3">
         <Label className='py-2'>Title</Label>
@@ -398,7 +398,7 @@ export default function TestcaseForm({ jsonData, setJsonData }: TestcaseFormProp
       <div className="mb-4">
         <div className="flex justify-between items-center mb-2">
           <Label className="py-2">Product/Service Items</Label>
-          <Button onClick={addProductOrService} size="sm" className="flex items-center gap-1 bg-blue-500 text-white cursor-pointer hover:bg-blue-600">
+          <Button onClick={addProductOrService} size="sm" className="flex items-center gap-1 bg-green-900 text-white cursor-pointer hover:bg-green-700">
             <PlusIcon className="h-4 w-4" />
             Add service item
           </Button>
@@ -468,16 +468,18 @@ export default function TestcaseForm({ jsonData, setJsonData }: TestcaseFormProp
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
-                <div>
-                  <Label className="py-2">Days</Label>
-                  <Input
-                    type="number"
-                    value={days}
-                    readOnly
-                    className="bg-gray-100"
-                  />
-                </div>
+              <div className={cn("grid grid-cols-1 gap-4 mb-3", PER_DIEM_CODES.has(selectedInterventions[index]) ? "md:grid-cols-3" : "md:grid-cols-2")}>
+                {PER_DIEM_CODES.has(selectedInterventions[index]) && (
+                  <div>
+                    <Label className="py-2">Days</Label>
+                    <Input
+                      type="number"
+                      value={days}
+                      readOnly
+                      className="bg-gray-100"
+                    />
+                  </div>
+                )}
                 <div>
                   <Label className="py-2">Unit Price (KES)</Label>
                   <Input

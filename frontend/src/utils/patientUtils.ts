@@ -24,7 +24,7 @@ export const saveHIEPatient = async (patientPayload: Patient) => {
 }
 
 type AuthTokenParams = {
-    username: string;
+    email: string;
     password: string;
 };
 
@@ -36,7 +36,7 @@ export const getAuthenticationToken = async (params: AuthTokenParams) => {
         client_id: HIE_URL.PATHS.CLIENT_ID,
         code: process.env.CLIENT_SECRET || 'secret',
         code_verifier: 'secret',
-        username: params.username,
+        email: params.email,
         password: params.password,
     });
 
@@ -60,7 +60,7 @@ export const existingPatients = async () => {
     const response = await fetch(url, {
         method: 'GET',
         headers: {
-            'Authorization': `Bearer ${await getAuthenticationToken({ username: 'demo', password: 'demo' })}`,
+            'Authorization': `Bearer ${await getAuthenticationToken({ email: 'demo@mail.com', password: 'demo' })}`,
         },
     });
 

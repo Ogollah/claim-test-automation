@@ -292,11 +292,9 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
   };
 
   return (
-    <div className="mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-500 mb-6">Automated test suite</h1>
+    <div className="py-3">
 
-      <div className="bg-white rounded-sm shadow-md p-6 mb-8">
-        <h2 className="text-xl font-semibold text-gray-500 mb-4">Test Configuration</h2>
+      <div className="bg-white rounded-sm shadow-md p-6 mb-8 max-w-9xl mx-auto px-4 sm:px-6 lg:px-8">
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 text-gray-500">
           {/* Package Selector (ShadCN Style) */}
@@ -353,7 +351,7 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
             disabled={isRunning}
             className={`inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${isRunning
               ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+              : 'bg-green-900 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500'
               }`}
           >
             {isRunning && runningSection === 'all' ? (
@@ -370,7 +368,9 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
           </Button>
         </div>
       </div>
-      <ResultsTable results={results} onRefresh={handleRefreshResult} />
+      {results.length > 0 && (
+        <ResultsTable results={results} onRefresh={handleRefreshResult} />
+      )}
     </div>
   );
 }

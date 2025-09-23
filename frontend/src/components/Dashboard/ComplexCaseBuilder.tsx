@@ -437,7 +437,7 @@ export default function ComplexCaseBuilder({
         </PopoverTrigger>
         <PopoverContent className="w-auto overflow-hidden p-0 z-50">
           <Calendar
-            className="text-blue-500"
+            className="text-green-900"
             mode="single"
             selected={selectedDates[key] as Date}
             onSelect={(date) => {
@@ -492,11 +492,9 @@ export default function ComplexCaseBuilder({
   const tableHeaders = useMemo(() => getTableHeaders(showApproved), [showApproved]);
 
   return (
-    <div className="mx-auto px-4 py-8 text-gray-500">
-      <h1 className="text-2xl font-bold mb-6">Custom complex claim form</h1>
+    <div className="py-3 text-gray-500">
 
-      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-        <h2 className="text-xl font-semibold mb-4">Test Configuration</h2>
+      <div className="bg-white rounded-sm shadow-md p-6 mb-8 max-w-9xl mx-auto px-4 sm:px-6 lg:px-8">
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           {/* Package Selector */}
@@ -546,8 +544,10 @@ export default function ComplexCaseBuilder({
         </div>
 
         <div className="border-t border-gray-200 pt-4 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            {INTERVENTION_FIELDS.map(renderInterventionField)}
+          <div className={cn("grid grid-cols-1  gap-4 mb-4", isPerdiem ? "md:grid-cols-3" : "md:grid-cols-2")}>
+            {INTERVENTION_FIELDS
+              .filter(({ key }) => isPerdiem || key !== "days")
+              .map(renderInterventionField)}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -570,7 +570,7 @@ export default function ComplexCaseBuilder({
                     <PopoverContent className="w-auto p-0">
                       <Calendar
                         mode="single"
-                        className="text-blue-500"
+                        className="text-green-900"
                         selected={dateValue}
                         onSelect={(date) => setCurrentIntervention(prev => ({
                           ...prev,
@@ -596,7 +596,7 @@ export default function ComplexCaseBuilder({
                       variant="ghost"
                       size="sm"
                       onClick={handleResetTotal}
-                      className="text-xs text-blue-500 hover:text-blue-700"
+                      className="text-xs text-green-900 hover:text-green-700"
                     >
                       Reset to calculated
                     </Button>
@@ -640,7 +640,7 @@ export default function ComplexCaseBuilder({
           <Button
             onClick={addIntervention}
             disabled={!canAddIntervention}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-900 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
             <Plus className="h-5 w-5 mr-2" />
             Add
@@ -649,7 +649,7 @@ export default function ComplexCaseBuilder({
 
         {complexCases.length > 0 && (
           <div className="mb-6 py-4 border-t pt-4">
-            <h3 className="text-lg font-bold mb-2 text-green-500">Added cases ({complexCases.length})</h3>
+            <h3 className="text-lg font-bold mb-2 text-green-900">Added cases ({complexCases.length})</h3>
             <div className="overflow-x-auto bg-white rounded-lg shadow-md">
               <Table className="min-w-full">
                 <TableHeader className="bg-gray-50">
@@ -684,7 +684,7 @@ export default function ComplexCaseBuilder({
                             variant="ghost"
                             onClick={() => handleRunSingleTest(intervention.id)}
                             disabled={intervention.status === "running"}
-                            className="text-blue-500 hover:text-blue-900"
+                            className="text-green-900 hover:text-green-700"
                           >
                             <PlayIcon className="h-5 w-5" />
                           </Button>
@@ -712,7 +712,7 @@ export default function ComplexCaseBuilder({
             className={cn(
               "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white",
               canRunTests
-                ? "bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                ? "bg-green-900 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                 : "bg-gray-400 cursor-not-allowed"
             )}
           >

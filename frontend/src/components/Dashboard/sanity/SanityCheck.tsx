@@ -121,9 +121,8 @@ export default function SanityTestCases({ isRunning = false, onRunTests }: Sanit
     };
 
     return (
-        <div className="max-auto px-4 py-8">
-            <h1 className="text-2xl font-bold mb-6">Sanity Checks</h1>
-            <div className="bg-white shadow-md rounded-sm p-6 mb-8">
+        <div className="max-auto py-3 px-4">
+            <div className="bg-white rounded-sm shadow-md p-6 mb-8 max-w-9xl mx-auto px-4 sm:px-6 lg:px-8">
                 <TestcaseDetails
                     title="Positive Test Cases"
                     testCases={currentTestCases.positive}
@@ -138,7 +137,7 @@ export default function SanityTestCases({ isRunning = false, onRunTests }: Sanit
                     type="button"
                     onClick={handleRunAll}
                     disabled={isRunning}
-                    className={`mt-4 inline-flex items-center px-4 py-1 text-white ${isRunning ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+                    className={`mt-4 inline-flex items-center px-4 py-1 text-white ${isRunning ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-900 hover:bg-green-700'
                         }`}
                 >
                     {isRunning && runningSection === 'positive' ? (
@@ -152,7 +151,9 @@ export default function SanityTestCases({ isRunning = false, onRunTests }: Sanit
                     )}
                 </Button>
             </div>
-            <ResultsTable results={results} onRefresh={handleRefresh} />
+            {results.length > 0 && (
+                <ResultsTable results={results} onRefresh={handleRefresh} />
+            )}
         </div>
     );
 }

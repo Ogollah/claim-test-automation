@@ -113,7 +113,7 @@ export default function ProviderDetailsPanel({
 
   return (
     <div className="border border-gray-200 rounded-lg p-4 w-full">
-      <h3 className="text-lg font-medium text-gray-500 mb2">Provider Details</h3>
+      <h3 className="text-lg font-medium text-green-900 mb2">Provider Details</h3>
 
       {isExpanded && (
         <div className="mt-4 space-y-4 text-gray-500">
