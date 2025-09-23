@@ -310,6 +310,24 @@ export const getPackagesByIsPreauth = async (is_preauth: number) => {
   }
 }
 
+export const updatePackage = async (id: number, data: Package) => {
+  try {
+    const resp = await api.put<Package>(`/api/packages/update/${id}`, data);
+    return resp.data;
+  } catch (error) {
+    console.error('--> Error updating package: ', error);
+  }
+};
+
+export const deletePackage = async (id: number) => {
+  try {
+    const resp = await api.delete(`/api/packages/delete/${id}`);
+    return resp;
+  } catch (error) {
+    console.error('--> Error deleting package: ', error);
+  }
+};
+
 // Test case
 
 export interface Error {

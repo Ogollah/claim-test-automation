@@ -9,7 +9,8 @@ import {
   CheckCircle,
   Wrench,
   FlaskConical,
-  ClipboardList
+  ClipboardList,
+  File
 } from "lucide-react";
 
 type Submenu = {
@@ -47,6 +48,21 @@ export function getMenuList(pathname: string): Group[] {
     {
       groupLabel: "Contents",
       menus: [
+        {
+          href: "",
+          label: "Package",
+          icon: File,
+          submenus: [
+            {
+              href: "/manage-packages",
+              label: "Manage packages"
+            },
+            {
+              href: "/manage-interventions",
+              label: "Manage interventions"
+            }
+          ]
+        },
         {
           href: "",
           label: "Custom builder",
