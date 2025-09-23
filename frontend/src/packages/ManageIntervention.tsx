@@ -190,8 +190,9 @@ export default function ManageIntervention() {
                     is_complex: formData.is_complex ? 1 : 0
                 });
                 const updatedInterventions = interventions.map(intervention =>
-                    intervention.id === editingIntervention.id && updatedIntervention ? updatedIntervention : intervention
+                    intervention.id === editingIntervention.id && updatedIntervention ? updatedIntervention.updatedIntervention : intervention
                 );
+                console.log("Updated intervention response:", updatedIntervention);
                 setInterventions(updatedInterventions);
                 toast.success("Intervention updated successfully");
             } else {
@@ -200,25 +201,30 @@ export default function ManageIntervention() {
                     package_id: Number(formData.package_id),
                     is_complex: formData.is_complex ? 1 : 0
                 });
+                if (newIntervention?.status === 201) {
 
-                let interventionToAdd: Intervention | undefined;
+                    let interventionToAdd: Intervention | undefined;
 
-                if (newIntervention && 'data' in newIntervention && newIntervention.data) {
-                    interventionToAdd = newIntervention.data as Intervention;
-                } else if (newIntervention && 'id' in newIntervention && 'package_id' in newIntervention && 'name' in newIntervention && 'code' in newIntervention) {
-                    interventionToAdd = newIntervention as Intervention;
-                }
+                    if (newIntervention && 'data' in newIntervention.data.intervention && newIntervention.data) {
+                        interventionToAdd = newIntervention.data.intervention as Intervention;
+                    } else if (newIntervention && 'id' in newIntervention.data.intervention && 'package_id' in newIntervention.data.intervention && 'name' in newIntervention.data.intervention && 'code' in newIntervention.data.intervention) {
+                        interventionToAdd = newIntervention.data.intervention as Intervention;
+                    }
 
-                if (interventionToAdd) {
-                    const updatedInterventions = [...interventions, interventionToAdd];
-                    setInterventions(updatedInterventions);
-                    toast.success("Intervention created successfully");
-                    const newTotalPages = Math.ceil((filteredInterventions.length + 1) / itemsPerPage);
-                    if (newTotalPages > totalPages) {
-                        setCurrentPage(newTotalPages);
+                    if (interventionToAdd) {
+                        const updatedInterventions = [interventionToAdd, ...interventions];
+                        setInterventions(updatedInterventions);
+                        toast.success("Intervention created successfully");
+                        const newTotalPages = Math.ceil((filteredInterventions.length + 1) / itemsPerPage);
+                        if (newTotalPages > totalPages) {
+                            setCurrentPage(newTotalPages);
+                        }
+                    } else {
+                        throw new Error("Invalid intervention data received");
                     }
                 } else {
-                    throw new Error("Invalid intervention data received");
+                    toast.error("Failed to create intervention");
+                    throw new Error("Failed to create intervention");
                 }
             }
 

@@ -51,8 +51,9 @@ export default function ManagePackage() {
             setIsLoading(true);
             try {
                 const pkg = await getPackages();
-                setPackages(pkg ?? []);
-                setFilteredPackages(pkg ?? []);
+                setPackages((pkg ?? []).slice().reverse());
+                setFilteredPackages((pkg ?? []).slice().reverse());
+
             } catch (error) {
                 console.error("Error fetching packages:", error);
                 setPackages([]);
@@ -140,32 +141,39 @@ export default function ManagePackage() {
 
         try {
             if (editingPackage && editingPackage.id) {
-                const updatedPackage = await updatePackage(editingPackage.id, formData);
+                const updatedPkg = await updatePackage(editingPackage.id, formData);
+
                 const updatedPackages = packages.map(pkg =>
-                    pkg.id === editingPackage.id && updatedPackage ? updatedPackage : pkg
+                    pkg.id === editingPackage?.id && updatedPkg ? updatedPkg.updatedPackage : pkg
                 );
                 setPackages(updatedPackages);
                 toast.success("Package updated successfully");
             } else {
                 const newPackage = await postPackage(formData);
-                let pkgToAdd: Package | undefined;
+                if (newPackage?.status === 201) {
+                    let pkgToAdd: Package | undefined;
 
-                if (newPackage && 'id' in newPackage && 'name' in newPackage && 'code' in newPackage) {
-                    pkgToAdd = newPackage as Package;
-                } else if (newPackage && 'data' in newPackage && newPackage.data && 'id' in newPackage.data && 'name' in newPackage.data && 'code' in newPackage.data) {
-                    pkgToAdd = newPackage.data as Package;
-                }
 
-                if (pkgToAdd) {
-                    const updatedPackages = [...packages, pkgToAdd];
-                    setPackages(updatedPackages);
-                    toast.success("Package created successfully");
-                    const newTotalPages = Math.ceil((filteredPackages.length + 1) / itemsPerPage);
-                    if (newTotalPages > totalPages) {
-                        setCurrentPage(newTotalPages);
+                    if (newPackage.data.shaPackage && 'id' in newPackage.data.shaPackage && 'name' in newPackage.data.shaPackage && 'code' in newPackage.data.shaPackage) {
+                        pkgToAdd = newPackage.data.shaPackage as Package;
+                    } else if (newPackage && 'data' in newPackage && newPackage.data && 'id' in newPackage.data && 'name' in newPackage.data && 'code' in newPackage.data) {
+                        pkgToAdd = newPackage.data as Package;
+                    }
+
+                    if (pkgToAdd) {
+                        const updatedPackages = [pkgToAdd, ...packages];
+                        setPackages(updatedPackages);
+                        toast.success("Package created successfully");
+                        const newTotalPages = Math.ceil((filteredPackages.length + 1) / itemsPerPage);
+                        if (newTotalPages > totalPages) {
+                            setCurrentPage(newTotalPages);
+                        }
+                    } else {
+                        throw new Error("Invalid package data received");
                     }
                 } else {
-                    throw new Error("Invalid package data received");
+                    toast.error("Failed to create package");
+                    throw new Error("Failed to create package");
                 }
             }
 
@@ -340,7 +348,7 @@ export default function ManagePackage() {
                                                         <TableCell className="font-medium text-gray-600">
                                                             {searchTerm ? (
                                                                 <span dangerouslySetInnerHTML={{
-                                                                    __html: pkg.code.replace(
+                                                                    __html: pkg.code?.replace(
                                                                         new RegExp(searchTerm, 'gi'),
                                                                         match => `<span class="bg-green-200">${match}</span>`
                                                                     )
@@ -352,7 +360,7 @@ export default function ManagePackage() {
                                                         <TableCell className="text-gray-600">
                                                             {searchTerm ? (
                                                                 <span dangerouslySetInnerHTML={{
-                                                                    __html: pkg.name.replace(
+                                                                    __html: pkg.name?.replace(
                                                                         new RegExp(searchTerm, 'gi'),
                                                                         match => `<span class="bg-green-200">${match}</span>`
                                                                     )
@@ -449,7 +457,7 @@ export default function ManagePackage() {
                                             type="text"
                                             id="code"
                                             value={formData.code}
-                                            onChange={(e) => setFormData(prev => ({ ...prev, code: e.target.value }))}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, code: e.target.value.toLocaleUpperCase() }))}
                                             placeholder="Enter package code"
                                             required
                                         />
