@@ -33,6 +33,7 @@ export function SheetMenu() {
           </Button>
         </SheetHeader>
         <Menu isOpen />
+        <br className="bg-white" />
       </SheetContent>
     </Sheet>
   );

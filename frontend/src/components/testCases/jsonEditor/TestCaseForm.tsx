@@ -11,7 +11,7 @@ import ProviderDetailsPanel from '@/components/Dashboard/ProviderDetailsPanel';
 import CustomSelector from '@/components/Dashboard/UseSelector';
 import { Button } from '@/components/ui/button';
 import { PlusIcon, TrashIcon } from 'lucide-react';
-import { PER_DIEM_CODES } from '@/lib/utils';
+import { cn, PER_DIEM_CODES } from '@/lib/utils';
 
 interface TestcaseFormProps {
   jsonData: any;
@@ -468,16 +468,18 @@ export default function TestcaseForm({ jsonData, setJsonData }: TestcaseFormProp
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
-                <div>
-                  <Label className="py-2">Days</Label>
-                  <Input
-                    type="number"
-                    value={days}
-                    readOnly
-                    className="bg-gray-100"
-                  />
-                </div>
+              <div className={cn("grid grid-cols-1 gap-4 mb-3", PER_DIEM_CODES.has(selectedInterventions[index]) ? "md:grid-cols-3" : "md:grid-cols-2")}>
+                {PER_DIEM_CODES.has(selectedInterventions[index]) && (
+                  <div>
+                    <Label className="py-2">Days</Label>
+                    <Input
+                      type="number"
+                      value={days}
+                      readOnly
+                      className="bg-gray-100"
+                    />
+                  </div>
+                )}
                 <div>
                   <Label className="py-2">Unit Price (KES)</Label>
                   <Input

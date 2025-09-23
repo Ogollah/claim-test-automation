@@ -24,6 +24,7 @@ import CustomSelector from "./UseSelector";
 import { InterventionItem, Provider, Practitioner } from "@/lib/types";
 import { DateFieldRenderer } from "./DateFieldRenderer";
 import { Switch } from "../ui/switch";
+import { cn } from "@/lib/utils";
 
 type TestRunnerProps = {
   isRunning?: boolean;
@@ -300,23 +301,32 @@ export default function OptimizedTestRunner({
 
         {/* Add Intervention Section */}
         <div className="border-t border-gray-200 pt-4 mb-6 text-gray-500">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            {INTERVENTION_FIELDS.map(({ label, key, disabled }) => (
-              <div key={key}>
-                <Label className="py-3">{label}</Label>
-                <Input
-                  type="number"
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  value={key === "netValue" ? netValue : intervention[key as keyof typeof intervention]}
-                  disabled={disabled}
-                  onChange={(e) => {
-                    if (!disabled) {
-                      updateIntervention(key as keyof typeof intervention, e.target.value);
+          <div className={cn("grid grid-cols-1  gap-4 mb-4", isPerdiem ? "md:grid-cols-3" : "md:grid-cols-2")}>
+            {INTERVENTION_FIELDS
+              .filter(({ key }) => isPerdiem || key !== "days") // <-- Only include "days" if isPerDiem is true
+              .map(({ label, key, disabled }) => (
+                <div key={key}>
+                  <Label className="py-3">{label}</Label>
+                  <Input
+                    type="number"
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    value={
+                      key === "netValue"
+                        ? netValue
+                        : intervention[key as keyof typeof intervention]
                     }
-                  }}
-                />
-              </div>
-            ))}
+                    disabled={disabled}
+                    onChange={(e) => {
+                      if (!disabled) {
+                        updateIntervention(
+                          key as keyof typeof intervention,
+                          e.target.value
+                        );
+                      }
+                    }}
+                  />
+                </div>
+              ))}
           </div>
 
           {/* Service Dates and Add Button */}
@@ -340,7 +350,7 @@ export default function OptimizedTestRunner({
               <Button
                 onClick={addIntervention}
                 disabled={!selectedPackage || !selectedIntervention}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-900 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
                 <Plus className="h-5 w-5" />
                 Add Intervention
@@ -452,7 +462,7 @@ export default function OptimizedTestRunner({
             disabled={isRunning || interventions.length === 0}
             className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${isRunning || interventions.length === 0
               ? "bg-gray-400 cursor-not-allowed"
-              : "bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              : "bg-green-900 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               }`}
           >
             {isRunning ? (

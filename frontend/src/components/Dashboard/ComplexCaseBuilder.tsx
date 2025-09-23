@@ -544,8 +544,10 @@ export default function ComplexCaseBuilder({
         </div>
 
         <div className="border-t border-gray-200 pt-4 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            {INTERVENTION_FIELDS.map(renderInterventionField)}
+          <div className={cn("grid grid-cols-1  gap-4 mb-4", isPerdiem ? "md:grid-cols-3" : "md:grid-cols-2")}>
+            {INTERVENTION_FIELDS
+              .filter(({ key }) => isPerdiem || key !== "days")
+              .map(renderInterventionField)}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
