@@ -244,6 +244,7 @@ export interface Intervention {
   package_id: number,
   name: string,
   code: string,
+  is_complex?: number,
 }
 
 export interface TestCaseItem {

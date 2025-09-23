@@ -270,7 +270,23 @@ export const getInterventionByComplexity = async (complexity: number) => {
   }
 }
 
+export const updateIntervention = async (id: number, data: Intervention) => {
+  try {
+    const resp = await api.put<Intervention>(`/api/interventions/update/${id}`, data);
+    return resp.data;
+  } catch (error) {
+    console.error('--> Error updating intervention: ', error);
+  }
+};
 
+export const deleteIntervention = async (id: number) => {
+  try {
+    const resp = await api.delete(`/api/interventions/delete/${id}`);
+    return resp.data;
+  } catch (error) {
+    console.error('--> Error deleting intervention: ', error);
+  }
+};
 
 // Package
 export const getPackages = async () => {

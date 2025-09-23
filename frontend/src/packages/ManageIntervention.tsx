@@ -27,19 +27,23 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Package } from "@/lib/types";
-import { getPackages, postPackage, updatePackage, deletePackage } from "@/lib/api";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Intervention, Package } from "@/lib/types";
+import { getIntervention, postIntervention, updateIntervention, deleteIntervention, getPackages } from "@/lib/api";
 import { toast } from "sonner";
 
-export default function ManagePackage() {
+export default function ManageIntervention() {
+    const [interventions, setInterventions] = useState<Intervention[]>([]);
     const [packages, setPackages] = useState<Package[]>([]);
-    const [filteredPackages, setFilteredPackages] = useState<Package[]>([]);
+    const [filteredInterventions, setFilteredInterventions] = useState<Intervention[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
-    const [editingPackage, setEditingPackage] = useState<Package | null>(null);
+    const [editingIntervention, setEditingIntervention] = useState<Intervention | null>(null);
     const [formData, setFormData] = useState({
+        package_id: "",
         code: "",
-        name: ""
+        name: "",
+        is_complex: false
     });
 
     const [currentPage, setCurrentPage] = useState(1);
@@ -50,14 +54,19 @@ export default function ManagePackage() {
         const fetchData = async () => {
             setIsLoading(true);
             try {
-                const pkg = await getPackages();
-                setPackages(pkg ?? []);
-                setFilteredPackages(pkg ?? []);
+                const [interventionsData, packagesData] = await Promise.all([
+                    getIntervention(),
+                    getPackages()
+                ]);
+                setInterventions(interventionsData ?? []);
+                setFilteredInterventions(interventionsData ?? []);
+                setPackages(packagesData ?? []);
             } catch (error) {
-                console.error("Error fetching packages:", error);
+                console.error("Error fetching data:", error);
+                setInterventions([]);
+                setFilteredInterventions([]);
                 setPackages([]);
-                setFilteredPackages([]);
-                toast.error("Failed to fetch packages");
+                toast.error("Failed to fetch data");
             } finally {
                 setIsLoading(false);
             }
@@ -65,46 +74,71 @@ export default function ManagePackage() {
         fetchData();
     }, []);
 
-    // Search functionality
+    // Search
     useEffect(() => {
         if (searchTerm.trim() === "") {
-            setFilteredPackages(packages);
+            setFilteredInterventions(interventions);
         } else {
-            const filtered = packages.filter(pkg =>
-                pkg.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                pkg.code.toLowerCase().includes(searchTerm.toLowerCase())
-            );
-            setFilteredPackages(filtered);
+            const searchLower = searchTerm.toLowerCase();
+            const filtered = interventions.filter(intervention => {
+                const packageObj = packages.find(p => p.id === intervention.package_id);
+                const packageCode = packageObj?.code.toLowerCase() || '';
+                const interventionCode = intervention.code.toLowerCase();
+                const interventionName = intervention.name.toLowerCase();
+                const isComplex = intervention.is_complex ? 'true complex yes 1' : 'false simple no 0';
+
+                return (
+                    packageCode.includes(searchLower) ||
+                    interventionCode.includes(searchLower) ||
+                    interventionName.includes(searchLower) ||
+                    isComplex.includes(searchLower)
+                );
+            });
+            setFilteredInterventions(filtered);
         }
         setCurrentPage(1);
-    }, [searchTerm, packages]);
+    }, [searchTerm, interventions, packages]);
 
     useEffect(() => {
         setCurrentPage(1);
     }, [itemsPerPage]);
 
+    // Get default package based on search
+    const getDefaultPackageId = () => {
+        if (searchTerm.trim() === "") {
+            return packages[0]?.id?.toString() || "";
+        }
+
+        // Find package that matches search term
+        const matchingPackage = packages.find(pkg =>
+            pkg.code.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+
+        return matchingPackage?.id?.toString() || packages[0]?.id?.toString() || "";
+    };
+
     // Pagination calculations
-    const totalPages = Math.ceil(filteredPackages.length / itemsPerPage);
+    const totalPages = Math.ceil(filteredInterventions.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    const currentItems = filteredPackages.slice(startIndex, endIndex);
+    const currentItems = filteredInterventions.slice(startIndex, endIndex);
 
     const handleDelete = async (id: string) => {
-        toast.info("Are you sure you want to delete this package? Deleting package will delete associated interventions", {
+        toast.info("Are you sure you want to delete this intervention?", {
             action: {
                 label: "Delete",
                 onClick: async () => {
                     try {
-                        await deletePackage(Number(id));
-                        const updatedPackages = packages.filter(pkg => pkg.id !== Number(id));
-                        setPackages(updatedPackages);
-                        toast.success("Package deleted successfully");
+                        await deleteIntervention(Number(id));
+                        const updatedInterventions = interventions.filter(intervention => intervention.id !== Number(id));
+                        setInterventions(updatedInterventions);
+                        toast.success("Intervention deleted successfully");
                         if (currentItems.length === 1 && currentPage > 1) {
                             setCurrentPage(prev => prev - 1);
                         }
                     } catch (error) {
-                        console.error("Error deleting package:", error);
-                        toast.error("Failed to delete package");
+                        console.error("Error deleting intervention:", error);
+                        toast.error("Failed to delete intervention");
                     }
                 },
             },
@@ -119,69 +153,98 @@ export default function ManagePackage() {
     };
 
     const handleAddNew = () => {
-        setEditingPackage(null);
-        setFormData({ code: "", name: "" });
+        setEditingIntervention(null);
+        setFormData({
+            package_id: getDefaultPackageId(),
+            code: "",
+            name: "",
+            is_complex: false
+        });
         setShowForm(true);
     };
 
-    const handleEdit = (pkg: Package) => {
-        setEditingPackage(pkg);
-        setFormData({ code: pkg.code, name: pkg.name });
+    const handleEdit = (intervention: Intervention) => {
+        setEditingIntervention(intervention);
+        setFormData({
+            package_id: intervention.package_id?.toString() || "",
+            code: intervention.code,
+            name: intervention.name,
+            is_complex: Boolean(intervention.is_complex)
+        });
         setShowForm(true);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!formData.code.trim() || !formData.name.trim()) {
-            toast.error("Please fill in all fields");
+        if (!formData.package_id || !formData.code.trim() || !formData.name.trim()) {
+            toast.error("Please fill in all required fields");
             return;
         }
 
         try {
-            if (editingPackage && editingPackage.id) {
-                const updatedPackage = await updatePackage(editingPackage.id, formData);
-                const updatedPackages = packages.map(pkg =>
-                    pkg.id === editingPackage.id && updatedPackage ? updatedPackage : pkg
+            if (editingIntervention && editingIntervention.id) {
+                const updatedIntervention = await updateIntervention(editingIntervention.id, {
+                    ...formData,
+                    package_id: Number(formData.package_id),
+                    is_complex: formData.is_complex ? 1 : 0
+                });
+                const updatedInterventions = interventions.map(intervention =>
+                    intervention.id === editingIntervention.id && updatedIntervention ? updatedIntervention : intervention
                 );
-                setPackages(updatedPackages);
-                toast.success("Package updated successfully");
+                setInterventions(updatedInterventions);
+                toast.success("Intervention updated successfully");
             } else {
-                const newPackage = await postPackage(formData);
-                let pkgToAdd: Package | undefined;
+                const newIntervention = await postIntervention({
+                    ...formData,
+                    package_id: Number(formData.package_id),
+                    is_complex: formData.is_complex ? 1 : 0
+                });
 
-                if (newPackage && 'id' in newPackage && 'name' in newPackage && 'code' in newPackage) {
-                    pkgToAdd = newPackage as Package;
-                } else if (newPackage && 'data' in newPackage && newPackage.data && 'id' in newPackage.data && 'name' in newPackage.data && 'code' in newPackage.data) {
-                    pkgToAdd = newPackage.data as Package;
+                let interventionToAdd: Intervention | undefined;
+
+                if (newIntervention && 'data' in newIntervention && newIntervention.data) {
+                    interventionToAdd = newIntervention.data as Intervention;
+                } else if (newIntervention && 'id' in newIntervention && 'package_id' in newIntervention && 'name' in newIntervention && 'code' in newIntervention) {
+                    interventionToAdd = newIntervention as Intervention;
                 }
 
-                if (pkgToAdd) {
-                    const updatedPackages = [...packages, pkgToAdd];
-                    setPackages(updatedPackages);
-                    toast.success("Package created successfully");
-                    const newTotalPages = Math.ceil((filteredPackages.length + 1) / itemsPerPage);
+                if (interventionToAdd) {
+                    const updatedInterventions = [...interventions, interventionToAdd];
+                    setInterventions(updatedInterventions);
+                    toast.success("Intervention created successfully");
+                    const newTotalPages = Math.ceil((filteredInterventions.length + 1) / itemsPerPage);
                     if (newTotalPages > totalPages) {
                         setCurrentPage(newTotalPages);
                     }
                 } else {
-                    throw new Error("Invalid package data received");
+                    throw new Error("Invalid intervention data received");
                 }
             }
 
             setShowForm(false);
-            setFormData({ code: "", name: "" });
-            setEditingPackage(null);
+            setFormData({
+                package_id: "",
+                code: "",
+                name: "",
+                is_complex: false
+            });
+            setEditingIntervention(null);
         } catch (error) {
-            console.error("Error saving package:", error);
-            toast.error("Failed to save package");
+            console.error("Error saving intervention:", error);
+            toast.error("Failed to save intervention");
         }
     };
 
     const handleCancel = () => {
         setShowForm(false);
-        setFormData({ code: "", name: "" });
-        setEditingPackage(null);
+        setFormData({
+            package_id: "",
+            code: "",
+            name: "",
+            is_complex: false
+        });
+        setEditingIntervention(null);
     };
 
     const goToPage = (page: number) => {
@@ -265,6 +328,18 @@ export default function ManagePackage() {
         setSearchTerm("");
     };
 
+    const getPackageCode = (packageId: number) => {
+        const packageObj = packages.find(p => p.id === packageId);
+        return packageObj?.code || "N/A";
+    };
+
+    const highlightText = (text: string, search: string) => {
+        if (!search.trim()) return text;
+
+        const regex = new RegExp(`(${search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+        return text.replace(regex, '<span class="bg-green-200">$1</span>');
+    };
+
     return (
         <div className="mx-auto py-3">
             <div className="bg-white rounded-sm shadow-md p-6 mb-8 max-w-9xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -272,7 +347,7 @@ export default function ManagePackage() {
                     <div className="flex-1 max-w-md relative">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                         <Input
-                            placeholder="Search packages by name or code..."
+                            placeholder="Search by package code, intervention code, name, or complexity..."
                             className="border border-gray-300 rounded-md py-2 px-10 pr-10"
                             value={searchTerm}
                             onChange={handleSearchChange}
@@ -293,13 +368,14 @@ export default function ManagePackage() {
                         className="bg-green-900 text-white px-4 py-2 rounded-md hover:bg-green-700 flex items-center gap-2"
                     >
                         <Plus size={18} />
-                        Add New Package
+                        Add New Intervention
                     </Button>
                 </div>
 
+                {/* Search results info */}
                 {searchTerm && (
                     <div className="mb-4 text-sm text-gray-600">
-                        Found {filteredPackages.length} package(s) matching "{searchTerm}"
+                        Found {filteredInterventions.length} intervention(s) matching "{searchTerm}"
                         <Button
                             variant="link"
                             onClick={clearSearch}
@@ -323,42 +399,42 @@ export default function ManagePackage() {
                                         <TableHeader>
                                             <TableRow>
                                                 <TableHead className="font-semibold text-gray-500">Package Code</TableHead>
-                                                <TableHead className="font-semibold text-gray-500">Package Name</TableHead>
+                                                <TableHead className="font-semibold text-gray-500">Intervention Code</TableHead>
+                                                <TableHead className="font-semibold text-gray-500">Intervention Name</TableHead>
+                                                <TableHead className="font-semibold text-gray-500">Complexity</TableHead>
                                                 <TableHead className="text-right font-semibold text-gray-500">Actions</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
                                             {currentItems.length === 0 ? (
                                                 <TableRow>
-                                                    <TableCell colSpan={3} className="text-center text-gray-500 h-32">
-                                                        {searchTerm ? 'No packages found matching your search' : 'No packages found'}
+                                                    <TableCell colSpan={5} className="text-center text-gray-500 h-32">
+                                                        {searchTerm ? 'No interventions found matching your search' : 'No interventions found'}
                                                     </TableCell>
                                                 </TableRow>
                                             ) : (
-                                                currentItems.map((pkg) => (
-                                                    <TableRow key={pkg.id} className="hover:bg-gray-50/50">
+                                                currentItems.map((intervention) => (
+                                                    <TableRow key={intervention.id} className="hover:bg-gray-50/50">
                                                         <TableCell className="font-medium text-gray-600">
-                                                            {searchTerm ? (
-                                                                <span dangerouslySetInnerHTML={{
-                                                                    __html: pkg.code.replace(
-                                                                        new RegExp(searchTerm, 'gi'),
-                                                                        match => `<span class="bg-green-200">${match}</span>`
-                                                                    )
-                                                                }} />
-                                                            ) : (
-                                                                pkg.code
-                                                            )}
+                                                            <span dangerouslySetInnerHTML={{
+                                                                __html: highlightText(getPackageCode(intervention.package_id), searchTerm)
+                                                            }} />
                                                         </TableCell>
                                                         <TableCell className="text-gray-600">
-                                                            {searchTerm ? (
-                                                                <span dangerouslySetInnerHTML={{
-                                                                    __html: pkg.name.replace(
-                                                                        new RegExp(searchTerm, 'gi'),
-                                                                        match => `<span class="bg-green-200">${match}</span>`
-                                                                    )
-                                                                }} />
+                                                            <span dangerouslySetInnerHTML={{
+                                                                __html: highlightText(intervention.code, searchTerm)
+                                                            }} />
+                                                        </TableCell>
+                                                        <TableCell className="text-gray-600">
+                                                            <span dangerouslySetInnerHTML={{
+                                                                __html: highlightText(intervention.name, searchTerm)
+                                                            }} />
+                                                        </TableCell>
+                                                        <TableCell className="text-gray-600">
+                                                            {intervention.is_complex ? (
+                                                                <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">Complex</span>
                                                             ) : (
-                                                                pkg.name
+                                                                <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Simple</span>
                                                             )}
                                                         </TableCell>
                                                         <TableCell className="text-right">
@@ -366,7 +442,7 @@ export default function ManagePackage() {
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="icon"
-                                                                    onClick={() => handleEdit(pkg)}
+                                                                    onClick={() => handleEdit(intervention)}
                                                                     className="text-green-900 hover:text-green-700 hover:bg-green-50"
                                                                 >
                                                                     <Edit size={16} />
@@ -374,7 +450,7 @@ export default function ManagePackage() {
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="icon"
-                                                                    onClick={() => handleDelete(String(pkg.id))}
+                                                                    onClick={() => handleDelete(String(intervention.id))}
                                                                     className="text-red-600 hover:text-red-900 hover:bg-red-50"
                                                                 >
                                                                     <Trash2 size={16} />
@@ -387,7 +463,7 @@ export default function ManagePackage() {
                                         </TableBody>
                                     </Table>
 
-                                    {filteredPackages.length > 0 && (
+                                    {filteredInterventions.length > 0 && (
                                         <div className="flex items-center justify-between px-4 py-4 border-t">
                                             <div className="flex items-center gap-4">
                                                 <div className="flex items-center gap-2">
@@ -404,11 +480,10 @@ export default function ManagePackage() {
                                                             <SelectItem value="100">100</SelectItem>
                                                         </SelectContent>
                                                     </Select>
-                                                    {/* <span className="text-sm text-gray-600">entries per page</span> */}
                                                 </div>
                                                 <div className="text-sm text-gray-600">
-                                                    Showing {startIndex + 1} to {Math.min(endIndex, filteredPackages.length)} of {filteredPackages.length} entries
-                                                    {searchTerm && ` (filtered from ${packages.length} total)`}
+                                                    Showing {startIndex + 1} to {Math.min(endIndex, filteredInterventions.length)} of {filteredInterventions.length} entries
+                                                    {searchTerm && ` (filtered from ${interventions.length} total)`}
                                                 </div>
                                             </div>
                                             <Pagination>
@@ -428,7 +503,7 @@ export default function ManagePackage() {
                             <div className="bg-gray-50 rounded-lg border border-gray-200 p-6">
                                 <div className="flex justify-between items-center mb-4">
                                     <h3 className="text-lg font-medium text-green-900">
-                                        {editingPackage ? 'Edit Package' : 'Add New Package'}
+                                        {editingIntervention ? 'Edit Intervention' : 'Add New Intervention'}
                                     </h3>
                                     <Button
                                         variant="ghost"
@@ -442,31 +517,63 @@ export default function ManagePackage() {
 
                                 <form onSubmit={handleSubmit} className="space-y-4">
                                     <div className="space-y-2">
+                                        <Label htmlFor="package_id" className="text-sm font-medium text-gray-600">
+                                            Package <span className="text-red-500">*</span>
+                                        </Label>
+                                        <Select disabled={!!editingIntervention} value={formData.package_id} onValueChange={(value) => setFormData(prev => ({ ...prev, package_id: value }))}>
+                                            <SelectTrigger className="text-gray-500 w-full">
+                                                <SelectValue placeholder="Select a package" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {packages.map((pkg) => (
+                                                    <SelectItem key={pkg.id} value={pkg.id?.toString() || ""}>
+                                                        {pkg.code} - {pkg.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    <div className="space-y-2">
                                         <Label htmlFor="code" className="text-sm font-medium text-gray-600">
-                                            Package Code
+                                            Intervention Code <span className="text-red-500">*</span>
                                         </Label>
                                         <Input
                                             type="text"
                                             id="code"
                                             value={formData.code}
                                             onChange={(e) => setFormData(prev => ({ ...prev, code: e.target.value }))}
-                                            placeholder="Enter package code"
+                                            placeholder="Enter intervention code"
                                             required
+                                            className="text-gray-600"
                                         />
                                     </div>
 
                                     <div className="space-y-2">
                                         <Label htmlFor="name" className="text-sm font-medium text-gray-600">
-                                            Package Name
+                                            Intervention Name <span className="text-red-500">*</span>
                                         </Label>
                                         <Input
                                             type="text"
                                             id="name"
                                             value={formData.name}
                                             onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                                            placeholder="Enter package name"
+                                            placeholder="Enter intervention name"
                                             required
+                                            className="text-gray-600"
                                         />
+                                    </div>
+
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id="is_complex"
+                                            checked={formData.is_complex}
+                                            onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_complex: checked as boolean }))}
+                                            className="border-green-900 text-green-900 focus:ring-green-900"
+                                        />
+                                        <Label htmlFor="is_complex" className="text-sm font-medium text-gray-600">
+                                            Complex Intervention
+                                        </Label>
                                     </div>
 
                                     <div className="flex gap-2 pt-4">
@@ -475,7 +582,7 @@ export default function ManagePackage() {
                                             className="flex-1 bg-green-900 text-white hover:bg-green-700 flex items-center justify-center gap-2"
                                         >
                                             <Save size={16} />
-                                            {editingPackage ? 'Update' : 'Save'}
+                                            {editingIntervention ? 'Update' : 'Save'}
                                         </Button>
                                         <Button
                                             type="button"
