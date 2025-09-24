@@ -149,7 +149,7 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                       </div>
                       <div className="text-xs text-gray-400 break-words whitespace-pre-wrap">
 
-                        {result.outcome ? (<span className="text-red-400 break-words">{result.outcome}</span>) : (<span className="text-red-400 break-words">{result.details.error ? `${result.details.error}` : <Minus className="h-4 w-4" />}</span>)}
+                        {result.outcome ? (<span className="text-red-400 break-words">{result.outcome}</span>) : (<span className="text-red-400 break-words">{result.details.error ? `${result.details.error}` : <span className={`${result.details.request?.formData?.is_bundle_only ? 'text-green-500' : ''}`}>{result.message}</span>}</span>)}
 
                       </div>
                     </TableCell>
@@ -232,7 +232,7 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
 
                     </TableCell>
                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                      {result.ruleStatus?.toUpperCase() || <span className="h-4 w-4 text-red-500">{`${result.details.statusCode} - ${result.message}`}</span>}
+                      {result.ruleStatus?.toUpperCase() || <span className={`h-4 w-4 ${result.details.request?.formData?.is_bundle_only ? 'text-green-500' : 'text-red-500'}`}>{`${result.details.request?.formData?.is_bundle_only ? '' : result.details.statusCode} - ${result.message}`}</span>}
                     </TableCell>
                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(result.timestamp).toLocaleString()}
