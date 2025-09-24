@@ -69,12 +69,17 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
       });
   };
 
+  const inProgressOutcomes = ['Pending', CLAIM_STATUS.CLINICAL_REVIEW, CLAIM_STATUS.IN_REVIEW];
+
   const getStatusClasses = (status: string, outcome?: string) => {
     if (status === 'passed') return 'bg-green-100 text-green-800';
-    if (status === 'failed' && outcome === 'Pending') return 'bg-yellow-100 text-yellow-800';
+    if (status === 'failed' && inProgressOutcomes.includes(outcome || '')) {
+      return 'bg-yellow-100 text-yellow-800';
+    }
     if (status === 'failed') return 'bg-red-100 text-red-800';
     return 'bg-gray-100 text-gray-800';
   };
+
 
   return (
     <div className="bg-white shadow overflow-hidden sm:rounded-lg">
@@ -143,11 +148,9 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                         {result.name}
                       </div>
                       <div className="text-xs text-gray-400 break-words whitespace-pre-wrap">
-                        {result.outcome ?? (
-                          <span className="text-red-400 break-words">
-                            {result.details.error}
-                          </span>
-                        )}
+
+                        {result.outcome ? (<span className="text-red-400 break-words">{result.outcome}</span>) : (<span className="text-red-400 break-words">{result.details.error ? `${result.details.error}` : <span className={`${result.details.request?.formData?.is_bundle_only ? 'text-green-500' : ''}`}>{result.message}</span>}</span>)}
+
                       </div>
                     </TableCell>
                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -155,39 +158,81 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                     </TableCell>
                     <TableCell className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center justify-start">
-                        <span className={`px-2 inline-flex items-center text-xs leading-5 font-semibold rounded-full ${getStatusClasses(result.status, result.outcome)}`}>
-                          {result.status === 'passed' ? (
-                            <CheckCircleIcon className="h-4 w-4 mr-1" />
-                          ) : result.status === 'failed' && result.outcome !== 'Pending' ? (
-                            <XCircleIcon className="h-4 w-4 mr-1" />
-                          ) : result.outcome === 'Pending' && result.status === 'failed' ? (
-                            <Button
-                              variant="link"
-                              onClick={() => handleRefresh(result.id, result.claimId ?? '', result.test)}
-                              size="sm"
-                              disabled={refreshingIds[result.id]}
-                              className="h-4 w-4 mr-1"
-                            >
-                              <RefreshCcwIcon className={`h-4 w-4 ${refreshingIds[result.id] ? 'text-orange-500 animate-spin' : 'text-orange-400'}`} />
-                            </Button>
-                          ) : (
-                            <Button
-                              onClick={() => copyPayload(result.details.fhirBundle)}
-                              className="h-4 w-4 mr-1 bg-blue-100 text-blue-800 hover:text-blue-500 hover:bg-blue-100 text-sm"
-                            >
-                              <ClipboardIcon className="h-4 w-4 mr-1" />
-                            </Button>
-                          )}
-                          {result.outcome !== 'Pending' ? (
-                            result.status.toUpperCase()
-                          ) : (
-                            <span className="text-orange-400">{refreshingIds[result.id] ? 'Refreshing...' : 'PENDING'}</span>
-                          )}
+                        <span
+                          className={`px-2 inline-flex items-center text-xs leading-5 font-semibold rounded-full ${getStatusClasses(
+                            result.status,
+                            result.outcome
+                          )}`}
+                        >
+                          {(() => {
+                            const isPending = result.outcome === 'Pending';
+                            const isInReview = result.outcome === CLAIM_STATUS.CLINICAL_REVIEW || result.outcome === CLAIM_STATUS.IN_REVIEW;
+                            const isFailed = result.status === 'failed';
+                            const isPassed = result.status === 'passed';
+                            const isRefreshing = refreshingIds[result.id];
+
+                            if (isPassed) {
+                              return <CheckCircleIcon className="h-4 w-4 mr-1" />;
+                            }
+
+                            if (isFailed && (isPending || isInReview)) {
+                              return (
+                                <Button
+                                  variant="link"
+                                  onClick={() => handleRefresh(result.id, result.claimId ?? '', result.test)}
+                                  size="sm"
+                                  disabled={isRefreshing}
+                                  className="h-4 w-4 mr-1"
+                                >
+                                  <RefreshCcwIcon
+                                    className={`h-4 w-4 ${isRefreshing ? 'text-orange-500 animate-spin' : 'text-orange-400'
+                                      }`}
+                                  />
+                                </Button>
+                              );
+                            }
+
+                            if (isFailed) {
+                              return <XCircleIcon className="h-4 w-4 mr-1" />;
+                            }
+
+                            return (
+                              <Button
+                                onClick={() => copyPayload(result.details.fhirBundle)}
+                                className="h-4 w-4 mr-1 bg-blue-100 text-blue-800 hover:text-blue-500 hover:bg-blue-100 text-sm"
+                              >
+                                <ClipboardIcon className="h-4 w-4 mr-1" />
+                              </Button>
+                            );
+                          })()}
+
+                          {(() => {
+                            const isPending = result.outcome === 'Pending';
+                            const isInReview = result.outcome === CLAIM_STATUS.CLINICAL_REVIEW;
+                            const isRefreshing = refreshingIds[result.id];
+
+                            if (!isPending && !isInReview) {
+                              return result.status.toUpperCase();
+                            }
+
+                            return (
+                              <span className="text-orange-400">
+                                {isRefreshing
+                                  ? 'Refreshing...'
+                                  : isPending
+                                    ? 'PENDING'
+                                    : isInReview
+                                      ? 'IN REVIEW'
+                                      : result.outcome}
+                              </span>
+                            );
+                          })()}
                         </span>
                       </div>
+
                     </TableCell>
                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                      {result.ruleStatus?.toUpperCase() || <span className="h-4 w-4 text-red-500">{result.details.statusCode}</span>}
+                      {result.ruleStatus?.toUpperCase() || <span className={`h-4 w-4 ${result.details.request?.formData?.is_bundle_only ? 'text-green-500' : 'text-red-500'}`}>{`${result.details.request?.formData?.is_bundle_only ? '' : result.details.statusCode} - ${result.message}`}</span>}
                     </TableCell>
                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(result.timestamp).toLocaleString()}

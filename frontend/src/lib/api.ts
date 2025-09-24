@@ -270,7 +270,23 @@ export const getInterventionByComplexity = async (complexity: number) => {
   }
 }
 
+export const updateIntervention = async (id: number, data: Intervention) => {
+  try {
+    const resp = await api.put<Intervention>(`/api/interventions/update/${id}`, data);
+    return resp.data;
+  } catch (error) {
+    console.error('--> Error updating intervention: ', error);
+  }
+};
 
+export const deleteIntervention = async (id: number) => {
+  try {
+    const resp = await api.delete(`/api/interventions/delete/${id}`);
+    return resp.data;
+  } catch (error) {
+    console.error('--> Error deleting intervention: ', error);
+  }
+};
 
 // Package
 export const getPackages = async () => {
@@ -309,6 +325,24 @@ export const getPackagesByIsPreauth = async (is_preauth: number) => {
     console.error('--> Error fetching packages by is_preauth: ', error);
   }
 }
+
+export const updatePackage = async (id: number, data: Package) => {
+  try {
+    const resp = await api.put<Package>(`/api/packages/update/${id}`, data);
+    return resp.data;
+  } catch (error) {
+    console.error('--> Error updating package: ', error);
+  }
+};
+
+export const deletePackage = async (id: number) => {
+  try {
+    const resp = await api.delete(`/api/packages/delete/${id}`);
+    return resp;
+  } catch (error) {
+    console.error('--> Error deleting package: ', error);
+  }
+};
 
 // Test case
 

@@ -228,6 +228,7 @@ const handleTestError = (error: any, testData: TestCase, testCase?: TestCaseItem
       fhirBundle: errorResponse.error.fhirBundle,
       errorMessage: errorMessage,
       statusCode: statusCode,
+      statusString: errorResponse?.data?.status ? String(errorResponse.data.status) : undefined,
       response: errorResponse,
       validationErrors: errorResponse.validation_errors || []
     }

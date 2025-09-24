@@ -5,7 +5,6 @@ import { FormatPatient, Package, TestCase, TestCaseItem, TestResult } from '@/li
 import { getInterventionByComplexity, getInterventionByPackageId, getPackages, getTestCaseByCode } from '@/lib/api';
 import TestcaseDetails from '@/components/testCases/TestcaseDetails';
 import ResultsTable from '@/components/Dashboard/ResultsTable';
-import { DEFAULT_PACKAGE } from '@/packages/ShaPackages';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -20,7 +19,7 @@ type TestRunnerProps = {
 };
 
 export default function TestCasesRunner({ isRunning = false, onRunTests }: TestRunnerProps) {
-  const [selectedPackage, setSelectedPackage] = useState(DEFAULT_PACKAGE);
+  const [selectedPackage, setSelectedPackage] = useState('');
   const [selectedIntervention, setSelectedIntervention] = useState('');
   const [runningSection, setRunningSection] = useState<string | null>(null);
   const [availableInterventions, setAvailableInterventions] = useState<any[]>([]);
@@ -230,7 +229,7 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
 
   const handleRefreshResult = async (claimId: string, test?: string) => {
     try {
-      const { outcome, status, message } = await refreshTestResult(claimId, test);
+      const { outcome, status, message, ruleStatus } = await refreshTestResult(claimId, test);
 
       setResults(prevResults =>
         prevResults.map(result => {
@@ -239,6 +238,7 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
               ...result,
               outcome,
               status,
+              ruleStatus,
               message,
               timestamp: new Date().toISOString()
             };

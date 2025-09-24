@@ -46,7 +46,7 @@ export default function ComplexCases() {
 
   const handleRefreshResult = async (claimId: string) => {
     try {
-      const { outcome, status, message } = await refreshTestResult(claimId);
+      const { outcome, status, message, ruleStatus } = await refreshTestResult(claimId);
 
       setResults(prevResults =>
         prevResults.map(result => {
@@ -56,6 +56,7 @@ export default function ComplexCases() {
               outcome,
               status,
               message,
+              ruleStatus,
               timestamp: new Date().toISOString()
             };
           }

@@ -109,9 +109,9 @@ export default function SanityTestCases({ isRunning = false, onRunTests }: Sanit
 
     const handleRefresh = async (claimId: string, test?: string) => {
         try {
-            const { outcome, status, message } = await refreshTestResult(claimId, test);
+            const { outcome, status, message, ruleStatus } = await refreshTestResult(claimId, test);
             setResults(prev =>
-                prev.map(r => (r.claimId === claimId ? { ...r, outcome, status, message, timestamp: new Date().toISOString() } : r))
+                prev.map(r => (r.claimId === claimId ? { ...r, outcome, status, message, ruleStatus, timestamp: new Date().toISOString() } : r))
             );
             toast.success('Result refreshed');
         } catch (err) {

@@ -50,7 +50,7 @@ export default function Home() {
 
   const handleRefreshResult = async (claimId: string) => {
     try {
-      const { outcome, status, message } = await refreshTestResult(claimId);
+      const { outcome, status, message, ruleStatus } = await refreshTestResult(claimId);
 
       setResults(prevResults =>
         prevResults.map(result =>
@@ -60,6 +60,7 @@ export default function Home() {
               outcome,
               status,
               message,
+              ruleStatus,
               timestamp: new Date().toISOString()
             }
             : result
