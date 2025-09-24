@@ -194,7 +194,7 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
 
     const handleRefreshResult = async (claimId: string, test?: string) => {
         try {
-            const { outcome, status, message } = await refreshTestResult(claimId, test);
+            const { outcome, status, message, ruleStatus } = await refreshTestResult(claimId, test);
 
             setResults(prevResults =>
                 prevResults.map(result => {
@@ -203,6 +203,7 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
                             ...result,
                             outcome,
                             status,
+                            ruleStatus,
                             message,
                             timestamp: new Date().toISOString()
                         };

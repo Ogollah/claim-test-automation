@@ -43,14 +43,16 @@ export const refreshTestResult = async (
   outcome: string;
   status: 'passed' | 'failed';
   message: string;
+  ruleStatus: string;
 }> => {
   try {
     const newOutcome = await getClaimOutcome(claimId);
 
     return {
       outcome: newOutcome,
+      ruleStatus: newOutcome,
       status:
-        (test === 'negative' && [CLAIM_STATUS.REJECTED, CLAIM_STATUS.DECLINED, CLAIM_STATUS.SENT_BACK].includes(newOutcome)) ||
+        (test === 'negative' && [CLAIM_STATUS.REJECTED, CLAIM_STATUS.DECLINED, CLAIM_STATUS.SENT_BACK, CLAIM_STATUS.DECLINE].includes(newOutcome)) ||
           [CLAIM_STATUS.APPROVED, CLAIM_STATUS.SENT_FOR_PAYMENT, CLAIM_STATUS.CLINICAL_REVIEW].includes(newOutcome)
           ? 'passed'
           : 'failed',
@@ -75,7 +77,7 @@ export const shouldTestPass = (
   response: boolean
 ): boolean => {
   const positiveOutcomes = [CLAIM_STATUS.APPROVED, CLAIM_STATUS.SENT_FOR_PAYMENT, CLAIM_STATUS.CLINICAL_REVIEW];
-  const negativeOutCome = [CLAIM_STATUS.DECLINED, CLAIM_STATUS.REJECTED, CLAIM_STATUS.SENT_BACK];
+  const negativeOutCome = [CLAIM_STATUS.DECLINED, CLAIM_STATUS.REJECTED, CLAIM_STATUS.SENT_BACK, CLAIM_STATUS.DECLINE];
 
   if (response === true && (testType === 'positive' || testType === 'build' || testType === 'complex')) {
     return positiveOutcomes.includes(outcome);

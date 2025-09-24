@@ -342,6 +342,7 @@ export interface TestResult {
       message: string;
     }[];
     statusCode?: number;
+    statusString?: string;
   };
 }
 export interface ComplexCase {

@@ -71,7 +71,7 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
 
   const getStatusClasses = (status: string, outcome?: string) => {
     if (status === 'passed') return 'bg-green-100 text-green-800';
-    if (status === 'failed' && outcome === 'Pending') return 'bg-yellow-100 text-yellow-800';
+    if (status === 'failed' && outcome === 'Pending' && outcome === CLAIM_STATUS.CLINICAL_REVIEW) return 'bg-yellow-100 text-yellow-800';
     if (status === 'failed') return 'bg-red-100 text-red-800';
     return 'bg-gray-100 text-gray-800';
   };
@@ -143,11 +143,9 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                         {result.name}
                       </div>
                       <div className="text-xs text-gray-400 break-words whitespace-pre-wrap">
-                        {result.outcome ?? (
-                          <span className="text-red-400 break-words">
-                            {result.details.error}
-                          </span>
-                        )}
+
+                        {result.outcome ? (<span className="text-red-400 break-words">{result.outcome}</span>) : (<span className="text-red-400 break-words">{result.details.error ? `${result.details.error}` : <Minus className="h-4 w-4" />}</span>)}
+
                       </div>
                     </TableCell>
                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -160,7 +158,7 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                             <CheckCircleIcon className="h-4 w-4 mr-1" />
                           ) : result.status === 'failed' && result.outcome !== 'Pending' ? (
                             <XCircleIcon className="h-4 w-4 mr-1" />
-                          ) : result.outcome === 'Pending' && result.status === 'failed' ? (
+                          ) : result.outcome === 'Pending' && result.status === 'failed' && result.outcome === CLAIM_STATUS.CLINICAL_REVIEW ? (
                             <Button
                               variant="link"
                               onClick={() => handleRefresh(result.id, result.claimId ?? '', result.test)}
@@ -187,7 +185,7 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                       </div>
                     </TableCell>
                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                      {result.ruleStatus?.toUpperCase() || <span className="h-4 w-4 text-red-500">{result.details.statusCode}</span>}
+                      {result.ruleStatus?.toUpperCase() || <span className="h-4 w-4 text-red-500">{`${result.details.statusCode} - ${result.message}`}</span>}
                     </TableCell>
                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(result.timestamp).toLocaleString()}

@@ -64,7 +64,8 @@ export const CLAIM_STATUS = {
   FAILED: "failed",
   REJECTED: "Rejected",
   SENT_BACK: "Returned back",
-  DECLINED: "Declined"
+  DECLINED: "Declined",
+  DECLINE: "Decline",
 
 };
 
