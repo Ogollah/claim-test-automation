@@ -31,6 +31,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Intervention, Package } from "@/lib/types";
 import { getIntervention, postIntervention, updateIntervention, deleteIntervention, getPackages } from "@/lib/api";
 import { toast } from "sonner";
+import { useAuthSession } from "@/hook/useAuth";
 
 export default function ManageIntervention() {
     const [interventions, setInterventions] = useState<Intervention[]>([]);
@@ -43,8 +44,12 @@ export default function ManageIntervention() {
         package_id: "",
         code: "",
         name: "",
-        is_complex: false
+        is_complex: false,
+        created_by: "",
+        updated_by: ""
     });
+
+    const { userId } = useAuthSession();
 
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(5);
@@ -158,7 +163,9 @@ export default function ManageIntervention() {
             package_id: getDefaultPackageId(),
             code: "",
             name: "",
-            is_complex: false
+            is_complex: false,
+            created_by: userId || "",
+            updated_by: userId || ""
         });
         setShowForm(true);
     };
@@ -169,7 +176,9 @@ export default function ManageIntervention() {
             package_id: intervention.package_id?.toString() || "",
             code: intervention.code,
             name: intervention.name,
-            is_complex: Boolean(intervention.is_complex)
+            is_complex: Boolean(intervention.is_complex),
+            created_by: userId || "",
+            updated_by: userId || ""
         });
         setShowForm(true);
     };
@@ -233,7 +242,9 @@ export default function ManageIntervention() {
                 package_id: "",
                 code: "",
                 name: "",
-                is_complex: false
+                is_complex: false,
+                created_by: "",
+                updated_by: ""
             });
             setEditingIntervention(null);
         } catch (error) {
@@ -248,7 +259,9 @@ export default function ManageIntervention() {
             package_id: "",
             code: "",
             name: "",
-            is_complex: false
+            is_complex: false,
+            created_by: "",
+            updated_by: ""
         });
         setEditingIntervention(null);
     };

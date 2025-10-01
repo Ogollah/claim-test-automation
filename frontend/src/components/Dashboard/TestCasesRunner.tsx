@@ -12,6 +12,7 @@ import { PlayIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { refreshTestResult } from '@/utils/claimUtils';
 import { runTestSuite } from '@/utils/testUtils';
+import { useAuthSession } from '@/hook/useAuth';
 
 type TestRunnerProps = {
   isRunning?: boolean;
@@ -31,6 +32,7 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
     negative: TestCase[];
   }>({ positive: [], negative: [] });
   const [complexInterventions, setComplexInterventions] = useState<string[]>([]);
+  const {userId} = useAuthSession();
 
   useEffect(() => {
     getInterventionByComplexity(1)
@@ -213,7 +215,7 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
         const response = await getTestCaseByCode(testCase.formData.productOrService[0].code);
         const testCaseData = response?.data || [];
 
-        const testResult = await runTestSuite(testCase, testCaseData);
+        const testResult = await runTestSuite(testCase, userId, testCaseData);
         setResults(prev => [...prev, ...testResult]);
 
         if (index < allTests.length - 1) {
@@ -277,7 +279,7 @@ export default function TestCasesRunner({ isRunning = false, onRunTests }: TestR
         const response = await getTestCaseByCode(testCase.formData.productOrService[0].code);
         const testCaseData = response?.data || [];
 
-        const testResult = await runTestSuite(testCase, testCaseData);
+        const testResult = await runTestSuite(testCase, userId, testCaseData);
         setResults((prev) => [...prev, ...testResult]);
 
         if (index < allTests.length - 1) {

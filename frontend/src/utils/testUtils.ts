@@ -14,7 +14,9 @@ import { patientPayload } from '@/lib/patient';
  */
 export const runTestSuite = async (
   testData: TestCase,
-  testCase?: TestCaseItem[]
+  userId?: string,
+  testCase?: TestCaseItem[],
+  
 ): Promise<TestResult[]> => {
   try {
     // Track execution time
@@ -22,18 +24,16 @@ export const runTestSuite = async (
     const response = await api.post(`${API_BASE_URL}/api/claims/submit`, testData);
     const duration = Date.now() - startTime;
 
-    console.log("API Response:", response.data);
-
     // Check if the overall request was successful
     if (!response.data.success) {
       // Handle API-level failure (like 400 errors)
-      return [handleTestError(response.data, testData, testCase, duration)];
+      return [handleTestError(response.data, testData, testCase, duration, userId)];
     }
 
     // Check if the data layer was successful
     if (!response.data.data?.success) {
       // Handle data-level failure
-      return [handleTestError(response.data, testData, testCase, duration)];
+      return [handleTestError(response.data, testData, testCase, duration, userId)];
     }
 
     // Validate response - check for either 200 or 201 status in the data layer
@@ -124,7 +124,9 @@ export const runTestSuite = async (
           message: finalOutcome,
           detail: response.data.message || 'Claim processed',
           status_code: response.status.toString(),
-          claim_id: claimId
+          claim_id: claimId,
+          created_by: userId,
+          updated_by: userId
         };
         await createResult(respResult);
       } catch (error) {
@@ -139,7 +141,7 @@ export const runTestSuite = async (
 
     return [result];
   } catch (error: any) {
-    return [handleTestError(error, testData, testCase)];
+    return [handleTestError(error, testData, testCase,  0, userId)];
   }
 };
 
@@ -182,7 +184,7 @@ const ensureResourcesExist = async (formData: TestCase['formData']) => {
 /**
  * Handles test execution errors and returns error result
  */
-const handleTestError = (error: any, testData: TestCase, testCase?: TestCaseItem[], duration?: number, ruleStatus?: string): TestResult => {
+const handleTestError = (error: any, testData: TestCase, testCase?: TestCaseItem[], duration?: number, ruleStatus?: string, userId?: string): TestResult => {
   const errorResponse = error?.response?.data || error;
   const statusCode = error?.response?.status || error?.status || 500;
 
@@ -241,7 +243,9 @@ const handleTestError = (error: any, testData: TestCase, testCase?: TestCaseItem
       message: errorMessage,
       detail: error.message || errorMessage,
       status_code: statusCode.toString(),
-      claim_id: errorResponse?.preAuthResponseId
+      claim_id: errorResponse?.preAuthResponseId,
+      created_by: userId,
+      updated_by: userId
     };
     createResult(respData).catch(err => console.error('Error saving error result:', err));
   }

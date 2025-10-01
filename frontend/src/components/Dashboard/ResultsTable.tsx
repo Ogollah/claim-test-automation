@@ -68,6 +68,7 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
         toast.error('Failed to copy payload');
       });
   };
+  const passingOutcomes = [CLAIM_STATUS.APPROVED, CLAIM_STATUS.SENT_FOR_PAYMENT, CLAIM_STATUS.CLINICAL_REVIEW];
 
   const inProgressOutcomes = ['Pending', CLAIM_STATUS.CLINICAL_REVIEW, CLAIM_STATUS.IN_REVIEW];
 
@@ -149,7 +150,11 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
                       </div>
                       <div className="text-xs text-gray-400 break-words whitespace-pre-wrap">
 
-                        {result.outcome ? (<span className="text-red-400 break-words">{result.outcome}</span>) : (<span className="text-red-400 break-words">{result.details.error ? `${result.details.error}` : <span className={`${result.details.request?.formData?.is_bundle_only ? 'text-green-500' : ''}`}>{result.message}</span>}</span>)}
+                        {result.outcome ? (<span className={`${passingOutcomes.includes(result.outcome) ? 'text-green-500' : 'text-red-500'}`}>
+                          {result.outcome}</span>) : (<span className="text-red-400 break-words">{result.details.error ? `${result.details.error}` : <span className={`h-4 w-4 ${passingOutcomes.includes(result.ruleStatus) || result.details?.request?.formData?.is_bundle_only
+                            ? 'text-green-500'
+                            : 'text-red-500'
+                            }`}>{result.message}</span>}</span>)}
 
                       </div>
                     </TableCell>
@@ -232,8 +237,22 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
 
                     </TableCell>
                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                      {result.ruleStatus?.toUpperCase() || <span className={`h-4 w-4 ${result.details.request?.formData?.is_bundle_only ? 'text-green-500' : 'text-red-500'}`}>{`${result.details.request?.formData?.is_bundle_only ? '' : result.details.statusCode} - ${result.message}`}</span>}
+                      {result.ruleStatus ? (
+                        <span className={`h-4 w-4 ${passingOutcomes.includes(result.ruleStatus) ? 'text-green-500' : 'text-red-500'}`}>
+                          {result.ruleStatus.toUpperCase()}
+                        </span>
+                      ) : (
+                        <span
+                          className={`h-4 w-4 ${passingOutcomes.includes(result.ruleStatus) || result.details?.request?.formData?.is_bundle_only
+                            ? 'text-green-500'
+                            : 'text-red-500'
+                            }`}
+                        >
+                          {`${result.details?.request?.formData?.is_bundle_only ? '' : result.details?.statusCode} - ${result.message}`}
+                        </span>
+                      )}
                     </TableCell>
+
                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(result.timestamp).toLocaleString()}
                     </TableCell>

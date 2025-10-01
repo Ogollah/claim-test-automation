@@ -14,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import TestCases from './TestCases';
 import { TestCase, TestCaseItem, Package, Intervention } from '@/lib/types';
 import { testCaseSample } from '@/lib/test/test';
+import { useAuthSession } from '@/hook/useAuth';
 
 const ajv = new Ajv({ allErrors: true });
 
@@ -29,6 +30,7 @@ export default function TestcaseEditor({ }: TestCaseEditorProps) {
     const [packages, setPackages] = useState<Package[]>([]);
     const [availableInterventions, setAvailableInterventions] = useState<Intervention[]>([]);
     const [tests, setTests] = useState<TestCaseItem[]>([]);
+    const { userId } = useAuthSession();
 
     // Fetch packages on mount
     useEffect(() => {
@@ -207,6 +209,7 @@ export default function TestcaseEditor({ }: TestCaseEditorProps) {
                     description,
                     code,
                     test_config: dataToSave,
+                    updated_by: userId
                 });
 
                 if (updateResp?.status === 200) {
@@ -235,6 +238,8 @@ export default function TestcaseEditor({ }: TestCaseEditorProps) {
                     description,
                     code,
                     test_config: dataToSave,
+                    created_by: userId,
+                    updated_by: userId
                 });
 
                 if (createResp?.status === 201) {
