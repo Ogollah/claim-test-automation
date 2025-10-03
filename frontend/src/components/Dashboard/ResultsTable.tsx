@@ -237,20 +237,11 @@ export default function ResultsTable({ results, onRefresh }: ResultsTableProps) 
 
                     </TableCell>
                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                      {result.ruleStatus ? (
-                        <span className={`h-4 w-4 ${passingOutcomes.includes(result.ruleStatus) ? 'text-green-500' : 'text-red-500'}`}>
-                          {result.ruleStatus.toUpperCase()}
-                        </span>
-                      ) : (
-                        <span
-                          className={`h-4 w-4 ${passingOutcomes.includes(result.ruleStatus) || result.details?.request?.formData?.is_bundle_only
-                            ? 'text-green-500'
-                            : 'text-red-500'
-                            }`}
-                        >
-                          {`${result.details?.request?.formData?.is_bundle_only ? '' : result.details?.statusCode} - ${result.message}`}
-                        </span>
-                      )}
+                      {result.outcome ? (<span className={`${passingOutcomes.includes(result.outcome) ? 'text-green-500' : 'text-red-500'}`}>
+                        {result.outcome}</span>) : (<span className="text-red-400 break-words">{result.details.error ? `${result.details.error}` : <span className={`h-4 w-4 ${passingOutcomes.includes(result.ruleStatus) || result.details?.request?.formData?.is_bundle_only
+                          ? 'text-green-500'
+                          : 'text-red-500'
+                          }`}>{result.message}</span>}</span>)}
                     </TableCell>
 
                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

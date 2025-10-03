@@ -16,7 +16,7 @@ export const runTestSuite = async (
   testData: TestCase,
   userId?: string,
   testCase?: TestCaseItem[],
-  
+
 ): Promise<TestResult[]> => {
   try {
     // Track execution time
@@ -141,7 +141,7 @@ export const runTestSuite = async (
 
     return [result];
   } catch (error: any) {
-    return [handleTestError(error, testData, testCase,  0, userId)];
+    return [handleTestError(error, testData, testCase, 0, userId)];
   }
 };
 
@@ -227,7 +227,7 @@ const handleTestError = (error: any, testData: TestCase, testCase?: TestCaseItem
       error: typeof errorResponse?.error?.error === 'object'
         ? errorResponse?.error?.error?.message
         : errorResponse?.error?.error,
-      fhirBundle: errorResponse.error.fhirBundle,
+      fhirBundle: errorResponse.error?.fhirBundle,
       errorMessage: errorMessage,
       statusCode: statusCode,
       statusString: errorResponse?.data?.status ? String(errorResponse.data.status) : undefined,

@@ -197,7 +197,7 @@ export default function OptimizedTestRunner({
             />
             <Label htmlFor="isBundleOnly">Build bundle only</Label>
           </div>
-         
+          {isBundleOnly && (
             <CustomSelector
               options={[
                 { id: "true", label: "Dev" },
@@ -208,7 +208,7 @@ export default function OptimizedTestRunner({
               label="Select environment"
               placeholder="Choose environment"
             />
-         
+          )}
         </div>
 
         {/* Use and Claim Type Selection */}
