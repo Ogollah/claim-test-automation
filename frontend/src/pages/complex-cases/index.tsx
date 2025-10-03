@@ -35,7 +35,7 @@ export default function ComplexCases() {
   const handleRunTests = async (payload: any) => {
     setIsRunning(true);
     try {
-      const result = await runTestSuite(payload);
+      const result = await runTestSuite(payload, session?.user.id);
       setResults(prev => [...prev, ...result]);
     } catch (error) {
       console.error('Test execution failed:', error);

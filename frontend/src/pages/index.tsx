@@ -37,7 +37,7 @@ export default function Home() {
   const handleRunTests = async (payload: any) => {
     setIsRunning(true);
     try {
-      const result = await runTestSuite(payload);
+      const result = await runTestSuite(payload, session?.user.id);
       setResults(prev => [...prev, ...result]);
       toast.success('Tests completed successfully');
     } catch (error) {

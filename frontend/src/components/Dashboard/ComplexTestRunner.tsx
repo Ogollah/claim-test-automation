@@ -12,6 +12,7 @@ import TestcaseDetails from "../testCases/TestcaseDetails";
 import { Button } from "../ui/button";
 import { StopIcon } from "@heroicons/react/16/solid";
 import { PlayIcon } from "lucide-react";
+import { useAuthSession } from "@/hook/useAuth";
 
 interface ComplexTestRunnerProps {
     isRunning: boolean;
@@ -39,6 +40,7 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
         negative: []
     });
     const [complexInterventions, setComplexInterventions] = useState<string[]>([]);
+    const {userId} = useAuthSession();
 
     useEffect(() => {
         const fetchInterventions = async () => {
@@ -178,7 +180,7 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
                 const response = await getTestCaseByCode(testCase.formData.productOrService[0].code);
                 const testCaseData: TestCaseItem[] = response?.data || [];
 
-                const testResult = await runTestSuite(testCase, testCaseData);
+                const testResult = await runTestSuite(testCase, userId, testCaseData);
                 setResults(prev => [...prev, ...testResult]);
 
                 if (index < allTests.length - 1) {
@@ -242,7 +244,7 @@ export default function ComplexTestRunner({ isRunning = false, onRunTests }: Com
                 const response = await getTestCaseByCode(testCase.formData.productOrService[0].code);
                 const testCaseData: TestCaseItem[] = response?.data || [];
 
-                const testResult = await runTestSuite(testCase, testCaseData);
+                const testResult = await runTestSuite(testCase, userId, testCaseData);
                 setResults((prev) => [...prev, ...testResult]);
 
                 if (index < allTests.length - 1) {

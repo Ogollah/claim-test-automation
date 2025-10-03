@@ -9,6 +9,7 @@ import { PlayIcon } from "lucide-react";
 import TestcaseDetails from "@/components/testCases/TestcaseDetails";
 import { Button } from "@/components/ui/button";
 import ResultsTable from "../ResultsTable";
+import { useAuthSession } from "@/hook/useAuth";
 
 interface SanityTestCasesProps {
     isRunning?: boolean;
@@ -20,6 +21,7 @@ export default function SanityTestCases({ isRunning = false, onRunTests }: Sanit
     const [results, setResults] = useState<TestResult[]>([]);
     const [currentTestCases, setCurrentTestCases] = useState<{ positive: TestCase[] }>({ positive: [] });
     const [complexInterventions, setComplexInterventions] = useState<string[]>([]);
+    const {userId} = useAuthSession();
 
     useEffect(() => {
         getInterventionByComplexity(1)
@@ -92,7 +94,7 @@ export default function SanityTestCases({ isRunning = false, onRunTests }: Sanit
             try {
                 const res = await getTestCaseByCode(tc.formData.productOrService[0].code);
                 const testData = res?.data || [];
-                const testResults = await runTestSuite(tc, testData);
+                const testResults = await runTestSuite(tc, userId, testData);
                 setResults(prev => [...prev, ...testResults]);
             } catch (err) {
                 console.error(err);

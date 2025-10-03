@@ -1,3 +1,5 @@
+import NextAuth from "next-auth";
+
 interface Identifier {
   system: string
   value: string
@@ -236,7 +238,9 @@ export interface FhirProviderResource {
 export interface Package {
   id?: number,
   name: string,
-  code: string
+  code: string,
+  created_date?: string,
+  updates_date?: string
 }
 // Intervention
 export interface Intervention {
@@ -245,6 +249,8 @@ export interface Intervention {
   name: string,
   code: string,
   is_complex?: number,
+  created_date?: string,
+  updates_date?: string
 }
 
 export interface TestCaseItem {
@@ -254,7 +260,9 @@ export interface TestCaseItem {
   description: string,
   test_config: TestCase,
   code: string,
-  error?: { message: string, code: string }
+  error?: { message: string, code: string },
+  created_by?: string,
+  updated_by?: string
 }
 
 export interface Result {
@@ -267,7 +275,9 @@ export interface Result {
   updates_date?: string,
   message?: string,
   detail?: string,
-  status_code?: string
+  status_code?: string,
+  created_by?: string,
+  updated_by?: string
 }
 
 // Interface for the FHIR Bundle in the response
@@ -350,5 +360,31 @@ export interface ComplexCase {
   formData: TestCase['formData'];
   netValue: number;
   status: string;
+}
+
+declare module "next-auth" {
+  interface Session {
+    accessToken?: string;
+    user: {
+      id: string;
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+    };
+  }
+
+  interface User {
+    id: string;
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    id?: string;
+    accessToken?: string;
+  }
 }
 

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 export const useAuthSession = () => {
-    const { data: session, status, update } = useSession()
+    const { data: session, status, update } = useSession();
     const router = useRouter()
     const [redirecting, setRedirecting] = useState(false)
 
@@ -15,6 +15,7 @@ export const useAuthSession = () => {
             signIn('keycloak')
         }
     }, [status, redirecting, router])
+    const userId = session?.user?.id;
 
     return {
         session,
@@ -22,6 +23,7 @@ export const useAuthSession = () => {
         isLoading: status === 'loading',
         isAuthenticated: status === 'authenticated',
         update,
-        redirecting
+        redirecting,
+        userId
     }
 }

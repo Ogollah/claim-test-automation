@@ -30,6 +30,7 @@ import {
 import { Package } from "@/lib/types";
 import { getPackages, postPackage, updatePackage, deletePackage } from "@/lib/api";
 import { toast } from "sonner";
+import { useAuthSession } from "@/hook/useAuth";
 
 export default function ManagePackage() {
     const [packages, setPackages] = useState<Package[]>([]);
@@ -39,8 +40,11 @@ export default function ManagePackage() {
     const [editingPackage, setEditingPackage] = useState<Package | null>(null);
     const [formData, setFormData] = useState({
         code: "",
-        name: ""
+        name: "",
+        created_by: "",
+        updated_by: "",
     });
+    const { userId } = useAuthSession();
 
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(5);
@@ -121,13 +125,13 @@ export default function ManagePackage() {
 
     const handleAddNew = () => {
         setEditingPackage(null);
-        setFormData({ code: "", name: "" });
+        setFormData({ code: "", name: "", created_by: userId || "", updated_by: userId || "" });
         setShowForm(true);
     };
 
     const handleEdit = (pkg: Package) => {
         setEditingPackage(pkg);
-        setFormData({ code: pkg.code, name: pkg.name });
+        setFormData({ code: pkg.code, name: pkg.name, created_by: userId || "", updated_by: userId || "" });
         setShowForm(true);
     };
 
@@ -178,7 +182,7 @@ export default function ManagePackage() {
             }
 
             setShowForm(false);
-            setFormData({ code: "", name: "" });
+            setFormData({ code: "", name: "", created_by: "", updated_by: "" });
             setEditingPackage(null);
         } catch (error) {
             console.error("Error saving package:", error);
@@ -188,7 +192,7 @@ export default function ManagePackage() {
 
     const handleCancel = () => {
         setShowForm(false);
-        setFormData({ code: "", name: "" });
+        setFormData({ code: "", name: "", created_by: "", updated_by: "" });
         setEditingPackage(null);
     };
 

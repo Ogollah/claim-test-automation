@@ -10,7 +10,8 @@ import {
   Wrench,
   FlaskConical,
   ClipboardList,
-  File
+  File,
+  UploadCloudIcon
 } from "lucide-react";
 
 type Submenu = {
@@ -50,21 +51,6 @@ export function getMenuList(pathname: string): Group[] {
       menus: [
         {
           href: "",
-          label: "Package",
-          icon: File,
-          submenus: [
-            {
-              href: "/manage-packages",
-              label: "Manage packages"
-            },
-            {
-              href: "/manage-interventions",
-              label: "Manage interventions"
-            }
-          ]
-        },
-        {
-          href: "",
           label: "Custom builder",
           icon: ClipboardList,
           submenus: [
@@ -90,6 +76,36 @@ export function getMenuList(pathname: string): Group[] {
             {
               href: "/complex-tests",
               label: "Complex test suite"
+            }
+          ]
+        },
+        {
+          href: "",
+          label: "Bulk upload",
+          icon: UploadCloudIcon,
+          submenus: [
+            {
+              href: "/upload-preauth",
+              label: "Upload preauth-claim"
+            },
+            // {
+            //   href: "/history",
+            //   label: "History"
+            // }
+          ]
+        },
+        {
+          href: "",
+          label: "Package",
+          icon: File,
+          submenus: [
+            {
+              href: "/manage-packages",
+              label: "Manage packages"
+            },
+            {
+              href: "/manage-interventions",
+              label: "Manage interventions"
             }
           ]
         },
