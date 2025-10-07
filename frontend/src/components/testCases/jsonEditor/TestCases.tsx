@@ -17,6 +17,7 @@ import {
     Package,
     TestCaseItem,
 } from "@/lib/types";
+import { styleText } from "node:util";
 
 const TABLE_HEADERS = [
     "Select",
@@ -60,12 +61,26 @@ export default function TestCases({
     }, [selectedTestCase, onTestCaseSelect]);
 
     const handleDelete = useCallback(async (testId: number) => {
-        try {
-            onDeleteTestCase(testId);
-        } catch (error) {
-            console.error("Error deleting test case:", error);
-            toast.error("Failed to delete test case");
-        }
+        toast.info("Are you sure you want to delete this test case?", {
+            action: {
+                label: "Delete",
+                onClick: async () => {
+                    try {
+                        onDeleteTestCase(testId);
+                    } catch (error) {
+                        console.error("Error deleting test case:", error);
+                        toast.error("Failed to delete test case");
+                    }
+                },
+            },
+            cancel: {
+                label: "Cancel",
+                onClick: () => {
+                    toast.dismiss();
+                }
+            },
+            duration: 10000,
+        })
     }, [onDeleteTestCase]);
 
     return (
