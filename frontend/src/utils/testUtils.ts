@@ -84,7 +84,7 @@ export const runTestSuite = async (
 
 
     // Determine test status
-    const bOutcome = [CLAIM_STATUS.APPROVED, CLAIM_STATUS.SENT_FOR_PAYMENT, CLAIM_STATUS.CLINICAL_REVIEW].includes(finalOutcome);
+    const bOutcome = [CLAIM_STATUS.APPROVED, CLAIM_STATUS.SENT_FOR_PAYMENT, CLAIM_STATUS.CLINICAL_REVIEW, CLAIM_STATUS.MANUAL_REVIEW].includes(finalOutcome);
     const testPassed = shouldTestPass(
       testData?.formData?.test,
       finalOutcome,
@@ -210,6 +210,7 @@ const handleTestError = (error: any, testData: TestCase, testCase?: TestCaseItem
   const isBundleOnly = testData?.formData?.is_bundle_only === true;
   const testCaseId = testCase?.find(i => i.name === testData?.formData?.title)?.id;
 
+
   const errorResult: TestResult = {
     id: `error-${Date.now()}`,
     req: error,
@@ -227,7 +228,7 @@ const handleTestError = (error: any, testData: TestCase, testCase?: TestCaseItem
       error: typeof errorResponse?.error?.error === 'object'
         ? errorResponse?.error?.error?.message
         : errorResponse?.error?.error,
-      fhirBundle: errorResponse.error?.fhirBundle,
+      fhirBundle: errorResponse.error?.fhirBundle || errorResponse?.fhirBundle,
       errorMessage: errorMessage,
       statusCode: statusCode,
       statusString: errorResponse?.data?.status ? String(errorResponse.data.status) : undefined,

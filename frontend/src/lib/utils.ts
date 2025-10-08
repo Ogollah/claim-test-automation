@@ -67,7 +67,7 @@ export const CLAIM_STATUS = {
   SENT_BACK: "Returned back",
   DECLINED: "Declined",
   DECLINE: "Decline",
-
+  MANUAL_REVIEW: "Manual Review"
 };
 
 export const PER_DIEM_CODES = new Set([
