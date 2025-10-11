@@ -76,7 +76,7 @@ export const shouldTestPass = (
   outcome: string,
   response: boolean
 ): boolean => {
-  const positiveOutcomes = [CLAIM_STATUS.APPROVED, CLAIM_STATUS.SENT_FOR_PAYMENT, CLAIM_STATUS.CLINICAL_REVIEW];
+  const positiveOutcomes = [CLAIM_STATUS.APPROVED, CLAIM_STATUS.SENT_FOR_PAYMENT, CLAIM_STATUS.CLINICAL_REVIEW, CLAIM_STATUS.MANUAL_REVIE];
   const negativeOutCome = [CLAIM_STATUS.DECLINED, CLAIM_STATUS.REJECTED, CLAIM_STATUS.SENT_BACK, CLAIM_STATUS.DECLINE];
 
   if (response === true && (testType === 'positive' || testType === 'build' || testType === 'complex')) {

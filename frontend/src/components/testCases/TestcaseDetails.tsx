@@ -12,10 +12,11 @@ import {
 } from "@/components/ui/form";
 import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { PlayIcon, UserIcon, XIcon, CodeIcon, FileTextIcon } from 'lucide-react';
+import { PlayIcon, UserIcon, XIcon, CodeIcon, FileTextIcon, RefreshCwIcon } from 'lucide-react';
 import { Label } from '../ui/label';
 import { FormatPatient, TestCase } from '@/lib/types';
 import PatientDetailsPanel from '../Dashboard/PatientDetailsPanel';
+import { getPatients, searchPatientHie } from '@/lib/api';
 
 interface TestcaseDetailsProps {
   title: string;
@@ -29,6 +30,78 @@ interface TestcaseDetailsProps {
   showDisplayToggle?: boolean;
   complexInterventions?: string[];
 }
+
+// Helper function to calculate birthdate from age
+const calculateBirthDate = (age: number): string => {
+  const today = new Date();
+  const birthYear = today.getFullYear() - age;
+  return `${birthYear}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+};
+
+// Helper function to extract search parameters from test case
+const getSearchParameters = (testCase: TestCase): Array<{ param: string, value: string }> => {
+  const params: Array<{ param: string, value: string }> = [];
+  const { patient } = testCase.formData;
+
+  // Extract first name and last name from the full name
+  if (patient.name) {
+    const nameParts = patient.name.split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+
+    if (firstName) {
+      params.push({ param: 'given', value: firstName });
+    }
+    if (lastName) {
+      params.push({ param: 'family', value: lastName });
+    }
+    // Also try full name search
+    params.push({ param: 'name', value: patient.name });
+  }
+
+  // Add gender search
+  if (patient.gender) {
+    params.push({ param: 'gender', value: patient.gender });
+  }
+
+  // Add birthdate search
+  if (patient.birthDate) {
+    params.push({ param: 'birthdate', value: patient.birthDate });
+  }
+
+  return params;
+};
+
+// Function to search HIE with multiple parameters
+const searchHieWithParams = async (searchParams: Array<{ param: string, value: string }>, localPatientIds: Set<string>): Promise<FormatPatient | null> => {
+  for (const { param, value } of searchParams) {
+    if (!value) continue;
+
+    try {
+      console.log(`Searching HIE with ${param}=${value}`);
+      const hiePatients = await searchPatientHie(param, value);
+
+      if (hiePatients && hiePatients.length > 0) {
+        // Filter out patients that exist in local DB
+        const newPatients = hiePatients.filter(patient =>
+          !localPatientIds.has(patient.id) &&
+          !patient.identifiers?.some(id => localPatientIds.has(id.value))
+        );
+
+        if (newPatients.length > 0) {
+          console.log(`Found ${newPatients.length} new patients with ${param}=${value}`);
+          return newPatients[0]; // Return the first new patient found
+        } else {
+          console.log(`No new patients found with ${param}=${value}`);
+        }
+      }
+    } catch (error) {
+      console.error(`HIE search failed for ${param}=${value}:`, error);
+    }
+  }
+
+  return null;
+};
 
 export default function TestcaseDetails({
   title,
@@ -44,6 +117,9 @@ export default function TestcaseDetails({
 }: TestcaseDetailsProps) {
   const [editingTestCase, setEditingTestCase] = useState<string | null>(null);
   const [currentDisplayMode, setCurrentDisplayMode] = useState<'title' | 'code' | 'both'>(displayMode);
+  const [updatingPatients, setUpdatingPatients] = useState<Record<string, boolean>>({});
+  const [localPatientIds, setLocalPatientIds] = useState<Set<string>>(new Set());
+  const [hasAutoUpdated, setHasAutoUpdated] = useState<boolean>(false);
 
   const items = testCases || [];
   const interventionsList = complexInterventions || [];
@@ -63,6 +139,131 @@ export default function TestcaseDetails({
       items: defaultSelectedItems,
     },
   });
+
+  // Load local patient IDs on component mount
+  useEffect(() => {
+    loadLocalPatientIds();
+  }, []);
+
+  // Auto-update patients when component mounts or test cases change
+  useEffect(() => {
+    if (items.length > 0 && onUpdatePatient && !hasAutoUpdated && localPatientIds.size > 0) {
+      autoUpdateAllPatients();
+    }
+  }, [items, onUpdatePatient, hasAutoUpdated, localPatientIds.size]);
+
+  const loadLocalPatientIds = async () => {
+    try {
+      const patients = await getPatients();
+      if (patients) {
+        const ids = new Set<string>();
+        patients.forEach(patient => {
+          ids.add(patient.id);
+          // Also add all identifier values to the set
+          patient.identifiers?.forEach(identifier => {
+            if (identifier.value) {
+              ids.add(identifier.value);
+            }
+          });
+        });
+        setLocalPatientIds(ids);
+        console.log('Loaded local patient IDs:', Array.from(ids));
+      }
+    } catch (error) {
+      console.error('Error loading local patients:', error);
+    }
+  };
+
+  // Auto-update patient for a specific test case
+  const autoUpdatePatient = async (testCaseTitle: string): Promise<boolean> => {
+    const testCase = items.find(tc => tc.formData.title === testCaseTitle);
+    if (!testCase || !onUpdatePatient) {
+      console.log('No test case found or onUpdatePatient not provided');
+      return false;
+    }
+
+    setUpdatingPatients(prev => ({ ...prev, [testCaseTitle]: true }));
+
+    try {
+      console.log(`Auto-updating patient for: ${testCaseTitle}`);
+      const searchParams = getSearchParameters(testCase);
+      console.log('Search parameters:', searchParams);
+
+      // Prioritize gender and birthdate searches for better matching
+      const prioritizedParams = [
+        ...searchParams.filter(p => p.param === 'gender' || p.param === 'birthdate'),
+        ...searchParams.filter(p => p.param !== 'gender' && p.param !== 'birthdate')
+      ];
+
+      const foundPatient = await searchHieWithParams(prioritizedParams, localPatientIds);
+
+      if (foundPatient) {
+        console.log('Found patient for update:', foundPatient);
+        onUpdatePatient(testCaseTitle, foundPatient);
+
+        // Add the new patient to local IDs to avoid duplicates in subsequent searches
+        setLocalPatientIds(prev => {
+          const newSet = new Set(prev);
+          newSet.add(foundPatient.id);
+          foundPatient.identifiers?.forEach(id => {
+            if (id.value) newSet.add(id.value);
+          });
+          return newSet;
+        });
+
+        return true;
+      } else {
+        console.log('No suitable patient found in HIE');
+        return false;
+      }
+    } catch (error) {
+      console.error(`Error auto-updating patient for ${testCaseTitle}:`, error);
+      return false;
+    } finally {
+      setUpdatingPatients(prev => ({ ...prev, [testCaseTitle]: false }));
+    }
+  };
+
+  // Auto-update all test cases
+  const autoUpdateAllPatients = async () => {
+    if (!onUpdatePatient) {
+      console.error('Update patient function not available');
+      return;
+    }
+
+    setHasAutoUpdated(true);
+    let updatedCount = 0;
+    let errorCount = 0;
+
+    console.log('Starting automatic patient update for all test cases...');
+
+    // Process test cases sequentially to avoid overwhelming the API
+    for (const testCase of items) {
+      try {
+        const success = await autoUpdatePatient(testCase.formData.title);
+        if (success) {
+          updatedCount++;
+        } else {
+          errorCount++;
+        }
+
+        // Small delay to avoid overwhelming the API
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (error) {
+        errorCount++;
+        console.error(`Failed to update patient for ${testCase.formData.title}:`, error);
+      }
+    }
+
+    console.log(`Auto-update completed: ${updatedCount} updated, ${errorCount} failed`);
+
+    if (updatedCount > 0) {
+      toast.success(`Auto-updated patients for ${updatedCount} test cases`);
+    }
+    if (errorCount > 0) {
+      toast.warning(`${errorCount} test cases couldn't find matching patients`);
+    }
+  };
 
   function onSubmit(data: z.infer<typeof FormSchema>) {
     if (data.items.length === 0) {
@@ -107,6 +308,16 @@ export default function TestcaseDetails({
       onUpdatePatient(editingTestCase, patient);
       setEditingTestCase(null);
       toast.success(`Patient updated for test case: ${editingTestCase}`);
+
+      // Add the new patient to local IDs to avoid duplicates
+      setLocalPatientIds(prev => {
+        const newSet = new Set(prev);
+        newSet.add(patient.id);
+        patient.identifiers?.forEach(id => {
+          if (id.value) newSet.add(id.value);
+        });
+        return newSet;
+      });
     }
   };
 
@@ -163,38 +374,63 @@ export default function TestcaseDetails({
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-green-900">{title}</h2>
 
-        {showDisplayToggle && (
-          <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2">
+          {/* Auto-update status indicator */}
+          {Object.values(updatingPatients).some(Boolean) && (
+            <div className="flex items-center text-sm text-blue-600">
+              <RefreshCwIcon className="h-4 w-4 mr-1 animate-spin" />
+              Auto-updating patients...
+            </div>
+          )}
+
+          {/* Manual update button as fallback */}
+          {onUpdatePatient && (
             <Button
               type="button"
-              variant={currentDisplayMode === 'title' ? 'default' : 'outline'}
+              variant="outline"
               size="sm"
-              onClick={() => setCurrentDisplayMode('title')}
-              title="Show titles only"
+              onClick={autoUpdateAllPatients}
+              disabled={Object.values(updatingPatients).some(Boolean)}
+              title="Re-run auto-update for all patients from HIE"
             >
-              <FileTextIcon className="h-4 w-4" />
+              <RefreshCwIcon className={`h-4 w-4 mr-1 ${Object.values(updatingPatients).some(Boolean) ? 'animate-spin' : ''}`} />
+              Update All
             </Button>
-            <Button
-              type="button"
-              variant={currentDisplayMode === 'code' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setCurrentDisplayMode('code')}
-              title="Show codes only"
-            >
-              <CodeIcon className="h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
-              variant={currentDisplayMode === 'both' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setCurrentDisplayMode('both')}
-              title="Show both title and code"
-            >
-              <FileTextIcon className="h-4 w-4 mr-1" />
-              <CodeIcon className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
+          )}
+
+          {showDisplayToggle && (
+            <>
+              <Button
+                type="button"
+                variant={currentDisplayMode === 'title' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setCurrentDisplayMode('title')}
+                title="Show titles only"
+              >
+                <FileTextIcon className="h-4 w-4" />
+              </Button>
+              <Button
+                type="button"
+                variant={currentDisplayMode === 'code' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setCurrentDisplayMode('code')}
+                title="Show codes only"
+              >
+                <CodeIcon className="h-4 w-4" />
+              </Button>
+              <Button
+                type="button"
+                variant={currentDisplayMode === 'both' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setCurrentDisplayMode('both')}
+                title="Show both title and code"
+              >
+                <FileTextIcon className="h-4 w-4 mr-1" />
+                <CodeIcon className="h-4 w-4" />
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       <Form {...form}>
@@ -204,12 +440,13 @@ export default function TestcaseDetails({
             name="items"
             render={({ field }) => (
               <FormItem>
-                {/* <Label>Select Test Cases</Label> */}
                 <div className={`grid ${getGridClass()} gap-4`}>
                   {items.map((item) => {
                     const testCaseTitle = item.formData.title;
                     const shouldShowPanel = showPanels[testCaseTitle] || false;
                     const isEditing = editingTestCase === testCaseTitle;
+                    const isUpdating = updatingPatients[testCaseTitle];
+
                     return (
                       <FormItem
                         key={testCaseTitle}
@@ -232,17 +469,22 @@ export default function TestcaseDetails({
                             </FormControl>
                             <div className="grid gap-1.5 flex-1">
                               {getTestCaseDisplay(item)}
-                              {(showPatientPanel || shouldShowPanel) && item.formData.patient && (
+                              {(showPatientPanel || shouldShowPanel) && (
                                 <div className="text-xs text-muted-foreground mt-1">
                                   <span className="font-medium">Patient: </span>
-                                  {getPatientInfo(item.formData.patient)}
+                                  {item.formData.patient ? getPatientInfo(item.formData.patient) : 'No patient selected'}
+                                  {isUpdating && (
+                                    <span className="ml-2 text-blue-500">
+                                      <RefreshCwIcon className="h-3 w-3 animate-spin inline" /> Updating...
+                                    </span>
+                                  )}
                                 </div>
                               )}
-                              {(showPatientPanel || shouldShowPanel) && editingTestCase && item.formData?.title === editingTestCase && (
+                              {(showPatientPanel || shouldShowPanel) && isEditing && (
                                 <div className="mb-4 p-4 border border-gray-200 rounded-md bg-gray-50">
                                   <div className="flex items-center justify-between mb-3">
                                     <h5 className="text-gray-700 font-medium">
-                                      Editing Patient
+                                      Editing Patient for {testCaseTitle}
                                     </h5>
                                     <Button
                                       type="button"
@@ -265,17 +507,20 @@ export default function TestcaseDetails({
                             </div>
                           </div>
                           {(showPatientPanel || shouldShowPanel) && onUpdatePatient && (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEditPatient(item.formData.title)}
-                              className="ml-2 shrink-0"
-                              title="Edit patient for this test case"
-                              disabled={!!editingTestCase && editingTestCase !== item.formData.title}
-                            >
-                              <UserIcon className="h-4 w-4" />
-                            </Button>
+                            <div className="flex flex-col space-y-2 ml-2 shrink-0">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditPatient(testCaseTitle)}
+                                className="flex items-center"
+                                title="Edit patient for this test case"
+                                disabled={!!editingTestCase && editingTestCase !== testCaseTitle}
+                              >
+                                <UserIcon className="h-3 w-3 mr-1" />
+                                Manual
+                              </Button>
+                            </div>
                           )}
                         </div>
                       </FormItem>
@@ -285,17 +530,25 @@ export default function TestcaseDetails({
               </FormItem>
             )}
           />
-          <Button
-            type="submit"
-            disabled={isRunning || !!editingTestCase}
-            className={`inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${isRunning || editingTestCase
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-green-900 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500'
-              }`}
-          >
-            <PlayIcon className="-ml-1 mr-2 h-5 w-5" />
-            {isRunning ? 'Running...' : 'Run selected tests'}
-          </Button>
+          <div className="flex items-center space-x-4">
+            <Button
+              type="submit"
+              disabled={isRunning || !!editingTestCase || Object.values(updatingPatients).some(Boolean)}
+              className={`inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${isRunning || editingTestCase || Object.values(updatingPatients).some(Boolean)
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-green-900 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500'
+                }`}
+            >
+              <PlayIcon className="-ml-1 mr-2 h-5 w-5" />
+              {isRunning ? 'Running...' : 'Run selected tests'}
+            </Button>
+
+            {Object.values(updatingPatients).some(Boolean) && (
+              <span className="text-sm text-muted-foreground">
+                Auto-updating patients from HIE...
+              </span>
+            )}
+          </div>
         </form>
       </Form>
     </div>
