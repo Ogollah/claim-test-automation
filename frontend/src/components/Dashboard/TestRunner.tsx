@@ -175,40 +175,99 @@ export default function OptimizedTestRunner({
     { label: "Net value", key: "netValue", disabled: true }
   ];
 
-  console.log('selected is_bundle:', isBundleOnly);
-
 
   return (
     <div className="text-gray-500 py-3">
 
       <div className="bg-white rounded-sm shadow-md p-6 mb-8 max-w-9xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div className="flex items-center space-x-2">
+
+          <div className="flex items-center space-x-4">
+            {/* <span className={`text-sm ${!isBundleOnly ? 'text-green-900 font-medium' : 'text-gray-500'}`}>
+              QA
+            </span> */}
+
+            <Switch
+              id="isBundleOnly"
+              checked={isBundleOnly}
+              onCheckedChange={(checked: boolean) => {
+                setIsBundleOnly(checked);
+                // if (!isBundleOnly) {
+                //   setIsDev(false);
+                // }
+              }}
+              className="data-[state=checked]:bg-green-900"
+            />
+
+            <span className={`text-sm ${isBundleOnly ? 'text-green-900 font-medium' : 'text-gray-500'}`}>
+              Build bundle only
+            </span>
+          </div>
+
+          {/* <div className="flex items-center space-x-2">
             <Switch
               className="bg-red-700"
               id="isBundleOnly"
               checked={isBundleOnly}
               onCheckedChange={(checked: boolean) => {
                 setIsBundleOnly(checked);
-                if (!isBundleOnly) {
-                  setIsDev(false);
-                }
+                // if (!isBundleOnly) {
+                //   setIsDev(false);
+                // }
               }}
             />
             <Label htmlFor="isBundleOnly">Build bundle only</Label>
-          </div>
-          {isBundleOnly && (
-            <CustomSelector
-              options={[
-                { id: "true", label: "Dev" },
-                { id: "false", label: "QA" }
-              ]}
-              value={String(isDev)}
-              onChange={(val) => setIsDev(val === "true")}
-              label="Select environment"
-              placeholder="Choose environment"
+          </div> */}
+          {/* {isBundleOnly && ( */}
+          {/* <CustomSelector
+            options={[
+              { id: "true", label: "Dev" },
+              { id: "false", label: "QA" }
+            ]}
+            value={String(isDev)}
+            onChange={(val) => setIsDev(val === "true")}
+            label="Select environment"
+            placeholder="Choose environment"
+          /> */}
+          {/* )} */}
+
+          {/* <div className="flex items-center space-x-4">
+            <span className={`text-sm ${!isDev ? 'text-green-900 font-medium' : 'text-gray-500'}`}>
+              QA
+            </span>
+            <button
+              type="button"
+              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-900 focus:ring-offset-2 ${isDev ? 'bg-green-900' : 'bg-gray-200'
+                }`}
+              onClick={() => setIsDev(!isDev)}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isDev ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+              />
+            </button>
+            <span className={`text-sm ${isDev ? 'text-green-900 font-medium' : 'text-gray-500'}`}>
+              Development
+            </span>
+          </div> */}
+
+          <div className="flex items-center space-x-4">
+            <span className={`text-sm ${!isDev ? 'text-green-900 font-medium' : 'text-gray-500'}`}>
+              QA
+            </span>
+
+            <Switch
+              checked={isDev}
+              onCheckedChange={setIsDev}
+              className="data-[state=checked]:bg-green-900"
             />
-          )}
+
+            <span className={`text-sm ${isDev ? 'text-green-900 font-medium' : 'text-gray-500'}`}>
+              Development
+            </span>
+          </div>
+
+
         </div>
 
         {/* Use and Claim Type Selection */}

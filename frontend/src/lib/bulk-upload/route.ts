@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
         backendFormData.append('isDev', isDev.toString());
         backendFormData.append('batchSize', batchSize.toString());
 
-        const backendResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/claims/bundle/bulk/upload`, {
+        const backendResponse = await fetch(`http://localhost:5000/api/claims/bundle/bulk/upload`, {
             method: 'POST',
             body: backendFormData,
         });

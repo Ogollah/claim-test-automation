@@ -67,6 +67,7 @@ export const CLAIM_STATUS = {
   SENT_BACK: "Returned back",
   DECLINED: "Declined",
   DECLINE: "Decline",
+  MANUAL_REVIE: "Manual Review"
 
 };
 

@@ -227,7 +227,7 @@ const handleTestError = (error: any, testData: TestCase, testCase?: TestCaseItem
       error: typeof errorResponse?.error?.error === 'object'
         ? errorResponse?.error?.error?.message
         : errorResponse?.error?.error,
-      fhirBundle: errorResponse.error?.fhirBundle,
+      fhirBundle: errorResponse.error?.fhirBundle || errorResponse?.fhirBundle,
       errorMessage: errorMessage,
       statusCode: statusCode,
       statusString: errorResponse?.data?.status ? String(errorResponse.data.status) : undefined,
