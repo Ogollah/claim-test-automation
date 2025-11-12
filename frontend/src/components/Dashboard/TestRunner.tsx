@@ -25,7 +25,7 @@ import { InterventionItem, Provider, Practitioner } from "@/lib/types";
 import { DateFieldRenderer } from "./DateFieldRenderer";
 import { Switch } from "../ui/switch";
 import { cn } from "@/lib/utils";
-import DocumentAttachment, { AttachmentType } from "./DocumentAttachment";
+import DocumentAttachment, { AttachmentType } from "./attachments/DocumentAttachment";
 
 type TestRunnerProps = {
   isRunning?: boolean;

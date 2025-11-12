@@ -1,8 +1,8 @@
 import { useState, useCallback } from "react";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../ui/select";
-import { Label } from "../ui/label";
-import { Input } from "../ui/input";
-import { Button } from "../ui/button";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../../ui/select";
+import { Label } from "../../ui/label";
+import { Input } from "../../ui/input";
+import { Button } from "../../ui/button";
 import { X, FileText } from "lucide-react";
 import { toast } from "sonner";
 
