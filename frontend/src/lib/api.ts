@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Provider, Patient, PatientBundle, FormatPatient, FormatProvider, ProviderItem, Practitioner, PractitionerBundle, ProviderBundle, PractitionerItem, Intervention, Package, TestCaseItem, Result, TestResult } from './types';
+import { Provider, Patient, PatientBundle, FormatPatient, FormatProvider, ProviderItem, Practitioner, PractitionerBundle, ProviderBundle, PractitionerItem, Intervention, Package, TestCaseItem, Result, TestResult, CreateScheduleData, ReportTestResult, DashboardStats, ReportResult, TestCaseSummary } from './types';
 import { hiePatients, patients } from './patient';
 import { api, API_BASE_URL, HIE_URL } from './utils';
 import { hieProviders } from './providers';
@@ -456,3 +456,119 @@ export const deleteResult = async (id: number) => {
 
   }
 }
+
+export const getSchedules = async () => {
+  try {
+    const resp = await api.get("/api/scheduler/schedules");
+    return resp.data;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+export const createSchedule = async (data: CreateScheduleData) => {
+  try {
+    const resp = await api.post("/api/scheduler/schedules", data);
+    return resp.data;
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+export const updateSchedule = async (id: number, data: CreateScheduleData) => {
+  try {
+    const resp = await api.put(`/api/scheduler/schedules/${id}`, data);
+    return resp.data;
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+export const deleteScheduleById = async (id: number) => {
+  try {
+    const resp = await api.delete(`/api/scheduler/schedules/${id}`);
+    return resp.data;
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+export const toggleSchedule = async (id: number, isActive: boolean) => {
+  try {
+    const resp = await api.patch(`/api/scheduler/schedules/${id}`, { is_active: isActive });
+    return resp.data;
+  } catch (error) {
+    console.error(error);
+  }
+};
+export const runSchedule = async (id: number): Promise<any> => {
+  try {
+    const resp = await api.post(`/api/scheduler/schedules/${id}/run-now`);
+    return resp.data;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
+
+export const getReportTestResults = async (params?: {
+  start_date?: string;
+  end_date?: string;
+  email_sent?: boolean;
+  limit?: number;
+}) => {
+  try {
+    const resp = await api.get<ReportTestResult[]>("/api/scheduler/scheduled-results", { params });
+    return resp.data;
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+export const getReportResults = async (params?: {
+  start_date?: string;
+  end_date?: string;
+  email_sent?: boolean;
+  limit?: number;
+}) => {
+  try {
+    const resp = await api.get<ReportResult[]>("/api/reports", { params });
+    return resp.data;
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+export const triggerManualTests = async () => {
+  try {
+    const resp = await api.post("/api/scheduler/trigger-tests");
+    return resp.data;
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+export const sendManualReports = (recipients?: string[]): Promise<{ message: string; reportData: any }> => {
+  return api.post('api/scheduler/send-report', { recipients });
+};
+
+export const sendPendingReportEmails = (): Promise<{ message: string; sentCount: number }> => {
+  return api.post('api/dashboard/send-pending-emails');
+};
+
+export const markEmailSent = (resultId: number): Promise<void> => {
+  return api.put(`api/dashboard/results/${resultId}/mark-email-sent`);
+};
+
+export const getDashboardStats = (): Promise<TestCaseSummary> => {
+  return api.get('api/dashboard/stats');
+};
+
+// Verification
+export const verifyTestExecution = (): Promise<any> => {
+  return api.get('api/scheduler/verify-execution');
+};
+
+export const executeMissingTests = (): Promise<any> => {
+  return api.post('api/scheduler/execute-missing-tests');
+};

@@ -265,6 +265,15 @@ export interface TestCaseItem {
   updated_by?: string
 }
 
+export interface AutomationTestSuite {
+  TC_ID?: string,
+  TC__Name: string,
+  intervention_category: string,
+  pre_auth: boolean,
+  type: string,
+  intervention_code: string,
+}
+
 export interface Result {
   id?: number,
   testcase_id: number,
@@ -388,3 +397,90 @@ declare module "next-auth/jwt" {
   }
 }
 
+export interface Schedule {
+  id: number;
+  schedule_type: 'daily' | 'weekly' | 'monthly' | 'custom';
+  schedule_time: string;
+  is_active: boolean;
+  email_recipients: string[];
+  test_config: any;
+  created_by: string;
+  updated_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ReportTestResult {
+  email_recipients: string[];
+  id: number;
+  testcase_id: number;
+  testcase_name: string;
+  testcase_code: string;
+  intervention_name: string;
+  result_status: number;
+  claim_id: string;
+  response_id: string;
+  status_code: string;
+  message: string;
+  detail: string;
+  is_scheduled: boolean;
+  is_email_sent: boolean;
+  scheduled_time: string | null;
+  email_sent_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ReportResult {
+  id: number;
+  name: string;
+  number_of_tests: number;
+  number_passed: number;
+  number_failed: number;
+  is_email_sent: boolean;
+  email_sent_at: string;
+  test_details?: string;
+  created_at?: string;
+  created_by?: string;
+}
+
+export interface DashboardStats {
+  totalSchedules: number;
+  activeSchedules: number;
+  testsToday: number;
+  successRate: number;
+  emailsSent: number;
+  pendingEmails: number;
+}
+
+export interface CreateScheduleData {
+  schedule_type: 'daily' | 'weekly' | 'monthly' | 'custom';
+  schedule_time: string;
+  email_recipients: string[];
+  test_config: any;
+  created_by: string;
+  updated_by: string;
+}
+
+export interface ScheduleFormData {
+  schedule_type: 'daily' | 'weekly' | 'monthly' | 'custom'
+  schedule_time: string
+  email_recipients: string
+  test_config: string
+  is_active: boolean
+}
+
+export interface TestCaseSummary {
+  id: number;
+  name: string;
+  code: string;
+  intervention_name: string;
+  total_runs: number;
+  passes: number;
+  failures: number;
+  last_run: string;
+  cancelled_runs: number;
+  errors: number;
+  in_progress: number;
+  execution_time: number;
+}

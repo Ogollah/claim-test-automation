@@ -18,12 +18,19 @@ import {
     TestCaseItem,
 } from "@/lib/types";
 
-const TABLE_HEADERS = [
+// Define headers for different modes
+const SINGLE_SELECT_HEADERS = [
     "Select",
     "Intervention",
     "Test Case Name",
     "Description",
     "Actions"
+];
+
+const MULTI_SELECT_HEADERS = [
+    "Select",
+    "Test Case Name",
+    "Description"
 ];
 
 interface TestCasesProps {
@@ -33,10 +40,13 @@ interface TestCasesProps {
     selectedPackage: string;
     selectedIntervention: string;
     selectedTestCase: TestCaseItem | null;
+    selectedTestCases: TestCaseItem[]; // New prop for multi-select
     onSelectPackage: (packageId: string) => void;
     onSelectIntervention: (interventionCode: string) => void;
     onTestCaseSelect: (testCase: TestCaseItem | null) => void;
-    onDeleteTestCase: (testId: number) => void;
+    onTestCasesSelect: (testCases: TestCaseItem[]) => void; // New handler for multi-select
+    onDeleteTestCase?: (testId: number) => void;
+    mode: "single" | "multiple";
 }
 
 export default function TestCases({
@@ -46,18 +56,48 @@ export default function TestCases({
     selectedPackage,
     selectedIntervention,
     selectedTestCase,
+    selectedTestCases = [],
     onSelectPackage,
     onSelectIntervention,
     onTestCaseSelect,
-    onDeleteTestCase
+    onTestCasesSelect,
+    onDeleteTestCase,
+    mode = "single",
 }: TestCasesProps) {
 
     const handleSelectTestCase = useCallback((testCase: TestCaseItem) => {
-        if (testCase.id) {
+        if (!testCase.id) return;
+
+        if (mode === "single") {
+            // Single select mode behavior
             const newSelected = selectedTestCase?.id === testCase.id ? null : testCase;
             onTestCaseSelect(newSelected);
+        } else {
+            // Multi-select mode behavior
+            const isCurrentlySelected = selectedTestCases.some(tc => tc.id === testCase.id);
+            let newSelectedTestCases: TestCaseItem[];
+
+            if (isCurrentlySelected) {
+                // Remove from selection
+                newSelectedTestCases = selectedTestCases.filter(tc => tc.id !== testCase.id);
+            } else {
+                // Add to selection
+                newSelectedTestCases = [...selectedTestCases, testCase];
+            }
+
+            onTestCasesSelect(newSelectedTestCases);
         }
-    }, [selectedTestCase, onTestCaseSelect]);
+    }, [selectedTestCase, selectedTestCases, mode, onTestCaseSelect, onTestCasesSelect]);
+
+    const isTestCaseSelected = useCallback((testCase: TestCaseItem) => {
+        if (!testCase.id) return false;
+        
+        if (mode === "single") {
+            return selectedTestCase?.id === testCase.id;
+        } else {
+            return selectedTestCases.some(tc => tc.id === testCase.id);
+        }
+    }, [selectedTestCase, selectedTestCases, mode]);
 
     const handleDelete = useCallback(async (testId: number) => {
         toast.info("Are you sure you want to delete this test case? This action cannot be undone.", {
@@ -65,7 +105,7 @@ export default function TestCases({
                 label: "Delete",
                 onClick: async() => {
                     try {
-                        onDeleteTestCase(testId);
+                        onDeleteTestCase?.(testId);
                     } catch (error) {
                         console.error("Error deleting test case:", error);
                         toast.error("Failed to delete test case");
@@ -81,6 +121,21 @@ export default function TestCases({
             duration: 10000,
         })
     }, [onDeleteTestCase]);
+
+    const getSelectedDisplayText = () => {
+        if (mode === "single") {
+            return selectedTestCase ? `Selected: ${selectedTestCase.name}` : null;
+        } else {
+            if (selectedTestCases.length === 0) return null;
+            if (selectedTestCases.length === 1) return `Selected: ${selectedTestCases[0].name}`;
+            return `Selected: ${selectedTestCases.length} test cases`;
+        }
+    };
+
+    // Determine which headers to use based on mode
+    const tableHeaders = mode === "multiple" ? MULTI_SELECT_HEADERS : SINGLE_SELECT_HEADERS;
+
+    const selectedDisplayText = getSelectedDisplayText();
 
     return (
         <div className="mx-auto py-4 text-gray-500">
@@ -105,22 +160,21 @@ export default function TestCases({
                             </SelectContent>
                         </Select>
                     </div>
-
-                    <InterventionSelector
-                        packageId={selectedPackage}
-                        interventions={availableInterventions}
-                        selectedIntervention={selectedIntervention}
-                        onSelectIntervention={onSelectIntervention}
-                    />
+                        <InterventionSelector
+                            packageId={selectedPackage}
+                            interventions={availableInterventions}
+                            selectedIntervention={selectedIntervention}
+                            onSelectIntervention={onSelectIntervention}
+                        />
                 </div>
 
                 {/* Selected test case info */}
-                {selectedTestCase && (
+                {selectedDisplayText && (
                     <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
                         <div className="flex items-center">
                             <CheckIcon className="h-5 w-5 text-blue-600 mr-2" />
                             <span className="text-blue-700 font-medium">
-                                Selected: {selectedTestCase.name}
+                                {selectedDisplayText}
                             </span>
                         </div>
                     </div>
@@ -130,13 +184,13 @@ export default function TestCases({
                 {tests.length > 0 ? (
                     <div className="mb-6">
                         <h3 className="text-lg font-medium text-gray-500 mb-2">
-                            Test cases
+                            Test cases {mode === "multiple" && `(${selectedTestCases.length} selected)`}
                         </h3>
                         <div className="overflow-x-auto bg-white rounded-lg shadow-md">
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        {TABLE_HEADERS.map((header) => (
+                                        {tableHeaders.map((header) => (
                                             <th
                                                 key={header}
                                                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
@@ -149,34 +203,47 @@ export default function TestCases({
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {tests.map((test) => {
-                                        const isSelected = selectedTestCase?.id === test.id;
+                                        const isSelected = isTestCaseSelected(test);
                                         return (
                                             <tr
                                                 key={test.id}
                                                 className={isSelected ? "bg-blue-50" : "hover:bg-gray-50 cursor-pointer"}
                                                 onClick={() => handleSelectTestCase(test)}
                                             >
+                                                {/* Select Checkbox */}
                                                 <td className="px-6 py-4 text-sm text-gray-500">
                                                     <div className={`flex items-center justify-center h-5 w-5 rounded-full border-2 ${isSelected ? "bg-blue-600 border-blue-600" : "border-gray-300"}`}>
                                                         {isSelected && <CheckIcon className="h-3 w-3 text-white" />}
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4 text-sm text-gray-500">{selectedIntervention}</td>
+
+                                                {/* Intervention Column - only in single mode */}
+                                                {mode === "single" && (
+                                                    <td className="px-6 py-4 text-sm text-gray-500">{selectedIntervention}</td>
+                                                )}
+
+                                                {/* Test Case Name */}
                                                 <td className="px-6 py-4 text-sm text-gray-500">{test.name}</td>
+
+                                                {/* Description */}
                                                 <td className="px-6 py-4 text-sm text-gray-500">{test.description}</td>
-                                                <td className="px-6 py-4 text-sm text-gray-500 flex space-x-2">
-                                                    <Button
-                                                        variant="ghost"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            test.id !== undefined && handleDelete(test.id);
-                                                        }}
-                                                        className="text-red-500 hover:text-red-700"
-                                                        title="Delete test case"
-                                                    >
-                                                        <TrashIcon className="h-4 w-4" />
-                                                    </Button>
-                                                </td>
+
+                                                {/* Actions Column - only in single mode */}
+                                                {mode === "single" && (
+                                                    <td className="px-6 py-4 text-sm text-gray-500 flex space-x-2">
+                                                        <Button
+                                                            variant="ghost"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                test.id !== undefined && handleDelete(test.id);
+                                                            }}
+                                                            className="text-red-500 hover:text-red-700"
+                                                            title="Delete test case"
+                                                        >
+                                                            <TrashIcon className="h-4 w-4" />
+                                                        </Button>
+                                                    </td>
+                                                )}
                                             </tr>
                                         );
                                     })}

@@ -39,7 +39,7 @@ export function getMenuList(pathname: string): Group[] {
       groupLabel: "",
       menus: [
         {
-          href: "/",
+          href: "/schedule",
           label: "Dashboard",
           icon: LayoutGrid,
           submenus: []
@@ -118,6 +118,11 @@ export function getMenuList(pathname: string): Group[] {
           href: "/sanity-checks",
           label: "Sanity check",
           icon: CheckCircle
+        },
+        {
+          href: "/schedule",
+          label: "Test Automation Dashboard",
+          icon: Tag
         }
       ]
     },
