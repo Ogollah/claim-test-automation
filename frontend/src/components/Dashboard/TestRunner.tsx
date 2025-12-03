@@ -25,6 +25,7 @@ import { InterventionItem, Provider, Practitioner } from "@/lib/types";
 import { DateFieldRenderer } from "./DateFieldRenderer";
 import { Switch } from "../ui/switch";
 import { cn } from "@/lib/utils";
+import DocumentAttachment, { AttachmentType } from "./attachments/DocumentAttachment";
 
 type TestRunnerProps = {
   isRunning?: boolean;
@@ -45,6 +46,7 @@ export default function OptimizedTestRunner({
   const [isBundleOnly, setIsBundleOnly] = useState<boolean>();
   const [relatedClaimId, setRelatedClaimId] = useState("");
   const [interventions, setInterventions] = useState<InterventionItem[]>([]);
+  const [attachments, setAttachments] = useState<AttachmentType[]>([]);
 
   const { packages } = usePackages();
   const { interventions: availableInterventions, selectedIntervention, setSelectedIntervention } = useInterventions(selectedPackage);
@@ -121,6 +123,7 @@ export default function OptimizedTestRunner({
       claimSubType: selectedClaimSubType,
       practitioner: selectedPractitioner,
       relatedClaimId: relatedClaimId,
+      attachments: attachments.length > 0 ? attachments : undefined,
       productOrService: interventions.map((intervention, index) => ({
         code: intervention.code,
         display: intervention.name,
@@ -151,7 +154,7 @@ export default function OptimizedTestRunner({
   }), [
     selectedIntervention, selectedPatient, selectedProvider, selectedUse,
     selectedClaimSubType, selectedPractitioner, relatedClaimId, interventions,
-    isPerdiem, dates, total, isBundleOnly, isDev
+    isPerdiem, dates, total, isBundleOnly, isDev, attachments
   ]);
 
   const handleRunTests = useCallback(() => {
@@ -476,6 +479,12 @@ export default function OptimizedTestRunner({
             </div>
           </div>
         )}
+
+        {/* Document Attachments Section - Added just above Patient Details */}
+        <DocumentAttachment
+          attachments={attachments}
+          onAttachmentsChange={setAttachments}
+        />
 
         {/* Patient, Provider, Practitioner */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 text-gray-500">
