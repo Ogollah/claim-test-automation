@@ -362,6 +362,45 @@ export interface ComplexCase {
   status: string;
 }
 
+export interface FundUtilization {
+  fundType: string;
+  utilisedAmount: number;
+  maxAmount: number;
+  availableAmount: number;
+}
+
+export interface IntermediatePeriodUsage {
+  individualUtilisedDuringPeriod?: number;
+  individualMaxDuringPeriod?: number;
+  period?: number;
+  lastUsageDate?: string;
+}
+export interface ComputationalDetail {
+  individualLimitAvailableCount: number;
+  householdLimitAvailableCount: number;
+  coverageStartDate: string;
+  coverageEndDate: string;
+  policyStartDate: string;
+  policyEndDate: string;
+  limitAvailableAmount: number;
+  intermediatePeriodUsage: IntermediatePeriodUsage;
+  nextAvailableDate: string;
+  eligibility: boolean;
+}
+
+export interface UtilizationResponse {
+  crId: string;
+  code: string;
+  limitScope: string;
+  individualMaxLimit?: number;
+  householdMaxLimit?: number;
+  individualUtilisedLimit?: number;
+  householdUtilisedLimit?: number;
+  fundUtilization?: FundUtilization[];
+  computationalDetail?: ComputationalDetail;
+
+}
+
 declare module "next-auth" {
   interface Session {
     accessToken?: string;

@@ -118,6 +118,11 @@ export function getMenuList(pathname: string): Group[] {
           href: "/sanity-checks",
           label: "Sanity check",
           icon: CheckCircle
+        },
+                {
+          href: "/utilization",
+          label: "Utilization",
+          icon: CheckCircle
         }
       ]
     },
